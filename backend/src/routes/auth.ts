@@ -126,6 +126,12 @@ router.post('/google', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+// GET /api/auth/google-client-id
+router.get('/google-client-id', (_req: Request, res: Response) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID || '284417810408-nmfp9erglprht0omhg2bqivf1lpuj54o.apps.googleusercontent.com';
+  res.json({ google_client_id: clientId });
+});
+
 // GET /api/auth/me
 router.get('/me', requireAuth, (req: AuthRequest, res: Response) => {
   if (req.user?.role === 'ADMIN') {

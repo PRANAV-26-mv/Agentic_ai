@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, ShieldAlert, Lock, User } from 'lucide-react';
+import { api } from '../services/api';
 
 export const LoginPage: React.FC = () => {
   const { loginWithDevEmail, loginWithGoogleToken, loginWithRegNumber, role, user } = useAuth();
@@ -12,8 +13,19 @@ export const LoginPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const rawGoogleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  const isRealGoogleClientId = !!(rawGoogleClientId && !rawGoogleClientId.includes('your-google-client-id') && !rawGoogleClientId.includes('YOUR_GOOGLE_CLIENT_ID'));
+  const [googleClientId, setGoogleClientId] = useState<string>(
+    import.meta.env.VITE_GOOGLE_CLIENT_ID || '284417810408-nmfp9erglprht0omhg2bqivf1lpuj54o.apps.googleusercontent.com'
+  );
+
+  useEffect(() => {
+    api.get('/auth/google-client-id')
+      .then(res => {
+        if (res.data?.google_client_id) {
+          setGoogleClientId(res.data.google_client_id);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (user && role) {
@@ -23,10 +35,10 @@ export const LoginPage: React.FC = () => {
   }, [user, role, navigate]);
 
   useEffect(() => {
-    if (isRealGoogleClientId && (window as any).google?.accounts?.id) {
+    if (googleClientId && (window as any).google?.accounts?.id) {
       try {
         (window as any).google.accounts.id.initialize({
-          client_id: rawGoogleClientId,
+          client_id: googleClientId,
           callback: (response: any) => {
             if (response.credential) {
               setLoading(true);
@@ -50,7 +62,7 @@ export const LoginPage: React.FC = () => {
         console.error('Google GSI init error:', err);
       }
     }
-  }, [isRealGoogleClientId, rawGoogleClientId, loginWithGoogleToken]);
+  }, [googleClientId, loginWithGoogleToken]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,7 +169,7 @@ export const LoginPage: React.FC = () => {
         </form>
 
         {/* Google OAuth Section (if configured) */}
-        {isRealGoogleClientId && (
+        {!!googleClientId && (
           <>
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
