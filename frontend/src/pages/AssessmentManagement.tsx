@@ -68,10 +68,10 @@ export const AssessmentManagement: React.FC = () => {
     <div className="space-y-6">
       
       {/* Banner */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-          <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-            <FileCheck className="w-6 h-6 text-purple-600" />
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center space-x-2">
+            <FileCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 shrink-0" />
             <span>Assessment Management & Duplication</span>
           </h2>
           <p className="text-slate-500 text-xs mt-1">Create fixed question or randomized pool assessments with timer constraints.</p>
@@ -79,7 +79,7 @@ export const AssessmentManagement: React.FC = () => {
 
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-colors"
+          className="w-full sm:w-auto px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-2 transition-colors shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Create Assessment</span>
@@ -90,7 +90,7 @@ export const AssessmentManagement: React.FC = () => {
       {loading ? (
         <div className="h-64 bg-slate-200 rounded-2xl animate-pulse"></div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-sm">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200">
@@ -180,7 +180,7 @@ export const AssessmentManagement: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Assessment Type</label>
                   <select

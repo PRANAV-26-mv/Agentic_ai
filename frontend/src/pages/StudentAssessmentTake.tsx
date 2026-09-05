@@ -295,25 +295,25 @@ export const StudentAssessmentTake: React.FC = () => {
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
       
       {/* Top Header Bar matching §17 */}
-      <header className="bg-slate-900 text-white px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0 shadow-md">
+      <header className="bg-slate-900 text-white px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-md">
         <div>
-          <h1 className="font-bold text-base sm:text-lg">{assessment?.title}</h1>
-          <p className="text-xs text-slate-400">Distraction-Free Evaluation Mode</p>
+          <h1 className="font-bold text-sm sm:text-lg">{assessment?.title}</h1>
+          <p className="text-[11px] text-slate-400">Distraction-Free Evaluation Mode</p>
         </div>
 
-        <div className="flex items-center space-x-6">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto justify-between sm:justify-end">
           {/* Tab Switch warning badge */}
           {tabSwitches > 0 && (
-            <div className="flex items-center space-x-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-3 py-1 rounded-full font-semibold">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              <span>Tab Switches: {tabSwitches}</span>
+            <div className="flex items-center space-x-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] px-2.5 py-1 rounded-full font-semibold">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+              <span>Switches: {tabSwitches}</span>
             </div>
           )}
 
           {/* Timer Countdown matching §17 & §19 */}
-          <div className="flex items-center space-x-2 bg-rose-500/20 border border-rose-500/40 text-rose-300 font-mono font-bold text-sm px-4 py-1.5 rounded-xl">
-            <Clock className="w-4 h-4 text-rose-400 animate-pulse" />
-            <span>Time Remaining: {formatTime(remainingSeconds)}</span>
+          <div className="flex items-center space-x-1.5 bg-rose-500/20 border border-rose-500/40 text-rose-300 font-mono font-bold text-xs sm:text-sm px-3 py-1 rounded-xl">
+            <Clock className="w-4 h-4 text-rose-400 animate-pulse shrink-0" />
+            <span>Time: {formatTime(remainingSeconds)}</span>
           </div>
         </div>
       </header>

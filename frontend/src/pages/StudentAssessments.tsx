@@ -33,10 +33,10 @@ export const StudentAssessments: React.FC = () => {
     <div className="space-y-6">
       
       {/* Banner */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div>
-          <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-            <FileCheck className="w-6 h-6 text-brand-600" />
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center space-x-2">
+            <FileCheck className="w-5 h-5 sm:w-6 sm:h-6 text-brand-600 shrink-0" />
             <span>Assigned Assessments</span>
           </h2>
           <p className="text-slate-500 text-xs mt-1">Complete your MCQ and Writing evaluations before the deadline.</p>
@@ -57,7 +57,7 @@ export const StudentAssessments: React.FC = () => {
             const isInProgress = attempt && attempt.status === 'IN_PROGRESS';
 
             return (
-              <div key={ass.id} className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-6 shadow-sm transition-all flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+              <div key={ass.id} className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-4 sm:p-6 shadow-sm transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 
                 <div className="space-y-2 max-w-2xl">
                   <div className="flex flex-wrap gap-2 items-center">
@@ -73,7 +73,7 @@ export const StudentAssessments: React.FC = () => {
                     </span>
                   </div>
 
-                  <h3 className="font-extrabold text-slate-900 text-lg">{ass.title}</h3>
+                  <h3 className="font-extrabold text-slate-900 text-base sm:text-lg">{ass.title}</h3>
                   <p className="text-xs text-slate-500">{ass.description}</p>
                   
                   <div className="text-[11px] text-slate-400">
@@ -82,11 +82,11 @@ export const StudentAssessments: React.FC = () => {
                 </div>
 
                 {/* Status Badge / Action Button matching §20 rule */}
-                <div>
+                <div className="w-full md:w-auto">
                   {isCompleted ? (
-                    <div className="flex flex-col items-end space-y-1">
+                    <div className="flex flex-col items-start md:items-end space-y-1">
                       <span className="inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                        <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                        <CheckCircle2 className="w-4 h-4 mr-1.5 shrink-0" />
                         COMPLETED ({attempt.percentage}%)
                       </span>
                       <span className="text-[11px] text-slate-400">Submitted on {new Date(attempt.submitted_at!).toLocaleDateString()}</span>
@@ -94,7 +94,7 @@ export const StudentAssessments: React.FC = () => {
                   ) : (
                     <button
                       onClick={() => handleStart(ass.id)}
-                      className={`px-6 py-3 font-bold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-all ${
+                      className={`w-full md:w-auto px-6 py-3 font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-2 transition-all ${
                         isInProgress
                           ? 'bg-amber-500 hover:bg-amber-600 text-white animate-pulse'
                           : 'bg-brand-600 hover:bg-brand-700 text-white'
