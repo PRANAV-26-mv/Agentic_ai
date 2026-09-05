@@ -11,7 +11,8 @@ import {
   BarChart, 
   Activity, 
   PieChart, 
-  ShieldAlert, 
+  ShieldAlert,
+  Crown, 
   LogOut 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -22,6 +23,7 @@ export const AdminSidebar: React.FC = () => {
 
   const navItems = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/admin/manage-admins', label: 'Admin Members', icon: Crown },
     { to: '/admin/students', label: 'Students', icon: Users },
     { to: '/admin/assessments', label: 'Assessments', icon: FileCheck },
     { to: '/admin/question-bank', label: 'Question Bank', icon: HelpCircle },

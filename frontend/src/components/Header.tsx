@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Bell, LogOut, Shield, User as UserIcon, BookOpen } from 'lucide-react';
+import { Bell, LogOut, Shield, User as UserIcon, BookOpen, Crown } from 'lucide-react';
 import { api } from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -8,6 +8,8 @@ export const Header: React.FC = () => {
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  const isSuperAdmin = user?.email?.toLowerCase() === 'pranavannur9659@gmail.com' || user?.is_super_admin;
 
   useEffect(() => {
     if (user && role === 'STUDENT') {
@@ -30,8 +32,8 @@ export const Header: React.FC = () => {
             <BookOpen className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-bold text-slate-900 text-base sm:text-lg leading-tight">
-              Student Assessment & Learning Portal
+            <h1 className="font-bold text-slate-900 text-base sm:text-lg leading-tight flex items-center space-x-2">
+              <span>Student Assessment & Learning Portal</span>
             </h1>
             <p className="text-xs text-slate-500 hidden sm:block">Learn • Practice • Assess • Improve</p>
           </div>
@@ -40,15 +42,22 @@ export const Header: React.FC = () => {
         {/* User Actions */}
         <div className="flex items-center space-x-4">
           
-          {/* Role Badge */}
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-            role === 'ADMIN' 
-              ? 'bg-purple-50 text-purple-700 border-purple-200' 
-              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-          }`}>
-            {role === 'ADMIN' ? <Shield className="w-3 h-3 mr-1" /> : <UserIcon className="w-3 h-3 mr-1" />}
-            {role} PORTAL
-          </span>
+          {/* Role / Super Admin Badge */}
+          {isSuperAdmin ? (
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+              <Crown className="w-3.5 h-3.5 mr-1 text-amber-600" />
+              SUPER ADMIN PORTAL
+            </span>
+          ) : (
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+              role === 'ADMIN' 
+                ? 'bg-purple-50 text-purple-700 border-purple-200' 
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            }`}>
+              {role === 'ADMIN' ? <Shield className="w-3 h-3 mr-1" /> : <UserIcon className="w-3 h-3 mr-1" />}
+              {role} PORTAL
+            </span>
+          )}
 
           {/* Notifications (Student) */}
           {role === 'STUDENT' && (

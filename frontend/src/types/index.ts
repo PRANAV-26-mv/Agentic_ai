@@ -3,6 +3,7 @@ export interface User {
   name: string;
   email: string;
   role: 'ADMIN' | 'STUDENT';
+  is_super_admin?: boolean;
   student_id?: string;
   department?: string;
   year?: number;
@@ -34,6 +35,7 @@ export interface Admin {
   name: string;
   email: string;
   role: 'ADMIN';
+  is_super_admin?: boolean;
   department: string;
   created_at: string;
 }

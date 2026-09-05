@@ -8,6 +8,7 @@ export interface Admin {
   email: string;
   password?: string;
   role: 'ADMIN';
+  is_super_admin?: boolean;
   department: string;
   created_at: string;
 }
@@ -200,11 +201,32 @@ export interface DoubtMessage {
 // Data Model Helpers
 
 export const AdminsModel = {
+  findAll(): Admin[] {
+    const list = memoryDb.table('admins') as Admin[];
+    return list.map(a => ({
+      ...a,
+      is_super_admin: a.email.toLowerCase() === 'pranavannur9659@gmail.com' || Boolean(a.is_super_admin)
+    }));
+  },
   findByEmail(email: string): Admin | undefined {
-    return memoryDb.table('admins').find(a => a.email.toLowerCase() === email.toLowerCase());
+    const admin = memoryDb.table('admins').find(a => a.email.toLowerCase() === email.toLowerCase()) as Admin | undefined;
+    if (admin) {
+      return {
+        ...admin,
+        is_super_admin: admin.email.toLowerCase() === 'pranavannur9659@gmail.com' || Boolean(admin.is_super_admin)
+      };
+    }
+    return undefined;
   },
   findById(id: string): Admin | undefined {
-    return memoryDb.table('admins').find(a => a.id === id);
+    const admin = memoryDb.table('admins').find(a => a.id === id) as Admin | undefined;
+    if (admin) {
+      return {
+        ...admin,
+        is_super_admin: admin.email.toLowerCase() === 'pranavannur9659@gmail.com' || Boolean(admin.is_super_admin)
+      };
+    }
+    return undefined;
   },
   create(admin: Omit<Admin, 'id' | 'created_at'>): Admin {
     const newAdmin: Admin = {
@@ -215,6 +237,20 @@ export const AdminsModel = {
     memoryDb.table('admins').push(newAdmin);
     db.save();
     return newAdmin;
+  },
+  delete(id: string): boolean {
+    const list = memoryDb.table('admins');
+    const index = list.findIndex(a => a.id === id);
+    if (index !== -1) {
+      const target = list[index];
+      if (target.email.toLowerCase() === 'pranavannur9659@gmail.com') {
+        throw new Error('Cannot delete Super Admin / Portal Owner account.');
+      }
+      list.splice(index, 1);
+      db.save();
+      return true;
+    }
+    return false;
   }
 };
 

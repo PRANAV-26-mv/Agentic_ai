@@ -28,6 +28,7 @@ import { WritingEvaluation } from './pages/WritingEvaluation';
 import { AssessmentMonitoring } from './pages/AssessmentMonitoring';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AuditLogPage } from './pages/AuditLogPage';
+import { AdminManagement } from './pages/AdminManagement';
 
 const ProtectedStudentRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, role, loading } = useAuth();
@@ -109,6 +110,7 @@ export function App() {
             <Route path="/admin/monitoring" element={<AssessmentMonitoring />} />
             <Route path="/admin/analytics" element={<AnalyticsPage />} />
             <Route path="/admin/audit-log" element={<AuditLogPage />} />
+            <Route path="/admin/manage-admins" element={<AdminManagement />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
