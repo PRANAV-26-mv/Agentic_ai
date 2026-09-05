@@ -1,0 +1,15 @@
+{
+  "name": "student-assessment-portal",
+  "version": "2.0.0",
+  "description": "Student Assessment & Learning Portal v2",
+  "main": "backend/dist/index.js",
+  "scripts": {
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "start": "node backend/dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

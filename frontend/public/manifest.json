@@ -1,0 +1,18 @@
+{
+  "name": "Student Assessment & Learning Portal",
+  "short_name": "Campus Portal",
+  "description": "Mobile assessment, AI doubt solver, attendance, and study portal for college students.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
