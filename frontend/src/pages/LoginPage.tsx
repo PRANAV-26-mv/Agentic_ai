@@ -14,7 +14,7 @@ export const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const [googleClientId, setGoogleClientId] = useState<string>(
-    import.meta.env.VITE_GOOGLE_CLIENT_ID || '284417810408-nmfp9erglprht0omhg2bqivf1lpuj54o.apps.googleusercontent.com'
+    import.meta.env.VITE_GOOGLE_CLIENT_ID || '284417810408-prac0n0e79hkaqvg1vgs27uuqrjchihu.apps.googleusercontent.com'
   );
 
   useEffect(() => {
