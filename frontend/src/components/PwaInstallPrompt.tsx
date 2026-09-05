@@ -57,7 +57,7 @@ export const PwaInstallPrompt: React.FC = () => {
       {/* Floating Action Button for Phone App Installation */}
       <button
         onClick={handleInstallClick}
-        className="fixed bottom-5 right-5 z-40 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold text-xs px-4 py-3 rounded-2xl shadow-xl border border-white/20 flex items-center space-x-2 animate-bounce transition-all hover:scale-105"
+        className="hidden sm:flex fixed bottom-5 right-5 z-40 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold text-xs px-4 py-3 rounded-2xl shadow-xl border border-white/20 items-center space-x-2 animate-bounce transition-all hover:scale-105"
         title="Use this Portal as an App on your Mobile Phone"
       >
         <Smartphone className="w-4 h-4 text-sky-300" />

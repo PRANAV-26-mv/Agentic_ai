@@ -711,6 +711,42 @@
   ],
   "audit_logs": [
     {
+      "id": "audit-1788631239781-372",
+      "actor_id": "std-001",
+      "actor_role": "STUDENT",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "std-001",
+      "timestamp": "2026-09-05T18:00:39.781Z"
+    },
+    {
+      "id": "audit-1788631236618-751",
+      "actor_id": "std-001",
+      "actor_role": "STUDENT",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "std-001",
+      "timestamp": "2026-09-05T18:00:36.618Z"
+    },
+    {
+      "id": "audit-1788631200026-177",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-05T18:00:00.026Z"
+    },
+    {
+      "id": "audit-1788631195637-335",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-05T17:59:55.637Z"
+    },
+    {
       "id": "audit-1788628054063-42",
       "actor_id": "adm-002",
       "actor_role": "ADMIN",
