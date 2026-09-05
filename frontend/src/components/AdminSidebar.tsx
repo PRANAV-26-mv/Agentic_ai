@@ -18,12 +18,14 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 export const AdminSidebar: React.FC = () => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const navItems = [
+  const isSuperAdmin = user?.email?.toLowerCase() === 'pranavannur9659@gmail.com' || user?.is_super_admin;
+
+  const rawNavItems = [
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/admin/manage-admins', label: 'Admin Members', icon: Crown },
+    { to: '/admin/manage-admins', label: 'Admin Members', icon: Crown, superOnly: true },
     { to: '/admin/students', label: 'Students', icon: Users },
     { to: '/admin/assessments', label: 'Assessments', icon: FileCheck },
     { to: '/admin/question-bank', label: 'Question Bank', icon: HelpCircle },
@@ -35,6 +37,8 @@ export const AdminSidebar: React.FC = () => {
     { to: '/admin/analytics', label: 'Analytics', icon: PieChart },
     { to: '/admin/audit-log', label: 'Audit Log', icon: ShieldAlert },
   ];
+
+  const navItems = rawNavItems.filter(item => !item.superOnly || isSuperAdmin);
 
   return (
     <aside className="w-64 bg-slate-900 text-slate-300 min-h-[calc(100vh-4rem)] flex flex-col justify-between p-4 shadow-xl">

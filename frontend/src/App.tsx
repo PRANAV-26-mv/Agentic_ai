@@ -44,6 +44,14 @@ const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children
   return <>{children}</>;
 };
 
+const ProtectedSuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, role, loading } = useAuth();
+  if (loading) return <div className="p-8 text-center text-xs text-slate-500 font-bold">Loading...</div>;
+  const isSuper = user?.email?.toLowerCase() === 'pranavannur9659@gmail.com' || user?.is_super_admin;
+  if (!user || role !== 'ADMIN' || !isSuper) return <Navigate to="/admin/dashboard" replace />;
+  return <>{children}</>;
+};
+
 const RootRedirect: React.FC = () => {
   const { user, role, loading } = useAuth();
   if (loading) return <div className="p-8 text-center text-xs text-slate-500 font-bold">Loading...</div>;
@@ -110,7 +118,14 @@ export function App() {
             <Route path="/admin/monitoring" element={<AssessmentMonitoring />} />
             <Route path="/admin/analytics" element={<AnalyticsPage />} />
             <Route path="/admin/audit-log" element={<AuditLogPage />} />
-            <Route path="/admin/manage-admins" element={<AdminManagement />} />
+            <Route
+              path="/admin/manage-admins"
+              element={
+                <ProtectedSuperAdminRoute>
+                  <AdminManagement />
+                </ProtectedSuperAdminRoute>
+              }
+            />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

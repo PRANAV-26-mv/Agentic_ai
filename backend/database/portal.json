@@ -1,15 +1,6 @@
 {
   "admins": [
     {
-      "id": "adm-001",
-      "name": "Dr. Sarah Jenkins",
-      "email": "admin@college.edu",
-      "password": "admin",
-      "role": "ADMIN",
-      "department": "Computer Science & Engineering",
-      "created_at": "2026-09-03T09:58:32.444Z"
-    },
-    {
       "id": "adm-002",
       "name": "Pranav (Admin)",
       "email": "pranavannur9659@gmail.com",
@@ -17,6 +8,15 @@
       "role": "ADMIN",
       "department": "Computer Science & Engineering",
       "created_at": "2026-09-05T14:20:00.000Z"
+    },
+    {
+      "email": "yamunaranir.al25@bitsathy.ac.in",
+      "name": "YAMUNA RANI R",
+      "department": "Artificial Intelligence & Data Science",
+      "password": "7376252AL245",
+      "role": "ADMIN",
+      "id": "adm-1788626901288",
+      "created_at": "2026-09-05T16:48:21.288Z"
     }
   ],
   "students": [
@@ -710,6 +710,44 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "audit-1788626953698-222",
+      "actor_id": "adm-1788626901288",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-1788626901288",
+      "timestamp": "2026-09-05T16:49:13.698Z"
+    },
+    {
+      "id": "audit-1788626901290-999",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "CREATE_ADMIN",
+      "entity_type": "ADMIN_USER",
+      "entity_id": "adm-1788626901288",
+      "metadata": "{\"email\":\"yamunaranir.al25@bitsathy.ac.in\",\"name\":\"YAMUNA RANI R\"}",
+      "timestamp": "2026-09-05T16:48:21.290Z"
+    },
+    {
+      "id": "audit-1788626838852-291",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "DELETE_ADMIN",
+      "entity_type": "ADMIN_USER",
+      "entity_id": "adm-001",
+      "metadata": "{\"email\":\"admin@college.edu\"}",
+      "timestamp": "2026-09-05T16:47:18.852Z"
+    },
+    {
+      "id": "audit-1788626820101-323",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-05T16:47:00.101Z"
+    },
     {
       "id": "audit-1788604731023-825",
       "actor_id": "adm-002",

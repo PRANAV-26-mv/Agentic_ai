@@ -4,8 +4,18 @@ import { requireAdmin, AuthRequest } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
+// Middleware: Strict Super Admin access check for pranavannur9659@gmail.com
+const requireSuperAdminOnly = (req: AuthRequest, res: Response, next: any) => {
+  const userEmail = req.user?.email?.toLowerCase();
+  if (userEmail !== 'pranavannur9659@gmail.com' && !req.user?.admin?.is_super_admin) {
+    res.status(403).json({ message: 'Access Denied: Only Super Admin (pranavannur9659@gmail.com) can access or manage admin members.' });
+    return;
+  }
+  next();
+};
+
 // GET /api/admins (List all admin members)
-router.get('/', requireAdmin, (_req: AuthRequest, res: Response) => {
+router.get('/', requireAdmin, requireSuperAdminOnly, (_req: AuthRequest, res: Response) => {
   try {
     const admins = AdminsModel.findAll();
     res.json(admins);
@@ -15,7 +25,7 @@ router.get('/', requireAdmin, (_req: AuthRequest, res: Response) => {
 });
 
 // POST /api/admins (Add a new admin member by email)
-router.post('/', requireAdmin, (req: AuthRequest, res: Response) => {
+router.post('/', requireAdmin, requireSuperAdminOnly, (req: AuthRequest, res: Response) => {
   try {
     const { email, name, department, password } = req.body;
 
@@ -60,7 +70,7 @@ router.post('/', requireAdmin, (req: AuthRequest, res: Response) => {
 });
 
 // DELETE /api/admins/:id (Delete admin member)
-router.delete('/:id', requireAdmin, (req: AuthRequest, res: Response) => {
+router.delete('/:id', requireAdmin, requireSuperAdminOnly, (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string;
     const existing = AdminsModel.findById(id);
