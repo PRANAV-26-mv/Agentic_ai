@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Bell, LogOut, Shield, User as UserIcon, BookOpen, Crown } from 'lucide-react';
+import { Bell, LogOut, Shield, User as UserIcon, BookOpen, Crown, Menu, X } from 'lucide-react';
 import { api } from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  mobileMenuOpen?: boolean;
+  onToggleMobileMenu?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMenu }) => {
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -26,14 +31,24 @@ export const Header: React.FC = () => {
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
-        {/* Brand Title */}
+        {/* Brand Title & Mobile Menu Toggle */}
         <div className="flex items-center space-x-3">
+          {onToggleMobileMenu && (
+            <button
+              onClick={onToggleMobileMenu}
+              className="md:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-100 border border-slate-200 focus:outline-none transition-colors"
+              title="Toggle Mobile Menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5 text-purple-600" /> : <Menu className="w-5 h-5 text-purple-600" />}
+            </button>
+          )}
+
           <div className="bg-sky-600 text-white p-2 rounded-lg flex items-center justify-center font-bold">
             <BookOpen className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-bold text-slate-900 text-base sm:text-lg leading-tight flex items-center space-x-2">
-              <span>Student Assessment & Learning Portal</span>
+            <h1 className="font-bold text-slate-900 text-sm sm:text-lg leading-tight flex items-center space-x-2">
+              <span className="truncate max-w-[200px] sm:max-w-none">Student Assessment & Learning Portal</span>
             </h1>
             <p className="text-xs text-slate-500 hidden sm:block">Learn • Practice • Assess • Improve</p>
           </div>
