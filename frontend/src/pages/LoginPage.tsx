@@ -51,10 +51,11 @@ export const LoginPage: React.FC = () => {
         });
         const container = document.getElementById('googleSignInBtnContainer');
         if (container) {
+          const btnWidth = Math.min(320, Math.max(240, window.innerWidth - 80));
           (window as any).google.accounts.id.renderButton(container, {
             theme: 'outline',
             size: 'large',
-            width: 320,
+            width: btnWidth,
             text: 'continue_with'
           });
         }
