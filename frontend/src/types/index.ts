@@ -34,6 +34,7 @@ export interface Admin {
   id: string;
   name: string;
   email: string;
+  password?: string;
   role: 'ADMIN';
   is_super_admin?: boolean;
   department: string;

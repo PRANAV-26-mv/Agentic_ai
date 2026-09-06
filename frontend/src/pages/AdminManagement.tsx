@@ -36,10 +36,59 @@ export const AdminManagement: React.FC = () => {
 
   const isSuperAdmin = user?.email?.toLowerCase() === 'pranavannur9659@gmail.com' || user?.is_super_admin;
 
+  const getLocalAdminBackup = (): Array<{ email: string; name: string; department: string; password?: string }> => {
+    try {
+      return JSON.parse(localStorage.getItem('portal_admins_backup') || '[]');
+    } catch {
+      return [];
+    }
+  };
+
+  const saveLocalAdminBackup = (list: Admin[]) => {
+    try {
+      const customAdmins = list
+        .filter(a => a.email.toLowerCase() !== 'pranavannur9659@gmail.com' && a.email.toLowerCase() !== 'admin@college.edu')
+        .map(a => ({
+          email: a.email,
+          name: a.name,
+          department: a.department,
+          password: a.password || '9488529035'
+        }));
+      localStorage.setItem('portal_admins_backup', JSON.stringify(customAdmins));
+    } catch (e) {
+      console.error('Failed to update local backup:', e);
+    }
+  };
+
   const fetchAdmins = () => {
     setLoading(true);
     api.get('/admins')
-      .then(res => setAdmins(res.data))
+      .then(async (res) => {
+        const serverAdmins: Admin[] = res.data;
+        const localBackup = getLocalAdminBackup();
+
+        // Auto-heal: Check if any added admin members disappeared due to Render disk restart
+        const missingAdmins = localBackup.filter(local => 
+          !serverAdmins.some(server => server.email.toLowerCase() === local.email.toLowerCase())
+        );
+
+        if (missingAdmins.length > 0) {
+          console.log('Detected missing admin members after Render reload. Auto-restoring:', missingAdmins);
+          for (const missing of missingAdmins) {
+            try {
+              await api.post('/admins', missing);
+            } catch (err) {
+              console.error('Auto-restoration error for:', missing.email, err);
+            }
+          }
+          const refreshed = await api.get('/admins');
+          setAdmins(refreshed.data);
+          saveLocalAdminBackup(refreshed.data);
+        } else {
+          setAdmins(serverAdmins);
+          saveLocalAdminBackup(serverAdmins);
+        }
+      })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
   };
@@ -57,6 +106,17 @@ export const AdminManagement: React.FC = () => {
     api.post('/admins', formData)
       .then((res) => {
         setSuccessMsg(`Admin member '${res.data.email}' registered successfully!`);
+        
+        // Update local backup cache
+        const currentBackup = getLocalAdminBackup();
+        const updatedBackup = [...currentBackup.filter(a => a.email.toLowerCase() !== res.data.email.toLowerCase()), {
+          email: res.data.email,
+          name: res.data.name,
+          department: res.data.department,
+          password: formData.password || '9488529035'
+        }];
+        localStorage.setItem('portal_admins_backup', JSON.stringify(updatedBackup));
+
         setFormData({
           email: '',
           name: '',
@@ -83,6 +143,12 @@ export const AdminManagement: React.FC = () => {
     api.delete(`/admins/${id}`)
       .then(() => {
         setSuccessMsg(`Admin member '${email}' removed successfully.`);
+
+        // Remove from local backup cache
+        const currentBackup = getLocalAdminBackup();
+        const updatedBackup = currentBackup.filter(a => a.email.toLowerCase() !== email.toLowerCase());
+        localStorage.setItem('portal_admins_backup', JSON.stringify(updatedBackup));
+
         fetchAdmins();
         setTimeout(() => setSuccessMsg(null), 3000);
       })
