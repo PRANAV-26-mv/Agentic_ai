@@ -6,11 +6,50 @@ export const StudentResults: React.FC = () => {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
+  const fetchResults = () => {
+    setLoading(true);
     api.get('/results')
-      .then(res => setResults(res.data))
+      .then(async (res) => {
+        const serverResults: any[] = res.data;
+        try {
+          const localSubmitted = JSON.parse(localStorage.getItem('portal_submitted_attempts') || '[]');
+          const missing = localSubmitted.filter((sub: any) => 
+            !serverResults.some((sr: any) => sr.attempt_id === sub.attempt_id || sr.id === sub.attempt_id)
+          );
+
+          if (missing.length > 0) {
+            console.log('Auto-restoring student exam submissions after Render disk reload:', missing);
+            for (const item of missing) {
+              try {
+                if (item.answers) {
+                  for (const [qid, ans] of Object.entries(item.answers as Record<string, any>)) {
+                    await api.post(`/assessments/${item.assessment_id}/answer`, {
+                      attempt_id: item.attempt_id,
+                      question_id: qid,
+                      ...ans
+                    });
+                  }
+                }
+                await api.post(`/assessments/${item.assessment_id}/submit`, { attempt_id: item.attempt_id });
+              } catch (e) {
+                console.error('Failed to auto-heal student submission:', item.attempt_id, e);
+              }
+            }
+            const refreshed = await api.get('/results');
+            setResults(refreshed.data);
+          } else {
+            setResults(serverResults);
+          }
+        } catch (e) {
+          setResults(serverResults);
+        }
+      })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchResults();
   }, []);
 
   return (

@@ -159,7 +159,16 @@ export const StudentAssessmentTake: React.FC = () => {
     if (!attempt) return;
     setSaving(true);
 
-    setAnswers(prev => ({ ...prev, [qid]: { ...prev[qid], ...data } }));
+    const updatedAnswers = { ...answers, [qid]: { ...answers[qid], ...data } };
+    setAnswers(updatedAnswers);
+    try {
+      localStorage.setItem(`student_attempt_${attempt.id}`, JSON.stringify({
+        attempt_id: attempt.id,
+        assessment_id: id,
+        answers: updatedAnswers,
+        timestamp: new Date().toISOString()
+      }));
+    } catch (e) {}
 
     api.post(`/assessments/${id}/answer`, {
       attempt_id: attempt.id,
@@ -174,6 +183,17 @@ export const StudentAssessmentTake: React.FC = () => {
     api.post(`/assessments/${id}/submit`, { attempt_id: attempt.id })
       .then(res => {
         setSubmittedSummary(res.data);
+        try {
+          const submittedItems = JSON.parse(localStorage.getItem('portal_submitted_attempts') || '[]');
+          const updatedList = [...submittedItems.filter((i: any) => i.attempt_id !== attempt.id), {
+            attempt_id: attempt.id,
+            assessment_id: id,
+            answers,
+            summary: res.data,
+            submitted_at: new Date().toISOString()
+          }];
+          localStorage.setItem('portal_submitted_attempts', JSON.stringify(updatedList));
+        } catch (e) {}
       })
       .finally(() => setSubmitting(false));
   };
