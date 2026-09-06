@@ -41,7 +41,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
     { to: '/admin/results', label: 'Results', icon: BarChart },
     { to: '/admin/monitoring', label: 'Assessment Monitoring', icon: Activity },
     { to: '/admin/analytics', label: 'Analytics', icon: PieChart },
-    { to: '/admin/audit-log', label: 'Audit Log', icon: ShieldAlert },
+    { to: '/admin/audit-log', label: 'User & Admin Activity', icon: ShieldAlert, superOnly: true },
   ];
 
   const navItems = rawNavItems.filter(item => !item.superOnly || isSuperAdmin);

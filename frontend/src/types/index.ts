@@ -176,6 +176,8 @@ export interface AuditLog {
   entity_id?: string;
   metadata?: string;
   timestamp: string;
+  actor_name?: string;
+  actor_email?: string;
 }
 
 export interface DoubtMessage {

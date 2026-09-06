@@ -117,7 +117,14 @@ export function App() {
             <Route path="/admin/evaluation" element={<WritingEvaluation />} />
             <Route path="/admin/monitoring" element={<AssessmentMonitoring />} />
             <Route path="/admin/analytics" element={<AnalyticsPage />} />
-            <Route path="/admin/audit-log" element={<AuditLogPage />} />
+            <Route
+              path="/admin/audit-log"
+              element={
+                <ProtectedSuperAdminRoute>
+                  <AuditLogPage />
+                </ProtectedSuperAdminRoute>
+              }
+            />
             <Route
               path="/admin/manage-admins"
               element={
