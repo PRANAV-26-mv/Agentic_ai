@@ -711,6 +711,15 @@
   ],
   "audit_logs": [
     {
+      "id": "audit-1788676594977-763",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-06T06:36:34.977Z"
+    },
+    {
       "id": "audit-1788631239781-372",
       "actor_id": "std-001",
       "actor_role": "STUDENT",

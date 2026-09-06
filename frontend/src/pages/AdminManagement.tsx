@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Admin } from '../types';
-import { Shield, UserPlus, Trash2, Crown, Mail, Building, CheckCircle2, AlertCircle } from 'lucide-react';
+import { 
+  Shield, 
+  UserPlus, 
+  Trash2, 
+  Crown, 
+  Mail, 
+  Building, 
+  CheckCircle2, 
+  AlertCircle,
+  Database,
+  Download,
+  Upload,
+  HardDrive,
+  RefreshCw
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const AdminManagement: React.FC = () => {
@@ -77,8 +91,47 @@ export const AdminManagement: React.FC = () => {
       });
   };
 
+  const handleDownloadBackup = () => {
+    api.get('/admins/database/backup', { responseType: 'blob' })
+      .then((res) => {
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `portal_database_backup_${new Date().toISOString().split('T')[0]}.json`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      })
+      .catch((err) => alert(err.response?.data?.message || 'Failed to download backup'));
+  };
+
+  const handleRestoreBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!window.confirm('Are you sure you want to restore the database from this backup JSON file? This will merge and overwrite portal collections.')) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const payload = JSON.parse(evt.target?.result as string);
+        api.post('/admins/database/restore', payload)
+          .then(() => {
+            alert('Database successfully restored! All assessments, students, results, and audit logs have been rehydrated.');
+            window.location.reload();
+          })
+          .catch(err => alert(err.response?.data?.message || 'Failed to restore database. Invalid backup file format.'));
+      } catch (err) {
+        alert('Failed to parse JSON backup file. Please select a valid JSON file.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-8 max-w-5xl mx-auto pb-12">
       
       {/* Super Admin Status Header */}
       <div className="bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 text-white p-6 rounded-2xl shadow-xl border border-purple-800/40 relative overflow-hidden">
@@ -98,9 +151,9 @@ export const AdminManagement: React.FC = () => {
                 </span>
                 <span className="text-xs text-purple-300 font-mono">pranavannur9659@gmail.com</span>
               </div>
-              <h2 className="text-2xl font-black mt-1">Admin Member & Portal Access Control</h2>
+              <h2 className="text-2xl font-black mt-1">Admin Member & Database Control</h2>
               <p className="text-slate-300 text-xs mt-0.5">
-                Manage portal administrators. Add new admin members by entering their email address to grant full administrative access.
+                Manage portal administrators, view system security, and backup/restore database state.
               </p>
             </div>
           </div>
@@ -152,51 +205,48 @@ export const AdminManagement: React.FC = () => {
             <select
               value={formData.department}
               onChange={e => setFormData({ ...formData, department: e.target.value })}
-              className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-bold"
+              className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none"
             >
-              <option value="Computer Science & Engineering">Computer Science & Engineering (CS)</option>
-              <option value="Artificial Intelligence & Data Science">Artificial Intelligence & Data Science (AD)</option>
-              <option value="Information Technology">Information Technology (IT)</option>
-              <option value="Electronics & Communication Engineering">Electronics & Communication Engineering (ECE)</option>
-              <option value="Electrical & Electronics Engineering">Electrical & Electronics Engineering (EEE)</option>
+              <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+              <option value="Artificial Intelligence & Data Science">Artificial Intelligence & Data Science</option>
+              <option value="Information Technology">Information Technology</option>
+              <option value="Artificial Intelligence & Machine Learning">Artificial Intelligence & Machine Learning</option>
             </select>
           </div>
 
           <div>
-            <label className="block font-bold text-slate-700 mb-1">Login Password</label>
+            <label className="block font-bold text-slate-700 mb-1">Default Password</label>
             <input
               type="text"
-              required
-              placeholder="Default: 9488529035"
               value={formData.password}
               onChange={e => setFormData({ ...formData, password: e.target.value })}
-              className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold text-purple-700 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+              className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-mono text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
             />
           </div>
         </div>
 
-        {successMsg && (
-          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold rounded-xl flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>{successMsg}</span>
-          </div>
-        )}
-
         {errorMsg && (
-          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 font-bold rounded-xl flex items-center space-x-2">
+          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl font-medium flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        <div>
+        {successMsg && (
+          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl font-medium flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        <div className="pt-2 flex justify-end">
           <button
             type="submit"
             disabled={submitting}
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md flex items-center space-x-2 transition-colors text-xs"
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-extrabold rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer disabled:opacity-50"
           >
             <UserPlus className="w-4 h-4" />
-            <span>{submitting ? 'Registering Admin...' : 'Register & Grant Admin Access'}</span>
+            <span>{submitting ? 'Granting Access...' : 'Register Admin Member'}</span>
           </button>
         </div>
       </form>
@@ -267,6 +317,88 @@ export const AdminManagement: React.FC = () => {
             })}
           </div>
         )}
+      </div>
+
+      {/* Database Backup, Persistence & Restore Section */}
+      <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2.5 bg-purple-600/20 text-purple-400 rounded-xl border border-purple-500/30">
+              <Database className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-black text-lg text-white">Database Backup & Cloud Persistence</h3>
+              <p className="text-xs text-slate-400">Prevent data loss across Render restarts and download complete JSON snapshots.</p>
+            </div>
+          </div>
+
+          <span className="text-xs font-bold text-emerald-400 bg-emerald-950 border border-emerald-800 px-3 py-1 rounded-full flex items-center space-x-1.5">
+            <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Active Persistence Engine</span>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Backup Action Card */}
+          <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-3">
+            <div className="flex items-center space-x-2 text-purple-400 font-bold text-sm">
+              <Download className="w-4 h-4" />
+              <span>1-Click Database Export Backup</span>
+            </div>
+            <p className="text-xs text-slate-400">
+              Download the entire portal dataset (Students, Admins, Assessments, Test Attempts, Results, Attendance, and Audit Logs) as a JSON snapshot file.
+            </p>
+            <button
+              onClick={handleDownloadBackup}
+              className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download Backup JSON</span>
+            </button>
+          </div>
+
+          {/* Restore Action Card */}
+          <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-3">
+            <div className="flex items-center space-x-2 text-amber-400 font-bold text-sm">
+              <Upload className="w-4 h-4" />
+              <span>Restore Database from JSON Snapshot</span>
+            </div>
+            <p className="text-xs text-slate-400">
+              Instantly rehydrate and restore all assessments, student accounts, and test results from a previously saved JSON backup file.
+            </p>
+            <label className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer">
+              <Upload className="w-4 h-4" />
+              <span>Upload Backup JSON & Restore</span>
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleRestoreBackup}
+                className="hidden"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Cloud Persistence Instructions for Render */}
+        <div className="bg-purple-950/40 p-4 rounded-xl border border-purple-800/40 text-xs text-slate-300 space-y-2">
+          <h4 className="font-bold text-purple-300 flex items-center space-x-2">
+            <HardDrive className="w-4 h-4 text-purple-400" />
+            <span>How Render.com Persistence & Cloud Storage Sync Works</span>
+          </h4>
+          <p className="text-[11px] text-slate-300 leading-relaxed">
+            Render free Web Services feature an <strong>ephemeral disk</strong>. When Render restarts or redeploys a new commit, local files reset to the Git repository state. To guarantee <strong>24/7 continuous automatic cloud data persistence</strong> without paying for disks:
+          </p>
+          <ul className="list-disc list-inside text-[11px] text-purple-200 space-y-1 font-mono">
+            <li>Create a free account on <a href="https://jsonbin.io" target="_blank" rel="noreferrer" className="underline text-amber-300">JSONBin.io</a> or MongoDB Atlas.</li>
+            <li>In Render Dashboard -&gt; Environment, set <span className="text-amber-300">DATABASE_SYNC_URL</span> to your cloud bin endpoint URL.</li>
+            <li>Optionally set <span className="text-amber-300">DATABASE_SYNC_KEY</span> to your secret key.</li>
+          </ul>
+          <p className="text-[11px] text-slate-400">
+            The portal backend automatically pulls the latest cloud snapshot on boot and saves every update to the cloud in real-time!
+          </p>
+        </div>
+
       </div>
 
     </div>

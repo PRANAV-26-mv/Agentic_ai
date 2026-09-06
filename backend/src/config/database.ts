@@ -59,9 +59,11 @@ const initialData: DbData = {
 
 class MemoryDb {
   private data: DbData;
+  private syncTimer: NodeJS.Timeout | null = null;
 
   constructor() {
     this.data = this.load();
+    this.initCloudSync();
   }
 
   private load(): DbData {
@@ -78,6 +80,14 @@ class MemoryDb {
 
   public save() {
     fs.writeFileSync(dbPath, JSON.stringify(this.data, null, 2), 'utf-8');
+    this.triggerCloudSync();
+  }
+
+  public restoreFromData(newData: Partial<DbData>) {
+    this.data = { ...initialData, ...newData };
+    this.save();
+    console.log('Database successfully restored from backup payload.');
+    return this.data;
   }
 
   public getData(): DbData {
@@ -97,16 +107,67 @@ class MemoryDb {
       this.save();
     };
   }
+
+  private async initCloudSync() {
+    const syncUrl = process.env.DATABASE_SYNC_URL || process.env.JSONBIN_URL;
+    const syncKey = process.env.DATABASE_SYNC_KEY || process.env.JSONBIN_SECRET_KEY;
+
+    if (!syncUrl) return;
+
+    try {
+      console.log('Fetching persistent database state from Cloud Storage:', syncUrl);
+      const headers: Record<string, string> = {};
+      if (syncKey) headers['X-Access-Key'] = syncKey;
+
+      const res = await fetch(syncUrl, { headers });
+      if (res.ok) {
+        const cloudData = await res.json();
+        const payload = cloudData.record || cloudData;
+        if (payload && typeof payload === 'object' && Array.isArray(payload.students)) {
+          this.data = { ...initialData, ...payload };
+          fs.writeFileSync(dbPath, JSON.stringify(this.data, null, 2), 'utf-8');
+          console.log('Database successfully hydrated from Cloud Storage!');
+        }
+      }
+    } catch (err: any) {
+      console.error('Cloud Sync pull failed, using local portal.json:', err.message);
+    }
+  }
+
+  private triggerCloudSync() {
+    const syncUrl = process.env.DATABASE_SYNC_URL || process.env.JSONBIN_URL;
+    const syncKey = process.env.DATABASE_SYNC_KEY || process.env.JSONBIN_SECRET_KEY;
+
+    if (!syncUrl) return;
+
+    if (this.syncTimer) clearTimeout(this.syncTimer);
+
+    this.syncTimer = setTimeout(async () => {
+      try {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (syncKey) headers['X-Access-Key'] = syncKey;
+
+        await fetch(syncUrl, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify(this.data)
+        });
+        console.log('Database changes successfully synced to Cloud Storage.');
+      } catch (err: any) {
+        console.error('Cloud Sync push failed:', err.message);
+      }
+    }, 2000);
+  }
 }
 
 export const memoryDb = new MemoryDb();
 
-// Generic query helper emulator
 export const db = {
   save: () => memoryDb.save(),
   getData: () => memoryDb.getData(),
   getTable: <K extends keyof DbData>(tableName: K) => memoryDb.table(tableName),
   transaction: (fn: () => void) => memoryDb.transaction(fn),
+  restore: (newData: Partial<DbData>) => memoryDb.restoreFromData(newData),
 };
 
 export function initDatabase() {

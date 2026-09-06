@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import { AdminsModel, StudentsModel, AuditLogsModel } from '../models/dbModels.js';
+import { db } from '../config/database.js';
 import { requireAdmin, AuthRequest } from '../middleware/authMiddleware.js';
 
 const router = Router();
@@ -21,6 +22,35 @@ router.get('/', requireAdmin, requireSuperAdminOnly, (_req: AuthRequest, res: Re
     res.json(admins);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/admins/database/backup (Download complete JSON database backup)
+router.get('/database/backup', requireAdmin, requireSuperAdminOnly, (_req: AuthRequest, res: Response) => {
+  try {
+    const backupData = db.getData();
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=portal_database_backup_${new Date().toISOString().split('T')[0]}.json`);
+    res.json(backupData);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Failed to export database backup.' });
+  }
+});
+
+// POST /api/admins/database/restore (Restore database from JSON payload)
+router.post('/database/restore', requireAdmin, requireSuperAdminOnly, (req: AuthRequest, res: Response) => {
+  try {
+    const backupPayload = req.body;
+    if (!backupPayload || typeof backupPayload !== 'object' || !Array.isArray(backupPayload.students)) {
+      res.status(400).json({ message: 'Invalid backup file payload. Must contain valid portal database collections.' });
+      return;
+    }
+
+    const restoredData = db.restore(backupPayload);
+    AuditLogsModel.log(req.user!.id, 'ADMIN', 'RESTORE_DATABASE', 'SYSTEM', 'DATABASE', { timestamp: new Date().toISOString() });
+    res.json({ message: 'Database successfully restored from backup JSON!', data: restoredData });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Failed to restore database.' });
   }
 });
 
