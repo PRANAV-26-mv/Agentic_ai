@@ -1,42 +1,45 @@
-import { memoryDb, initDatabase } from './config/database';
+import { memoryDb } from './config/database';
 import { v4 as uuidv4 } from 'uuid';
 
-export function seedData() {
-  initDatabase();
-
-  console.log('Seeding initial portal data...');
+export async function seedData() {
+  console.log('Verifying portal baseline collections...');
 
   const data = memoryDb.getData();
-
-  if (data.admins.length > 0) {
-    console.log('Database already seeded. Skipping.');
-    return;
-  }
-
   const now = new Date().toISOString();
+  let seededAny = false;
 
   // 1. Admin
-  const adminId = 'adm-001';
-  data.admins.push({
-    id: adminId,
-    name: 'Dr. Sarah Jenkins',
-    email: 'admin@college.edu',
-    password: 'admin',
-    role: 'ADMIN',
-    department: 'Computer Science & Engineering',
-    created_at: now
-  });
-  data.admins.push({
-    id: 'adm-002',
-    name: 'Pranav (Admin)',
-    email: 'pranavannur9659@gmail.com',
-    password: '9488529035',
-    role: 'ADMIN',
-    department: 'Computer Science & Engineering',
-    created_at: now
-  });
+  if (!data.admins || data.admins.length === 0) {
+    console.log('Seeding initial admins...');
+    data.admins = data.admins || [];
+    data.admins.push({
+      id: 'adm-001',
+      name: 'Dr. Sarah Jenkins',
+      email: 'admin@college.edu',
+      password: 'admin',
+      role: 'ADMIN',
+      department: 'Computer Science & Engineering',
+      created_at: now
+    });
+    data.admins.push({
+      id: 'adm-002',
+      name: 'Pranav (Admin)',
+      email: 'pranavannur9659@gmail.com',
+      password: '9488529035',
+      role: 'ADMIN',
+      department: 'Computer Science & Engineering',
+      created_at: now
+    });
+    seededAny = true;
+  }
+
+  const adminId = data.admins[0]?.id || 'adm-001';
 
   // 2. Students
+  if (!data.students || data.students.length === 0) {
+    console.log('Seeding initial 25 students roster...');
+    data.students = data.students || [];
+    data.student_progress = data.student_progress || [];
   const students = [
     {
       id: 'std-001',
@@ -440,18 +443,20 @@ export function seedData() {
     }
   ];
 
-  data.students.push(...students);
+    data.students.push(...students);
 
-  for (const s of students) {
-    data.student_progress.push({
-      id: uuidv4(),
-      student_id: s.id,
-      materials_viewed_count: 3,
-      assessments_completed_count: 1,
-      avg_score: 85.0,
-      attendance_pct: 92.5,
-      updated_at: now
-    });
+    for (const s of students) {
+      data.student_progress.push({
+        id: uuidv4(),
+        student_id: s.id,
+        materials_viewed_count: 3,
+        assessments_completed_count: 1,
+        avg_score: 85.0,
+        attendance_pct: 92.5,
+        updated_at: now
+      });
+    }
+    seededAny = true;
   }
 
   // 3. Study Materials
@@ -459,41 +464,46 @@ export function seedData() {
   const mat2Id = 'mat-002';
   const mat3Id = 'mat-003';
 
-  data.study_materials.push(
-    {
-      id: mat1Id,
-      title: 'Agentic AI Introduction & Architecture Guidelines',
-      description: 'Comprehensive starter guide on ReAct, Planning Agents, and Multi-Agent Orchestration.',
-      material_type: 'PDF',
-      file_url: '/uploads/Agentic_AI_Introduction.pdf',
-      page_count: 15,
-      target_type: 'ALL',
-      published_date: now,
-      created_by: adminId
-    },
-    {
-      id: mat2Id,
-      title: 'Transformer Architecture & Attention Mechanisms',
-      description: 'Deep dive into Multi-Head Self Attention, Positional Encodings, and Encoder-Decoder models.',
-      material_type: 'PDF',
-      file_url: '/uploads/Transformer_Architecture.pdf',
-      page_count: 24,
-      target_type: 'COMMUNITY',
-      target_community: 'Agentic AI & LLM Optimization',
-      published_date: now,
-      created_by: adminId
-    },
-    {
-      id: mat3Id,
-      title: 'Prompt Engineering & Structured Outputs Guide',
-      description: 'Best practices for Few-Shot prompting, Chain of Thought, and JSON Schema constraints.',
-      material_type: 'URL',
-      file_url: 'https://learn.promptengineering.org/advanced-guide',
-      target_type: 'ALL',
-      published_date: now,
-      created_by: adminId
-    }
-  );
+  if (!data.study_materials || data.study_materials.length === 0) {
+    console.log('Seeding initial study materials...');
+    data.study_materials = data.study_materials || [];
+    data.study_materials.push(
+      {
+        id: mat1Id,
+        title: 'Agentic AI Introduction & Architecture Guidelines',
+        description: 'Comprehensive starter guide on ReAct, Planning Agents, and Multi-Agent Orchestration.',
+        material_type: 'PDF',
+        file_url: '/uploads/Agentic_AI_Introduction.pdf',
+        page_count: 15,
+        target_type: 'ALL',
+        published_date: now,
+        created_by: adminId
+      },
+      {
+        id: mat2Id,
+        title: 'Transformer Architecture & Attention Mechanisms',
+        description: 'Deep dive into Multi-Head Self Attention, Positional Encodings, and Encoder-Decoder models.',
+        material_type: 'PDF',
+        file_url: '/uploads/Transformer_Architecture.pdf',
+        page_count: 24,
+        target_type: 'COMMUNITY',
+        target_community: 'Agentic AI & LLM Optimization',
+        published_date: now,
+        created_by: adminId
+      },
+      {
+        id: mat3Id,
+        title: 'Prompt Engineering & Structured Outputs Guide',
+        description: 'Best practices for Few-Shot prompting, Chain of Thought, and JSON Schema constraints.',
+        material_type: 'URL',
+        file_url: 'https://learn.promptengineering.org/advanced-guide',
+        target_type: 'ALL',
+        published_date: now,
+        created_by: adminId
+      }
+    );
+    seededAny = true;
+  }
 
   // 4. Questions
   const q1 = 'q-001';
@@ -502,95 +512,105 @@ export function seedData() {
   const q4 = 'q-004';
   const q5 = 'q-005';
 
-  data.questions.push(
-    {
-      id: q1,
-      source_pdf_id: mat1Id,
-      question_type: 'MCQ',
-      question_text: 'What is the core distinction of a ReAct (Reasoning + Acting) agent compared to a standard prompt pipeline?',
-      option_a: 'It executes code natively without external tools',
-      option_b: 'It interleaves reasoning step thoughts with tool execution observations in an iterative loop',
-      option_c: 'It pre-compiles all decision paths before execution',
-      option_d: 'It relies solely on zero-shot memory search',
-      correct_answer: 'B',
-      explanation: 'ReAct agents iteratively generate reasoning traces (Thought) and actions (Tool invocation), observing tool outputs before deciding the next step.',
-      marks: 2,
-      difficulty: 'Medium',
-      topic: 'Agentic Workflows',
-      status: 'APPROVED',
-      created_at: now
-    },
-    {
-      id: q2,
-      source_pdf_id: mat1Id,
-      question_type: 'MCQ',
-      question_text: 'Which component in a RAG (Retrieval-Augmented Generation) system converts unstructured text into dense semantic vector representations?',
-      option_a: 'Tokenizer',
-      option_b: 'Embedding Model',
-      option_c: 'Cross-Encoder Reranker',
-      option_d: 'Decoder Head',
-      correct_answer: 'B',
-      explanation: 'Embedding models map text chunks into high-dimensional vector spaces where semantic similarity can be computed via cosine distance.',
-      marks: 2,
-      difficulty: 'Easy',
-      topic: 'RAG Systems',
-      status: 'APPROVED',
-      created_at: now
-    },
-    {
-      id: q3,
-      source_pdf_id: mat2Id,
-      question_type: 'MCQ',
-      question_text: 'What is the primary advantage of FlashAttention over standard Multi-Head Attention in modern LLM architectures?',
-      option_a: 'It eliminates the need for Positional Embeddings',
-      option_b: 'It reduces memory IO complexity from quadratic O(N²) to linear by tiling GPU SRAM operations',
-      option_c: 'It converts self-attention into feed-forward layers',
-      option_d: 'It increases vocabulary size automatically',
-      correct_answer: 'B',
-      explanation: 'FlashAttention optimizes GPU memory bandwidth by executing attention matrix computation in SRAM tiles without writing full N x N matrices to HBM.',
-      marks: 2,
-      difficulty: 'Hard',
-      topic: 'LLM Architectures',
-      status: 'APPROVED',
-      created_at: now
-    },
-    {
-      id: q4,
-      source_pdf_id: mat1Id,
-      question_type: 'WRITING',
-      question_text: 'Explain the trade-offs between a single centralized orchestrator agent vs. a decentralized multi-agent network for complex software tasks.',
-      rubric: 'Centralized: 2 marks for clear single-point control vs complexity. Decentralized: 2 marks for modularity & scalability vs communication overhead. Examples & Clarity: 1 mark.',
-      expected_answer: 'A centralized orchestrator maintains global state and plan clarity, but can become a bottleneck or failure point. Decentralized networks distribute specialized tasks to autonomous worker agents, improving modularity but requiring robust inter-agent protocols.',
-      marks: 5,
-      difficulty: 'Medium',
-      topic: 'Multi-Agent Systems',
-      status: 'APPROVED',
-      created_at: now
-    },
-    {
-      id: q5,
-      source_pdf_id: mat3Id,
-      question_type: 'WRITING',
-      question_text: 'Describe how Chain-of-Thought (CoT) prompting alters model inference and why it improves performance on multi-step reasoning problems.',
-      rubric: 'Model compute allocation explanation: 2 marks. Multi-step decomposition: 2 marks. Practical example: 1 mark.',
-      expected_answer: 'Chain-of-Thought forces the model to generate intermediate reasoning tokens, effectively extending sequence-level compute budget before outputting the final answer.',
-      marks: 5,
-      difficulty: 'Easy',
-      topic: 'Prompt Engineering',
-      status: 'APPROVED',
-      created_at: now
-    }
-  );
+  if (!data.questions || data.questions.length === 0) {
+    console.log('Seeding initial questions...');
+    data.questions = data.questions || [];
+    data.questions.push(
+      {
+        id: q1,
+        source_pdf_id: mat1Id,
+        question_type: 'MCQ',
+        question_text: 'What is the core distinction of a ReAct (Reasoning + Acting) agent compared to a standard prompt pipeline?',
+        option_a: 'It executes code natively without external tools',
+        option_b: 'It interleaves reasoning step thoughts with tool execution observations in an iterative loop',
+        option_c: 'It pre-compiles all decision paths before execution',
+        option_d: 'It relies solely on zero-shot memory search',
+        correct_answer: 'B',
+        explanation: 'ReAct agents iteratively generate reasoning traces (Thought) and actions (Tool invocation), observing tool outputs before deciding the next step.',
+        marks: 2,
+        difficulty: 'Medium',
+        topic: 'Agentic Workflows',
+        status: 'APPROVED',
+        created_at: now
+      },
+      {
+        id: q2,
+        source_pdf_id: mat1Id,
+        question_type: 'MCQ',
+        question_text: 'Which component in a RAG (Retrieval-Augmented Generation) system converts unstructured text into dense semantic vector representations?',
+        option_a: 'Tokenizer',
+        option_b: 'Embedding Model',
+        option_c: 'Cross-Encoder Reranker',
+        option_d: 'Decoder Head',
+        correct_answer: 'B',
+        explanation: 'Embedding models map text chunks into high-dimensional vector spaces where semantic similarity can be computed via cosine distance.',
+        marks: 2,
+        difficulty: 'Easy',
+        topic: 'RAG Systems',
+        status: 'APPROVED',
+        created_at: now
+      },
+      {
+        id: q3,
+        source_pdf_id: mat2Id,
+        question_type: 'MCQ',
+        question_text: 'What is the primary advantage of FlashAttention over standard Multi-Head Attention in modern LLM architectures?',
+        option_a: 'It eliminates the need for Positional Embeddings',
+        option_b: 'It reduces memory IO complexity from quadratic O(N²) to linear by tiling GPU SRAM operations',
+        option_c: 'It converts self-attention into feed-forward layers',
+        option_d: 'It increases vocabulary size automatically',
+        correct_answer: 'B',
+        explanation: 'FlashAttention optimizes GPU memory bandwidth by executing attention matrix computation in SRAM tiles without writing full N x N matrices to HBM.',
+        marks: 2,
+        difficulty: 'Hard',
+        topic: 'LLM Architectures',
+        status: 'APPROVED',
+        created_at: now
+      },
+      {
+        id: q4,
+        source_pdf_id: mat1Id,
+        question_type: 'WRITING',
+        question_text: 'Explain the trade-offs between a single centralized orchestrator agent vs. a decentralized multi-agent network for complex software tasks.',
+        rubric: 'Centralized: 2 marks for clear single-point control vs complexity. Decentralized: 2 marks for modularity & scalability vs communication overhead. Examples & Clarity: 1 mark.',
+        expected_answer: 'A centralized orchestrator maintains global state and plan clarity, but can become a bottleneck or failure point. Decentralized networks distribute specialized tasks to autonomous worker agents, improving modularity but requiring robust inter-agent protocols.',
+        marks: 5,
+        difficulty: 'Medium',
+        topic: 'Multi-Agent Systems',
+        status: 'APPROVED',
+        created_at: now
+      },
+      {
+        id: q5,
+        source_pdf_id: mat3Id,
+        question_type: 'WRITING',
+        question_text: 'Describe how Chain-of-Thought (CoT) prompting alters model inference and why it improves performance on multi-step reasoning problems.',
+        rubric: 'Model compute allocation explanation: 2 marks. Multi-step decomposition: 2 marks. Practical example: 1 mark.',
+        expected_answer: 'Chain-of-Thought forces the model to generate intermediate reasoning tokens, effectively extending sequence-level compute budget before outputting the final answer.',
+        marks: 5,
+        difficulty: 'Easy',
+        topic: 'Prompt Engineering',
+        status: 'APPROVED',
+        created_at: now
+      }
+    );
+    seededAny = true;
+  }
 
   // 5. Question Pools
   const poolId = 'pool-001';
-  data.question_pools.push({
-    id: poolId,
-    name: 'Agentic AI Core Pool',
-    description: 'Master pool of interchangeable MCQ and Writing questions on agentic design.',
-    created_at: now,
-    question_ids: [q1, q2, q3, q4, q5]
-  });
+  if (!data.question_pools || data.question_pools.length === 0) {
+    console.log('Seeding initial question pools...');
+    data.question_pools = data.question_pools || [];
+    data.question_pools.push({
+      id: poolId,
+      name: 'Agentic AI Core Pool',
+      description: 'Master pool of interchangeable MCQ and Writing questions on agentic design.',
+      created_at: now,
+      question_ids: [q1, q2, q3, q4, q5]
+    });
+    seededAny = true;
+  }
 
   // 6. Assessments
   const ass1Id = 'ass-001';
@@ -599,100 +619,123 @@ export function seedData() {
   const startTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const endTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  data.assessments.push(
-    {
-      id: ass1Id,
-      title: 'Agentic AI & Prompt Engineering Level 1',
-      description: 'First mandatory evaluation covering ReAct pattern, RAG basics, and CoT reasoning.',
-      type: 'HYBRID',
-      question_selection_mode: 'FIXED',
-      target_type: 'ALL',
-      duration_minutes: 30,
-      start_time: startTime,
-      end_time: endTime,
-      passing_percentage: 60.0,
-      max_marks: 14.0,
-      status: 'PUBLISHED',
-      created_by: adminId,
-      created_at: now,
-      question_ids: [q1, q2, q3, q4]
-    },
-    {
-      id: ass2Id,
-      title: 'Advanced LLM Architecture & Pool Test',
-      description: 'Randomized draw assessment from the Agentic AI Core pool.',
-      type: 'HYBRID',
-      question_selection_mode: 'RANDOMIZED_POOL',
-      pool_id: poolId,
-      draw_count: 3,
-      target_type: 'COMMUNITY',
-      community: 'Agentic AI & LLM Optimization',
-      duration_minutes: 45,
-      start_time: startTime,
-      end_time: endTime,
-      passing_percentage: 70.0,
-      max_marks: 12.0,
-      status: 'PUBLISHED',
-      created_by: adminId,
-      created_at: now
-    }
-  );
+  if (!data.assessments || data.assessments.length === 0) {
+    console.log('Seeding baseline assessments...');
+    data.assessments = data.assessments || [];
+    data.assessments.push(
+      {
+        id: ass1Id,
+        title: 'Agentic AI & Prompt Engineering Level 1',
+        description: 'First mandatory evaluation covering ReAct pattern, RAG basics, and CoT reasoning.',
+        type: 'HYBRID',
+        question_selection_mode: 'FIXED',
+        target_type: 'ALL',
+        duration_minutes: 30,
+        start_time: startTime,
+        end_time: endTime,
+        passing_percentage: 60.0,
+        max_marks: 14.0,
+        status: 'PUBLISHED',
+        created_by: adminId,
+        created_at: now,
+        question_ids: [q1, q2, q3, q4]
+      },
+      {
+        id: ass2Id,
+        title: 'Advanced LLM Architecture & Pool Test',
+        description: 'Randomized draw assessment from the Agentic AI Core pool.',
+        type: 'HYBRID',
+        question_selection_mode: 'RANDOMIZED_POOL',
+        pool_id: poolId,
+        draw_count: 3,
+        target_type: 'COMMUNITY',
+        community: 'Agentic AI & LLM Optimization',
+        duration_minutes: 45,
+        start_time: startTime,
+        end_time: endTime,
+        passing_percentage: 70.0,
+        max_marks: 12.0,
+        status: 'PUBLISHED',
+        created_by: adminId,
+        created_at: now
+      }
+    );
+    seededAny = true;
+  }
 
   // 7. Attendance Session
   const sessId = 'sess-001';
-  data.attendance_sessions.push({
-    id: sessId,
-    community: 'Agentic AI & LLM Optimization',
-    department: 'ALL',
-    date: new Date().toISOString().split('T')[0],
-    code: '8K4P7Q',
-    start_time: now,
-    expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-    created_by: adminId
-  });
+  if (!data.attendance_sessions || data.attendance_sessions.length === 0) {
+    console.log('Seeding initial attendance session...');
+    data.attendance_sessions = data.attendance_sessions || [];
+    data.attendance_records = data.attendance_records || [];
+    data.attendance_sessions.push({
+      id: sessId,
+      community: 'Agentic AI & LLM Optimization',
+      department: 'ALL',
+      date: new Date().toISOString().split('T')[0],
+      code: '8K4P7Q',
+      start_time: now,
+      expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+      created_by: adminId
+    });
 
-  data.attendance_records.push({
-    id: uuidv4(),
-    session_id: sessId,
-    student_id: 'std-001',
-    marked_at: now,
-    status: 'PRESENT'
-  });
+    data.attendance_records.push({
+      id: uuidv4(),
+      session_id: sessId,
+      student_id: 'std-001',
+      marked_at: now,
+      status: 'PRESENT'
+    });
+    seededAny = true;
+  }
 
   // 8. Notifications
-  data.notifications.push(
-    {
-      id: uuidv4(),
-      title: 'Welcome to Student Assessment Portal v2',
-      message: 'Explore study materials, complete assigned assessments, and ask AI doubts directly!',
-      target_type: 'ALL',
-      priority: 'IMPORTANT',
-      created_at: now
-    },
-    {
-      id: uuidv4(),
-      title: 'New Assessment Available: Agentic AI Level 1',
-      message: 'The assessment is now active. Please complete it before the deadline.',
-      target_type: 'ALL',
-      priority: 'NORMAL',
-      created_at: now
-    }
-  );
+  if (!data.notifications || data.notifications.length === 0) {
+    console.log('Seeding initial notifications...');
+    data.notifications = data.notifications || [];
+    data.notifications.push(
+      {
+        id: uuidv4(),
+        title: 'Welcome to Student Assessment Portal v2',
+        message: 'Explore study materials, complete assigned assessments, and ask AI doubts directly!',
+        target_type: 'ALL',
+        priority: 'IMPORTANT',
+        created_at: now
+      },
+      {
+        id: uuidv4(),
+        title: 'New Assessment Available: Agentic AI Level 1',
+        message: 'The assessment is now active. Please complete it before the deadline.',
+        target_type: 'ALL',
+        priority: 'NORMAL',
+        created_at: now
+      }
+    );
+    seededAny = true;
+  }
 
   // 9. Initial Audit Log
-  data.audit_logs.push({
-    id: `audit-${Date.now()}`,
-    actor_id: adminId,
-    actor_role: 'ADMIN',
-    action: 'SEED_DATABASE',
-    entity_type: 'SYSTEM',
-    entity_id: 'portal-db',
-    metadata: JSON.stringify({ note: 'Initial seed of student roster and baseline assessments' }),
-    timestamp: now
-  });
+  if (!data.audit_logs || data.audit_logs.length === 0) {
+    data.audit_logs = data.audit_logs || [];
+    data.audit_logs.push({
+      id: `audit-${Date.now()}`,
+      actor_id: adminId,
+      actor_role: 'ADMIN',
+      action: 'SEED_DATABASE',
+      entity_type: 'SYSTEM',
+      entity_id: 'portal-db',
+      metadata: JSON.stringify({ note: 'Initial seed of student roster and baseline assessments' }),
+      timestamp: now
+    });
+    seededAny = true;
+  }
 
-  memoryDb.save();
-  console.log('Database seeded successfully!');
+  if (seededAny) {
+    memoryDb.save();
+    console.log('✅ Portal baseline collections populated and persisted successfully!');
+  } else {
+    console.log('Portal database already fully populated. No seeding needed.');
+  }
 }
 
-// Exported for index.ts initialization

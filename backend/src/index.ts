@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 
-import { initDatabase } from './config/database.js';
+import { initDatabase, memoryDb } from './config/database.js';
 import { seedData } from './seed.js';
 
 import authRouter from './routes/auth.js';
@@ -26,10 +26,6 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// Initialize Database & Seed
-initDatabase();
-seedData();
 
 // Middleware
 app.use(cors());
@@ -85,6 +81,38 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   res.status(err.status || 500).json({ message: err.message || 'Internal server error occurred.' });
 });
 
-app.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`🚀 Student Assessment Portal Backend running on http://0.0.0.0:${PORT}`);
-});
+// Graceful Shutdown to flush database changes
+const handleShutdown = async (signal: string) => {
+  console.log(`Received ${signal}. Flushing database state to persistent storage...`);
+  try {
+    await memoryDb.flush();
+    console.log('✅ Database state successfully flushed.');
+  } catch (err: any) {
+    console.error('Error during shutdown flush:', err.message);
+  }
+  process.exit(0);
+};
+
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+process.on('SIGINT', () => handleShutdown('SIGINT'));
+
+async function startServer() {
+  try {
+    // 1. Fully hydrate database from PostgreSQL / Cloud Storage before accepting requests
+    await initDatabase();
+
+    // 2. Safely verify baseline collections without overwriting existing data
+    await seedData();
+
+    // 3. Start HTTP server
+    app.listen(Number(PORT), '0.0.0.0', () => {
+      console.log(`🚀 Student Assessment Portal Backend running on http://0.0.0.0:${PORT}`);
+    });
+  } catch (err: any) {
+    console.error('Fatal Server Startup Error:', err);
+    process.exit(1);
+  }
+}
+
+startServer();
+

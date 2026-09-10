@@ -157,9 +157,67 @@ export const AdminManagement: React.FC = () => {
       });
   };
 
+  const [storageStatus, setStorageStatus] = useState<{
+    mode: string;
+    is_ephemeral: boolean;
+    has_database_url: boolean;
+    has_cloud_sync: boolean;
+    has_persistent_disk: boolean;
+    last_saved: string;
+    db_path: string;
+    counts: {
+      admins: number;
+      students: number;
+      assessments: number;
+      questions: number;
+      materials: number;
+      attempts: number;
+      attendance_sessions: number;
+      notifications: number;
+      audit_logs: number;
+    };
+  } | null>(null);
+  const [restoringReset, setRestoringReset] = useState<boolean>(false);
+  const [detectedServerReset, setDetectedServerReset] = useState<boolean>(false);
+
+  const fetchStorageStatus = () => {
+    api.get('/admins/database/status')
+      .then(res => {
+        setStorageStatus(res.data);
+
+        // Check if server was reset to empty/seed while browser has a fuller local backup
+        try {
+          const cached = localStorage.getItem('portal_full_backup_snapshot');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            const serverStudents = res.data?.counts?.students || 0;
+            const cachedStudents = parsed?.students?.length || 0;
+            const serverAssessments = res.data?.counts?.assessments || 0;
+            const cachedAssessments = parsed?.assessments?.length || 0;
+
+            if (res.data?.is_ephemeral && (cachedStudents > serverStudents || cachedAssessments > serverAssessments)) {
+              setDetectedServerReset(true);
+            } else {
+              setDetectedServerReset(false);
+            }
+          }
+        } catch (e) {
+          console.error('Error checking local snapshot:', e);
+        }
+      })
+      .catch(err => console.error('Failed to fetch storage status:', err));
+  };
+
   const handleDownloadBackup = () => {
     api.get('/admins/database/backup', { responseType: 'blob' })
       .then((res) => {
+        // Also cache latest in localStorage
+        res.data.text().then((text: string) => {
+          try {
+            localStorage.setItem('portal_full_backup_snapshot', text);
+          } catch {}
+        });
+
         const url = window.URL.createObjectURL(new Blob([res.data]));
         const link = document.createElement('a');
         link.href = url;
@@ -171,11 +229,31 @@ export const AdminManagement: React.FC = () => {
       .catch((err) => alert(err.response?.data?.message || 'Failed to download backup'));
   };
 
+  const handleAutoRestoreFromCache = async () => {
+    try {
+      const cached = localStorage.getItem('portal_full_backup_snapshot');
+      if (!cached) {
+        alert('No browser backup snapshot found.');
+        return;
+      }
+      setRestoringReset(true);
+      const payload = JSON.parse(cached);
+      await api.post('/admins/database/restore', payload);
+      alert('✅ Database successfully restored from your browser snapshot! All data reloaded.');
+      setDetectedServerReset(false);
+      window.location.reload();
+    } catch (err: any) {
+      alert('Failed to restore from browser snapshot: ' + (err.message || 'Unknown error'));
+    } finally {
+      setRestoringReset(false);
+    }
+  };
+
   const handleRestoreBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!window.confirm('Are you sure you want to restore the database from this backup JSON file? This will merge and overwrite portal collections.')) {
+    if (!window.confirm('Are you sure you want to restore the database from this backup JSON file? This will merge and rehydrate all portal data.')) {
       return;
     }
 
@@ -185,7 +263,10 @@ export const AdminManagement: React.FC = () => {
         const payload = JSON.parse(evt.target?.result as string);
         api.post('/admins/database/restore', payload)
           .then(() => {
-            alert('Database successfully restored! All assessments, students, results, and audit logs have been rehydrated.');
+            try {
+              localStorage.setItem('portal_full_backup_snapshot', JSON.stringify(payload));
+            } catch {}
+            alert('✅ Database successfully restored! All assessments, students, results, doubts, and audit logs are rehydrated.');
             window.location.reload();
           })
           .catch(err => alert(err.response?.data?.message || 'Failed to restore database. Invalid backup file format.'));
@@ -195,6 +276,16 @@ export const AdminManagement: React.FC = () => {
     };
     reader.readAsText(file);
   };
+
+  useEffect(() => {
+    fetchStorageStatus();
+    // Cache latest state quietly in background for emergency recovery
+    api.get('/admins/database/backup').then(res => {
+      try {
+        localStorage.setItem('portal_full_backup_snapshot', JSON.stringify(res.data));
+      } catch {}
+    }).catch(() => {});
+  }, []);
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-12">
@@ -219,12 +310,35 @@ export const AdminManagement: React.FC = () => {
               </div>
               <h2 className="text-2xl font-black mt-1">Admin Member & Database Control</h2>
               <p className="text-slate-300 text-xs mt-0.5">
-                Manage portal administrators, view system security, and backup/restore database state.
+                Manage portal administrators, monitor real-time database persistence, and safeguard data against Render reloads.
               </p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Detected Server Reset Alert Banner */}
+      {detectedServerReset && (
+        <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl p-5 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-black text-amber-900 text-sm">Server Reset Detected (Render Ephemeral Reload)</h4>
+              <p className="text-xs text-amber-800 mt-0.5">
+                Your Render container reloaded with baseline seed data, but your browser saved your previous custom portal state! You can immediately restore all your students, assessments, and results.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleAutoRestoreFromCache}
+            disabled={restoringReset}
+            className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow transition-all shrink-0 cursor-pointer disabled:opacity-50 flex items-center space-x-1.5"
+          >
+            <RefreshCw className={`w-4 h-4 ${restoringReset ? 'animate-spin' : ''}`} />
+            <span>{restoringReset ? 'Restoring...' : '1-Click Auto-Restore'}</span>
+          </button>
+        </div>
+      )}
 
       {/* Form: Add New Admin Member */}
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-5 text-xs">
@@ -387,22 +501,70 @@ export const AdminManagement: React.FC = () => {
 
       {/* Database Backup, Persistence & Restore Section */}
       <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 bg-purple-600/20 text-purple-400 rounded-xl border border-purple-500/30">
               <Database className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-black text-lg text-white">Database Backup & Cloud Persistence</h3>
-              <p className="text-xs text-slate-400">Prevent data loss across Render restarts and download complete JSON snapshots.</p>
+              <h3 className="font-black text-lg text-white">Database Persistence & Zero Data-Loss Engine</h3>
+              <p className="text-xs text-slate-400">Real-time status, automatic cloud backup, and emergency restore across Render reloads.</p>
             </div>
           </div>
 
-          <span className="text-xs font-bold text-emerald-400 bg-emerald-950 border border-emerald-800 px-3 py-1 rounded-full flex items-center space-x-1.5">
-            <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Active Persistence Engine</span>
-          </span>
+          <div className="flex items-center space-x-2">
+            {storageStatus?.mode === 'postgres' ? (
+              <span className="text-xs font-bold text-emerald-400 bg-emerald-950 border border-emerald-700 px-3 py-1 rounded-full flex items-center space-x-1.5 shadow-sm">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>PostgreSQL Cloud DB Connected (Zero Loss)</span>
+              </span>
+            ) : storageStatus?.has_persistent_disk ? (
+              <span className="text-xs font-bold text-blue-400 bg-blue-950 border border-blue-700 px-3 py-1 rounded-full flex items-center space-x-1.5">
+                <HardDrive className="w-3.5 h-3.5 text-blue-400" />
+                <span>Render Persistent Disk Connected</span>
+              </span>
+            ) : storageStatus?.has_cloud_sync ? (
+              <span className="text-xs font-bold text-cyan-400 bg-cyan-950 border border-cyan-700 px-3 py-1 rounded-full flex items-center space-x-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Cloud Storage Sync Connected</span>
+              </span>
+            ) : (
+              <span className="text-xs font-bold text-amber-300 bg-amber-950 border border-amber-700 px-3 py-1 rounded-full flex items-center space-x-1.5 animate-pulse">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                <span>Ephemeral Local (Connect PostgreSQL)</span>
+              </span>
+            )}
+            <button
+              onClick={fetchStorageStatus}
+              title="Refresh Storage Status"
+              className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
         </div>
+
+        {/* Live Database Inventory Counter */}
+        {storageStatus && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs">
+            <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+              <span className="text-[11px] text-slate-400 block font-bold">Total Students</span>
+              <span className="text-lg font-black text-purple-400">{storageStatus.counts.students}</span>
+            </div>
+            <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+              <span className="text-[11px] text-slate-400 block font-bold">Assessments</span>
+              <span className="text-lg font-black text-amber-400">{storageStatus.counts.assessments}</span>
+            </div>
+            <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+              <span className="text-[11px] text-slate-400 block font-bold">Question Bank</span>
+              <span className="text-lg font-black text-emerald-400">{storageStatus.counts.questions}</span>
+            </div>
+            <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+              <span className="text-[11px] text-slate-400 block font-bold">Test Submissions</span>
+              <span className="text-lg font-black text-cyan-400">{storageStatus.counts.attempts}</span>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
@@ -446,22 +608,27 @@ export const AdminManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Cloud Persistence Instructions for Render */}
-        <div className="bg-purple-950/40 p-4 rounded-xl border border-purple-800/40 text-xs text-slate-300 space-y-2">
+        {/* How to enable permanent PostgreSQL persistence on Render */}
+        <div className="bg-purple-950/40 p-4 rounded-xl border border-purple-800/40 text-xs text-slate-300 space-y-2.5">
           <h4 className="font-bold text-purple-300 flex items-center space-x-2">
             <HardDrive className="w-4 h-4 text-purple-400" />
-            <span>How Render.com Persistence & Cloud Storage Sync Works</span>
+            <span>How to Guarantee 100% Zero Data-Loss on Render.com</span>
           </h4>
           <p className="text-[11px] text-slate-300 leading-relaxed">
-            Render free Web Services feature an <strong>ephemeral disk</strong>. When Render restarts or redeploys a new commit, local files reset to the Git repository state. To guarantee <strong>24/7 continuous automatic cloud data persistence</strong> without paying for disks:
+            By default, Render free Web Services use an <strong>ephemeral filesystem</strong> that resets whenever the server sleeps or restarts. To make all data permanent 24/7 without losing anything:
           </p>
-          <ul className="list-disc list-inside text-[11px] text-purple-200 space-y-1 font-mono">
-            <li>Create a free account on <a href="https://jsonbin.io" target="_blank" rel="noreferrer" className="underline text-amber-300">JSONBin.io</a> or MongoDB Atlas.</li>
-            <li>In Render Dashboard -&gt; Environment, set <span className="text-amber-300">DATABASE_SYNC_URL</span> to your cloud bin endpoint URL.</li>
-            <li>Optionally set <span className="text-amber-300">DATABASE_SYNC_KEY</span> to your secret key.</li>
-          </ul>
+          <div className="bg-slate-950/80 p-3 rounded-lg border border-purple-900/60 font-mono text-[11px] space-y-1.5 text-purple-200">
+            <p className="font-bold text-amber-300">Method 1 (Automatic via Blueprint - Included):</p>
+            <p className="text-slate-300">Your <span className="text-emerald-400 font-bold">render.yaml</span> file is now configured with <span className="text-amber-300 font-bold">student-portal-db</span> (managed PostgreSQL). When deployed via Blueprint, Render sets up PostgreSQL automatically!</p>
+            
+            <p className="font-bold text-amber-300 pt-2">Method 2 (Manual in Render Dashboard in 1 minute):</p>
+            <p className="text-slate-300">1. In Render Dashboard, click <strong className="text-white">New +</strong> &rarr; <strong className="text-white">PostgreSQL</strong>.</p>
+            <p className="text-slate-300">2. Name it <strong className="text-white">student-portal-db</strong> and click <strong className="text-white">Create Database</strong> (Free tier).</p>
+            <p className="text-slate-300">3. Copy the <strong className="text-emerald-400">Internal Database URL</strong>.</p>
+            <p className="text-slate-300">4. Go to your Web Service &rarr; <strong className="text-white">Environment</strong> &rarr; Add key: <strong className="text-amber-300">DATABASE_URL</strong> with the URL value &rarr; Save!</p>
+          </div>
           <p className="text-[11px] text-slate-400">
-            The portal backend automatically pulls the latest cloud snapshot on boot and saves every update to the cloud in real-time!
+            Once connected, the backend automatically stores and syncs all portal data directly into PostgreSQL so nothing is ever lost!
           </p>
         </div>
 
@@ -470,3 +637,4 @@ export const AdminManagement: React.FC = () => {
     </div>
   );
 };
+

@@ -25,6 +25,16 @@ router.get('/', requireAdmin, requireSuperAdminOnly, (_req: AuthRequest, res: Re
   }
 });
 
+// GET /api/admins/database/status (Get current database persistence status & health)
+router.get('/database/status', requireAdmin, (_req: AuthRequest, res: Response) => {
+  try {
+    const status = db.getStorageStatus();
+    res.json(status);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Failed to get database status.' });
+  }
+});
+
 // GET /api/admins/database/backup (Download complete JSON database backup)
 router.get('/database/backup', requireAdmin, requireSuperAdminOnly, (_req: AuthRequest, res: Response) => {
   try {
@@ -38,7 +48,7 @@ router.get('/database/backup', requireAdmin, requireSuperAdminOnly, (_req: AuthR
 });
 
 // POST /api/admins/database/restore (Restore database from JSON payload)
-router.post('/database/restore', requireAdmin, requireSuperAdminOnly, (req: AuthRequest, res: Response) => {
+router.post('/database/restore', requireAdmin, requireSuperAdminOnly, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const backupPayload = req.body;
     if (!backupPayload || typeof backupPayload !== 'object' || !Array.isArray(backupPayload.students)) {
@@ -46,7 +56,7 @@ router.post('/database/restore', requireAdmin, requireSuperAdminOnly, (req: Auth
       return;
     }
 
-    const restoredData = db.restore(backupPayload);
+    const restoredData = await db.restore(backupPayload);
     AuditLogsModel.log(req.user!.id, 'ADMIN', 'RESTORE_DATABASE', 'SYSTEM', 'DATABASE', { timestamp: new Date().toISOString() });
     res.json({ message: 'Database successfully restored from backup JSON!', data: restoredData });
   } catch (err: any) {
