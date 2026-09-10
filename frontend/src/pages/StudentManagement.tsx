@@ -62,9 +62,16 @@ export const StudentManagement: React.FC = () => {
       });
   };
 
-  const handleDeactivate = (id: string) => {
-    if (!window.confirm('Are you sure you want to deactivate this student account?')) return;
-    api.delete(`/students/${id}`).then(() => fetchStudents());
+  const handleDeleteStudent = (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete student "${name}"? This action cannot be undone.`)) return;
+    api.delete(`/students/${id}`)
+      .then(() => {
+        setStudents(prev => prev.filter(s => s.id !== id));
+        fetchStudents();
+      })
+      .catch((err) => {
+        alert(err.response?.data?.message || 'Failed to delete student.');
+      });
   };
 
   return (
@@ -171,9 +178,9 @@ export const StudentManagement: React.FC = () => {
                   <td className="p-4 font-semibold text-purple-700">{std.suggested_role || 'AI Developer'}</td>
                   <td className="p-4 text-right space-x-2">
                     <button
-                      onClick={() => handleDeactivate(std.id)}
-                      className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg"
-                      title="Deactivate Student"
+                      onClick={() => handleDeleteStudent(std.id, std.name)}
+                      className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
+                      title="Delete Student Permanently"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

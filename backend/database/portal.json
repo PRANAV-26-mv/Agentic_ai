@@ -896,6 +896,26 @@
   ],
   "audit_logs": [
     {
+      "id": "audit-1789034265075-108",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "DELETE_STUDENT",
+      "entity_type": "STUDENT",
+      "entity_id": "std-1789034264986-869",
+      "metadata": "{\"name\":\"Test Deletable\",\"email\":\"deletable@bitsathy.ac.in\",\"student_id\":\"7376TEST999\"}",
+      "timestamp": "2026-09-10T09:57:45.075Z"
+    },
+    {
+      "id": "audit-1789034264991-387",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "CREATE_STUDENT",
+      "entity_type": "STUDENT",
+      "entity_id": "std-1789034264986-869",
+      "metadata": "{\"name\":\"Test Deletable\"}",
+      "timestamp": "2026-09-10T09:57:44.991Z"
+    },
+    {
       "id": "audit-1789031327268-896",
       "actor_id": "adm-002",
       "actor_role": "ADMIN",

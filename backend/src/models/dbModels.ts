@@ -316,6 +316,20 @@ export const StudentsModel = {
     db.save();
     return updated;
   },
+  delete(id: string): boolean {
+    const list = memoryDb.table('students');
+    const index = list.findIndex(s => s.id === id);
+    if (index !== -1) {
+      list.splice(index, 1);
+      // Also remove associated progress record
+      const progressList = memoryDb.table('student_progress');
+      const pIdx = progressList.findIndex(p => p.student_id === id);
+      if (pIdx !== -1) progressList.splice(pIdx, 1);
+      db.save();
+      return true;
+    }
+    return false;
+  },
   deactivate(id: string): boolean {
     const student = this.findById(id);
     if (student) {

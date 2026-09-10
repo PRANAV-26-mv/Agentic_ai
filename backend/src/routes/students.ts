@@ -107,10 +107,16 @@ router.put('/:id', requireAuth, (req: AuthRequest, res: Response) => {
 // DELETE /api/students/:id
 router.delete('/:id', requireAdmin, (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
-  const success = StudentsModel.deactivate(id);
+  const existing = StudentsModel.findById(id);
+  if (!existing) {
+    res.status(404).json({ message: 'Student not found.' });
+    return;
+  }
+
+  const success = StudentsModel.delete(id);
   if (success) {
-    AuditLogsModel.log(req.user!.id, 'ADMIN', 'DEACTIVATE_STUDENT', 'STUDENT', id);
-    res.json({ message: 'Student deactivated successfully.' });
+    AuditLogsModel.log(req.user!.id, 'ADMIN', 'DELETE_STUDENT', 'STUDENT', id, { name: existing.name, email: existing.email, student_id: existing.student_id });
+    res.json({ message: 'Student deleted successfully.' });
   } else {
     res.status(404).json({ message: 'Student not found.' });
   }
