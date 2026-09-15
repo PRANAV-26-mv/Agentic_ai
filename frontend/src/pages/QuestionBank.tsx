@@ -585,6 +585,13 @@ export const QuestionBank: React.FC = () => {
         </div>
       )}
 
+      {/* PDF AI Question Generator Wizard Modal */}
+      <PdfGeneratorWizard
+        isOpen={showPdfWizard}
+        onClose={() => setShowPdfWizard(false)}
+        onSuccess={fetchQuestions}
+      />
+
     </div>
   );
 };
