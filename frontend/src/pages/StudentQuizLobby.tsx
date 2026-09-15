@@ -401,7 +401,7 @@ export const StudentQuizLobby: React.FC = () => {
               </button>
 
               {/* Question Navigator Pills */}
-              <div className="hidden sm:flex items-center space-x-1">
+              <div className="hidden sm:flex items-center space-x-1 max-w-sm sm:max-w-md md:max-w-lg overflow-x-auto py-1 px-1">
                 {questions.map((q, idx) => {
                   const isCurrent = idx === currentQIndex;
                   const isAns = Boolean(answers[q.id]);

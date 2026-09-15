@@ -649,21 +649,51 @@ export const AdminQuizSessions: React.FC = () => {
                           className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none"
                         />
                       </div>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <button
                           type="button"
                           onClick={() => handleSelectRandomQuestions(5)}
-                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[11px] cursor-pointer"
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[10px] cursor-pointer"
                         >
                           Random 5
                         </button>
                         <button
                           type="button"
                           onClick={() => handleSelectRandomQuestions(10)}
-                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[11px] cursor-pointer"
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[10px] cursor-pointer"
                         >
                           Random 10
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectRandomQuestions(25)}
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[10px] cursor-pointer"
+                        >
+                          Random 25
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectRandomQuestions(50)}
+                          className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-lg text-[10px] cursor-pointer"
+                        >
+                          Random 50
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedQuestionIds(availableQuestions.map(q => q.id))}
+                          className="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-lg text-[10px] cursor-pointer"
+                        >
+                          Select All
+                        </button>
+                        {selectedQuestionIds.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedQuestionIds([])}
+                            className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg text-[10px] cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
                       </div>
                     </div>
 
