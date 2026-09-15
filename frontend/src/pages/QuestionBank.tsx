@@ -266,13 +266,6 @@ export const QuestionBank: React.FC = () => {
         </div>
       )}
 
-      {/* PDF Generator Wizard */}
-      <PdfGeneratorWizard
-        isOpen={showPdfWizard}
-        onClose={() => setShowPdfWizard(false)}
-        onSuccess={() => fetchQuestions()}
-      />
-
       {/* Pool Modal */}
       {showPoolModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
