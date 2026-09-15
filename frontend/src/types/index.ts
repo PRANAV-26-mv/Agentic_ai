@@ -146,12 +146,30 @@ export interface AttendanceSession {
   start_time: string;
   expires_at: string;
   created_by?: string;
+  attendee_count?: number;
 }
 
 export interface AttendanceRecord {
   id: string;
   session_id: string;
   student_id: string;
+  marked_at: string;
+  status: 'PRESENT';
+}
+
+export interface AttendanceAttendee {
+  record_id: string;
+  session_id: string;
+  session_code: string;
+  session_date: string;
+  session_community: string;
+  session_department: string;
+  student_id: string;
+  student_name: string;
+  student_reg: string;
+  student_department: string;
+  student_community: string;
+  student_email: string;
   marked_at: string;
   status: 'PRESENT';
 }

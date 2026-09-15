@@ -662,6 +662,16 @@
       "created_by": "adm-001",
       "id": "sess-1788430884250",
       "start_time": "2026-09-03T10:21:24.250Z"
+    },
+    {
+      "community": "Agentic AI & LLM Optimization",
+      "department": "ALL",
+      "date": "2026-09-15",
+      "code": "716407",
+      "expires_at": "2026-09-15T19:14:17.916Z",
+      "created_by": "adm-002",
+      "id": "sess-1789496057916",
+      "start_time": "2026-09-15T18:14:17.916Z"
     }
   ],
   "attendance_records": [
@@ -677,6 +687,13 @@
       "session_id": "sess-001",
       "student_id": "std-002",
       "marked_at": "2026-09-03T10:16:21.455Z",
+      "status": "PRESENT"
+    },
+    {
+      "id": "attrec-1789496483983",
+      "session_id": "sess-1789496057916",
+      "student_id": "std-001",
+      "marked_at": "2026-09-15T18:21:23.983Z",
       "status": "PRESENT"
     }
   ],
@@ -928,6 +945,52 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "audit-1789496721921-774",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-15T18:25:21.921Z"
+    },
+    {
+      "id": "audit-1789496702035-699",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-15T18:25:02.035Z"
+    },
+    {
+      "id": "audit-1789496445739-850",
+      "actor_id": "std-001",
+      "actor_role": "STUDENT",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "std-001",
+      "timestamp": "2026-09-15T18:20:45.739Z"
+    },
+    {
+      "id": "audit-1789496390150-713",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-15T18:19:50.150Z"
+    },
+    {
+      "id": "audit-1789496057927-267",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "CREATE_ATTENDANCE_SESSION",
+      "entity_type": "ATTENDANCE_SESSION",
+      "entity_id": "sess-1789496057916",
+      "metadata": "{\"code\":\"716407\"}",
+      "timestamp": "2026-09-15T18:14:17.927Z"
+    },
     {
       "id": "audit-1789494353091-26",
       "actor_id": "adm-002",

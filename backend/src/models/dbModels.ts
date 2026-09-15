@@ -134,6 +134,7 @@ export interface AttendanceSession {
   start_time: string;
   expires_at: string;
   created_by?: string;
+  attendee_count?: number;
 }
 
 export interface AttendanceRecord {
@@ -903,6 +904,61 @@ export const AttendanceModel = {
     const present = records.length;
     const percentage = Math.round((present / total) * 100);
     return { total, present, percentage, records };
+  },
+  getSessionAttendees(sessionId: string) {
+    const session = (memoryDb.table('attendance_sessions') as AttendanceSession[]).find(
+      s => s.id === sessionId || s.code === sessionId
+    );
+    if (!session) return [];
+
+    const records = (memoryDb.table('attendance_records') as AttendanceRecord[]).filter(
+      r => r.session_id === session.id
+    );
+
+    return records.map(r => {
+      const student = StudentsModel.findById(r.student_id);
+      return {
+        record_id: r.id,
+        session_id: session.id,
+        session_code: session.code,
+        session_date: session.date,
+        session_community: session.community || 'ALL',
+        session_department: session.department || 'ALL',
+        student_id: r.student_id,
+        student_name: student?.name || 'Unknown Student',
+        student_reg: student?.student_id || r.student_id,
+        student_department: student?.department || 'N/A',
+        student_community: student?.community || 'N/A',
+        student_email: student?.email || 'N/A',
+        marked_at: r.marked_at,
+        status: r.status || 'PRESENT'
+      };
+    }).sort((a, b) => new Date(b.marked_at).getTime() - new Date(a.marked_at).getTime());
+  },
+  getAllAttendees() {
+    const sessions = memoryDb.table('attendance_sessions') as AttendanceSession[];
+    const records = memoryDb.table('attendance_records') as AttendanceRecord[];
+
+    return records.map(r => {
+      const session = sessions.find(s => s.id === r.session_id);
+      const student = StudentsModel.findById(r.student_id);
+      return {
+        record_id: r.id,
+        session_id: r.session_id,
+        session_code: session?.code || 'N/A',
+        session_date: session?.date || 'N/A',
+        session_community: session?.community || 'ALL',
+        session_department: session?.department || 'ALL',
+        student_id: r.student_id,
+        student_name: student?.name || 'Unknown Student',
+        student_reg: student?.student_id || r.student_id,
+        student_department: student?.department || 'N/A',
+        student_community: student?.community || 'N/A',
+        student_email: student?.email || 'N/A',
+        marked_at: r.marked_at,
+        status: r.status || 'PRESENT'
+      };
+    }).sort((a, b) => new Date(b.marked_at).getTime() - new Date(a.marked_at).getTime());
   }
 };
 

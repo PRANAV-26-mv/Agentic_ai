@@ -674,7 +674,7 @@ export async function seedData() {
       community: 'Agentic AI & LLM Optimization',
       department: 'ALL',
       date: new Date().toISOString().split('T')[0],
-      code: '8K4P7Q',
+      code: '748291',
       start_time: now,
       expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
       created_by: adminId
