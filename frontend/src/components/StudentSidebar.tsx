@@ -9,6 +9,7 @@ import {
   Bell, 
   MessageSquare, 
   User, 
+  Zap,
   LogOut,
   X 
 } from 'lucide-react';
@@ -27,6 +28,7 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({ mobileOpen, onCl
     { to: '/dashboard', label: 'Dashboard', icon: Home },
     { to: '/materials', label: 'Study Materials', icon: BookOpen },
     { to: '/assessments', label: 'Assessments', icon: FileText },
+    { to: '/quiz-sessions', label: 'Live Quiz Sessions', icon: Zap },
     { to: '/results', label: 'My Results', icon: BarChart2 },
     { to: '/attendance', label: 'Attendance', icon: Calendar },
     { to: '/notifications', label: 'Notifications', icon: Bell },

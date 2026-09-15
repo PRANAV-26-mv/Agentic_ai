@@ -35,9 +35,7 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
     formData.append('writing_count', writingCount.toString());
     formData.append('difficulty', difficulty);
 
-    api.post('/pdf/generate-questions', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    api.post('/pdf/generate-questions', formData)
       .then(res => {
         setGeneratedQuestions(res.data.questions || []);
         setStep('review');

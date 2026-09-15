@@ -9,14 +9,31 @@ export const api = axios.create({
   },
 });
 
-// Interceptor to attach JWT token to every request
+// Interceptor to attach JWT token to every request and correctly handle FormData
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('portal_auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // When sending FormData, remove Content-Type so browser/axios sets multipart/form-data with boundary
+  if (config.data instanceof FormData) {
+    if (config.headers) {
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
+    }
+  }
+
   return config;
 });
+
+// Helper to resolve backend-served file URLs
+export const getFileUrl = (url?: string): string => {
+  if (!url) return '#';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const backendBase = API_BASE_URL.replace(/\/api\/?$/, '');
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 // Response error handler
 api.interceptors.response.use(

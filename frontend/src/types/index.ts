@@ -103,6 +103,7 @@ export interface Assessment {
   created_by?: string;
   created_at: string;
   questions?: Question[];
+  question_ids?: string[];
 }
 
 export interface AssessmentAttempt {
@@ -187,4 +188,65 @@ export interface DoubtMessage {
   sender: 'student' | 'ai';
   content: string;
   created_at: string;
+}
+
+export interface QuizSession {
+  id: string;
+  title: string;
+  description?: string;
+  pin: string;
+  assessment_id?: string;
+  question_ids: string[];
+  target_type: 'ALL' | 'DEPARTMENT' | 'COMMUNITY';
+  target_department?: string;
+  target_community?: string;
+  duration_minutes: number;
+  start_time: string;
+  end_time: string;
+  status: 'SCHEDULED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  created_by: string;
+  created_at: string;
+  participant_count?: number;
+  submitted_count?: number;
+  my_status?: 'LOBBY' | 'IN_PROGRESS' | 'SUBMITTED' | 'TIMED_OUT' | null;
+  my_score?: number | null;
+  my_rank?: number | null;
+  questions?: Question[];
+  participants?: QuizSessionParticipant[];
+  leaderboard?: QuizLeaderboardEntry[];
+  my_participant?: QuizSessionParticipant;
+}
+
+export interface QuizSessionParticipant {
+  id: string;
+  session_id: string;
+  student_id: string;
+  student_name: string;
+  student_reg: string;
+  student_department: string;
+  student_community: string;
+  joined_at: string;
+  started_at?: string;
+  submitted_at?: string;
+  status: 'LOBBY' | 'IN_PROGRESS' | 'SUBMITTED' | 'TIMED_OUT';
+  score?: number;
+  max_score?: number;
+  percentage?: number;
+  time_taken_seconds?: number;
+  rank?: number;
+  answers_json?: string;
+}
+
+export interface QuizLeaderboardEntry {
+  rank: number;
+  student_id: string;
+  student_name: string;
+  student_reg: string;
+  student_department: string;
+  student_community: string;
+  score: number;
+  max_score: number;
+  percentage: number;
+  time_taken_seconds: number;
+  submitted_at?: string;
 }

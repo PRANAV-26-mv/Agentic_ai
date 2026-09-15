@@ -77,6 +77,8 @@ export interface DbData {
   audit_logs: any[];
   doubt_conversations: any[];
   doubt_messages: any[];
+  quiz_sessions: any[];
+  quiz_session_participants: any[];
 }
 
 const initialData: DbData = {
@@ -100,7 +102,9 @@ const initialData: DbData = {
   student_progress: [],
   audit_logs: [],
   doubt_conversations: [],
-  doubt_messages: []
+  doubt_messages: [],
+  quiz_sessions: [],
+  quiz_session_participants: []
 };
 
 export type StorageMode = 'postgres' | 'cloud_sync' | 'persistent_disk' | 'ephemeral_local';

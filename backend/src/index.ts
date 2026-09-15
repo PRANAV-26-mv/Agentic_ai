@@ -21,6 +21,7 @@ import doubtsRouter from './routes/doubts.js';
 import analyticsRouter from './routes/analytics.js';
 import auditLogsRouter from './routes/auditLogs.js';
 import adminsRouter from './routes/admins.js';
+import quizSessionsRouter from './routes/quizSessions.js';
 
 dotenv.config();
 
@@ -54,6 +55,7 @@ app.use('/api/monitoring', monitoringRouter);
 app.use('/api/doubts', doubtsRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/audit-logs', auditLogsRouter);
+app.use('/api/quiz-sessions', quizSessionsRouter);
 
 // Healthcheck
 app.get('/api/health', (_req, res) => {

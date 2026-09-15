@@ -597,6 +597,39 @@
       "target_type": "ALL",
       "published_date": "2026-09-10T09:07:49.977Z",
       "created_by": "adm-002"
+    },
+    {
+      "title": "Test PDF Upload",
+      "description": "Test Description",
+      "material_type": "PDF",
+      "file_url": "/uploads/1789325178200-224547774.pdf",
+      "page_count": 19,
+      "target_type": "ALL",
+      "created_by": "adm-002",
+      "id": "mat-1789325178203",
+      "published_date": "2026-09-13T18:46:18.203Z"
+    },
+    {
+      "title": "Advanced Agentic Workflows & Multi-Agent Systems",
+      "description": "Comprehensive guide covering tool use, memory architectures, and delegation patterns.",
+      "material_type": "PDF",
+      "file_url": "/uploads/1789325343315-77518515.pdf",
+      "page_count": 7,
+      "target_type": "COMMUNITY",
+      "target_community": "Agentic AI & LLM Optimization",
+      "created_by": "adm-002",
+      "id": "mat-1789325343319",
+      "published_date": "2026-09-13T18:49:03.319Z"
+    },
+    {
+      "title": "Official LangGraph & AutoGen Documentation",
+      "description": "Official developer guides and orchestration frameworks.",
+      "material_type": "URL",
+      "file_url": "https://langchain-ai.github.io/langgraph/",
+      "target_type": "ALL",
+      "created_by": "adm-002",
+      "id": "mat-1789325343336",
+      "published_date": "2026-09-13T18:49:03.336Z"
     }
   ],
   "attendance_sessions": [
@@ -896,6 +929,109 @@
   ],
   "audit_logs": [
     {
+      "id": "audit-1789326302286-464",
+      "actor_id": "std-001",
+      "actor_role": "STUDENT",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "std-001",
+      "timestamp": "2026-09-13T19:05:02.286Z"
+    },
+    {
+      "id": "audit-1789326136532-488",
+      "actor_id": "std-001",
+      "actor_role": "STUDENT",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "std-001",
+      "timestamp": "2026-09-13T19:02:16.532Z"
+    },
+    {
+      "id": "audit-1789326136527-28",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "CREATE_QUIZ_SESSION",
+      "entity_type": "QUIZ_SESSION",
+      "entity_id": "qs-1789326136526",
+      "metadata": "{\"title\":\"AI Agent Architecture & Reasoning Sprint\",\"pin\":\"882201\"}",
+      "timestamp": "2026-09-13T19:02:16.527Z"
+    },
+    {
+      "id": "audit-1789326136513-863",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-13T19:02:16.513Z"
+    },
+    {
+      "id": "audit-1789325376448-583",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-13T18:49:36.448Z"
+    },
+    {
+      "id": "audit-1789325343340-714",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "CREATE_MATERIAL",
+      "entity_type": "MATERIAL",
+      "entity_id": "mat-1789325343336",
+      "metadata": "{\"title\":\"Official LangGraph & AutoGen Documentation\"}",
+      "timestamp": "2026-09-13T18:49:03.340Z"
+    },
+    {
+      "id": "audit-1789325343321-141",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "CREATE_MATERIAL",
+      "entity_type": "MATERIAL",
+      "entity_id": "mat-1789325343319",
+      "metadata": "{\"title\":\"Advanced Agentic Workflows & Multi-Agent Systems\"}",
+      "timestamp": "2026-09-13T18:49:03.321Z"
+    },
+    {
+      "id": "audit-1789325343275-864",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-13T18:49:03.275Z"
+    },
+    {
+      "id": "audit-1789325182349-453",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-13T18:46:22.349Z"
+    },
+    {
+      "id": "audit-1789325178204-258",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "CREATE_MATERIAL",
+      "entity_type": "MATERIAL",
+      "entity_id": "mat-1789325178203",
+      "metadata": "{\"title\":\"Test PDF Upload\"}",
+      "timestamp": "2026-09-13T18:46:18.204Z"
+    },
+    {
+      "id": "audit-1789325178185-297",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-13T18:46:18.185Z"
+    },
+    {
       "id": "audit-1789034265075-108",
       "actor_id": "adm-002",
       "actor_role": "ADMIN",
@@ -1137,5 +1273,45 @@
       "created_at": "2026-09-05T10:27:35.138Z"
     }
   ],
-  "doubt_messages": []
+  "doubt_messages": [],
+  "quiz_sessions": [
+    {
+      "title": "AI Agent Architecture & Reasoning Sprint",
+      "description": "Synchronized live quiz. Answer accurately and quickly for top leaderboard ranking.",
+      "pin": "882201",
+      "question_ids": [
+        "q-001",
+        "q-002",
+        "q-003"
+      ],
+      "target_type": "ALL",
+      "duration_minutes": 15,
+      "start_time": "2026-09-13T19:02:16.525Z",
+      "end_time": "2026-09-14T19:02:16.525Z",
+      "status": "ACTIVE",
+      "created_by": "adm-002",
+      "id": "qs-1789326136526",
+      "created_at": "2026-09-13T19:02:16.526Z"
+    }
+  ],
+  "quiz_session_participants": [
+    {
+      "id": "qsp-1789326136539-436",
+      "session_id": "qs-1789326136526",
+      "student_id": "std-001",
+      "student_name": "DEEPIKA J",
+      "student_reg": "7376242AD138",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-09-13T19:02:16.539Z",
+      "status": "SUBMITTED",
+      "started_at": "2026-09-13T19:02:16.544Z",
+      "submitted_at": "2026-09-13T19:02:16.553Z",
+      "score": 2,
+      "max_score": 6,
+      "percentage": 33,
+      "answers_json": "{\"q-001\":\"A\",\"q-002\":\"B\",\"q-003\":\"A\"}",
+      "time_taken_seconds": 1
+    }
+  ]
 }

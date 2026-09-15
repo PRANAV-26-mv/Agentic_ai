@@ -198,6 +198,44 @@ export interface DoubtMessage {
   created_at: string;
 }
 
+export interface QuizSession {
+  id: string;
+  title: string;
+  description?: string;
+  pin: string;
+  assessment_id?: string;
+  question_ids: string[];
+  target_type: 'ALL' | 'DEPARTMENT' | 'COMMUNITY';
+  target_department?: string;
+  target_community?: string;
+  duration_minutes: number;
+  start_time: string;
+  end_time: string;
+  status: 'SCHEDULED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  created_by: string;
+  created_at: string;
+}
+
+export interface QuizSessionParticipant {
+  id: string;
+  session_id: string;
+  student_id: string;
+  student_name: string;
+  student_reg: string;
+  student_department: string;
+  student_community: string;
+  joined_at: string;
+  started_at?: string;
+  submitted_at?: string;
+  status: 'LOBBY' | 'IN_PROGRESS' | 'SUBMITTED' | 'TIMED_OUT';
+  score?: number;
+  max_score?: number;
+  percentage?: number;
+  time_taken_seconds?: number;
+  rank?: number;
+  answers_json?: string;
+}
+
 // Data Model Helpers
 
 export const AdminsModel = {
@@ -962,5 +1000,173 @@ export const DoubtsModel = {
     memoryDb.table('doubt_messages').push(msg);
     db.save();
     return msg;
+  }
+};
+
+export const QuizSessionsModel = {
+  findAll(filter?: { status?: string; student?: Student }): QuizSession[] {
+    let list = memoryDb.table('quiz_sessions') as QuizSession[];
+    if (filter?.status) {
+      list = list.filter(s => s.status === filter.status);
+    }
+    if (filter?.student) {
+      const std = filter.student;
+      list = list.filter(s => {
+        if (s.target_type === 'ALL') return true;
+        if (s.target_type === 'DEPARTMENT' && s.target_department === std.department) return true;
+        if (s.target_type === 'COMMUNITY' && s.target_community === std.community) return true;
+        return false;
+      });
+    }
+    return [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  },
+  findById(id: string): QuizSession | undefined {
+    return (memoryDb.table('quiz_sessions') as QuizSession[]).find(s => s.id === id);
+  },
+  findByPin(pin: string): QuizSession | undefined {
+    const cleanPin = pin.trim();
+    return (memoryDb.table('quiz_sessions') as QuizSession[]).find(s => s.pin === cleanPin);
+  },
+  create(data: Omit<QuizSession, 'id' | 'created_at' | 'pin'> & { pin?: string }): QuizSession {
+    let pin = data.pin?.trim();
+    if (!pin) {
+      do {
+        pin = Math.floor(100000 + Math.random() * 900000).toString();
+      } while (this.findByPin(pin));
+    }
+    const newSession: QuizSession = {
+      ...data,
+      id: `qs-${Date.now()}`,
+      pin,
+      created_at: new Date().toISOString()
+    };
+    memoryDb.table('quiz_sessions').unshift(newSession);
+    db.save();
+    return newSession;
+  },
+  update(id: string, updates: Partial<QuizSession>): QuizSession | undefined {
+    const list = memoryDb.table('quiz_sessions') as QuizSession[];
+    const index = list.findIndex(s => s.id === id);
+    if (index === -1) return undefined;
+    const updated = { ...list[index], ...updates };
+    list[index] = updated;
+    db.save();
+    return updated;
+  },
+  delete(id: string): boolean {
+    const list = memoryDb.table('quiz_sessions') as QuizSession[];
+    const index = list.findIndex(s => s.id === id);
+    if (index !== -1) {
+      list.splice(index, 1);
+      const pList = memoryDb.table('quiz_session_participants') as QuizSessionParticipant[];
+      for (let i = pList.length - 1; i >= 0; i--) {
+        if (pList[i].session_id === id) {
+          pList.splice(i, 1);
+        }
+      }
+      db.save();
+      return true;
+    }
+    return false;
+  }
+};
+
+export const QuizSessionParticipantsModel = {
+  findBySessionAndStudent(sessionId: string, studentId: string): QuizSessionParticipant | undefined {
+    const list = memoryDb.table('quiz_session_participants') as QuizSessionParticipant[];
+    return list.find(p => p.session_id === sessionId && p.student_id === studentId);
+  },
+  getParticipants(sessionId: string): QuizSessionParticipant[] {
+    const list = memoryDb.table('quiz_session_participants') as QuizSessionParticipant[];
+    return list.filter(p => p.session_id === sessionId);
+  },
+  join(sessionId: string, student: Student): QuizSessionParticipant {
+    let participant = this.findBySessionAndStudent(sessionId, student.id);
+    if (!participant) {
+      participant = {
+        id: `qsp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        session_id: sessionId,
+        student_id: student.id,
+        student_name: student.name,
+        student_reg: student.student_id,
+        student_department: student.department,
+        student_community: student.community,
+        joined_at: new Date().toISOString(),
+        status: 'LOBBY'
+      };
+      memoryDb.table('quiz_session_participants').push(participant);
+      db.save();
+    }
+    return participant;
+  },
+  startQuiz(sessionId: string, studentId: string): QuizSessionParticipant | undefined {
+    const participant = this.findBySessionAndStudent(sessionId, studentId);
+    if (participant && (participant.status === 'LOBBY' || !participant.started_at)) {
+      participant.status = 'IN_PROGRESS';
+      participant.started_at = new Date().toISOString();
+      db.save();
+    }
+    return participant;
+  },
+  submit(
+    sessionId: string,
+    studentId: string,
+    answers: { [questionId: string]: string },
+    questions: Question[]
+  ): QuizSessionParticipant | undefined {
+    const participant = this.findBySessionAndStudent(sessionId, studentId);
+    if (!participant) return undefined;
+
+    let score = 0;
+    let maxScore = 0;
+
+    questions.forEach(q => {
+      const marks = q.marks || 1;
+      maxScore += marks;
+      const selected = answers[q.id];
+      if (selected && q.correct_answer && selected.trim().toUpperCase() === q.correct_answer.trim().toUpperCase()) {
+        score += marks;
+      }
+    });
+
+    const submittedAt = new Date();
+    participant.submitted_at = submittedAt.toISOString();
+    participant.status = 'SUBMITTED';
+    participant.score = score;
+    participant.max_score = maxScore;
+    participant.percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+    participant.answers_json = JSON.stringify(answers);
+
+    if (participant.started_at) {
+      const startTime = new Date(participant.started_at).getTime();
+      participant.time_taken_seconds = Math.max(1, Math.round((submittedAt.getTime() - startTime) / 1000));
+    } else {
+      participant.time_taken_seconds = 0;
+    }
+
+    db.save();
+    return participant;
+  },
+  getLeaderboard(sessionId: string) {
+    const participants = this.getParticipants(sessionId).filter(p => p.status === 'SUBMITTED');
+    participants.sort((a, b) => {
+      if ((b.score ?? 0) !== (a.score ?? 0)) {
+        return (b.score ?? 0) - (a.score ?? 0);
+      }
+      return (a.time_taken_seconds ?? 999999) - (b.time_taken_seconds ?? 999999);
+    });
+    return participants.map((p, idx) => ({
+      rank: idx + 1,
+      student_id: p.student_id,
+      student_name: p.student_name,
+      student_reg: p.student_reg,
+      student_department: p.student_department,
+      student_community: p.student_community,
+      score: p.score ?? 0,
+      max_score: p.max_score ?? 0,
+      percentage: p.percentage ?? 0,
+      time_taken_seconds: p.time_taken_seconds ?? 0,
+      submitted_at: p.submitted_at
+    }));
   }
 };

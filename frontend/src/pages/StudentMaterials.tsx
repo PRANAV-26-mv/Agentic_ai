@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { api, getFileUrl } from '../services/api';
 import { StudyMaterial } from '../types';
 import { BookOpen, FileText, Download, ExternalLink, MessageSquare, Search, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -97,7 +97,7 @@ export const StudentMaterials: React.FC = () => {
               {/* Action Buttons matching §8 */}
               <div className="pt-4 border-t border-slate-100 grid grid-cols-3 gap-2">
                 <a
-                  href={mat.file_url}
+                  href={getFileUrl(mat.file_url)}
                   target="_blank"
                   rel="noreferrer"
                   className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1 transition-colors"
@@ -107,8 +107,10 @@ export const StudentMaterials: React.FC = () => {
                 </a>
 
                 <a
-                  href={mat.file_url}
+                  href={getFileUrl(mat.file_url)}
                   download
+                  target="_blank"
+                  rel="noreferrer"
                   className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1 transition-colors"
                 >
                   <Download className="w-3.5 h-3.5" />

@@ -34,9 +34,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
     formData.append('file', file);
     formData.append('mode', 'dry-run');
 
-    api.post('/students/bulk-import', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    api.post('/students/bulk-import', formData)
       .then(res => setPreviewData(res.data))
       .catch(err => {
         setErrorMsg(err.response?.data?.message || 'Unable to process file. Upload a valid CSV or XLSX file.');
@@ -52,9 +50,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
     formData.append('file', file);
     formData.append('mode', 'commit');
 
-    api.post('/students/bulk-import', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    api.post('/students/bulk-import', formData)
       .then(() => {
         onSuccess();
         onClose();

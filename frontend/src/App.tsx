@@ -15,8 +15,11 @@ import { StudentAttendance } from './pages/StudentAttendance';
 import { StudentNotifications } from './pages/StudentNotifications';
 import { AskADoubt } from './pages/AskADoubt';
 import { StudentProfile } from './pages/StudentProfile';
+import { StudentQuizSessions } from './pages/StudentQuizSessions';
+import { StudentQuizLobby } from './pages/StudentQuizLobby';
 
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AdminQuizSessions } from './pages/AdminQuizSessions';
 import { StudentManagement } from './pages/StudentManagement';
 import { AssessmentManagement } from './pages/AssessmentManagement';
 import { QuestionBank } from './pages/QuestionBank';
@@ -91,6 +94,8 @@ export function App() {
             <Route path="/dashboard" element={<StudentDashboard />} />
             <Route path="/materials" element={<StudentMaterials />} />
             <Route path="/assessments" element={<StudentAssessments />} />
+            <Route path="/quiz-sessions" element={<StudentQuizSessions />} />
+            <Route path="/quiz-sessions/:id" element={<StudentQuizLobby />} />
             <Route path="/results" element={<StudentResults />} />
             <Route path="/attendance" element={<StudentAttendance />} />
             <Route path="/notifications" element={<StudentNotifications />} />
@@ -109,6 +114,7 @@ export function App() {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/students" element={<StudentManagement />} />
             <Route path="/admin/assessments" element={<AssessmentManagement />} />
+            <Route path="/admin/quiz-sessions" element={<AdminQuizSessions />} />
             <Route path="/admin/question-bank" element={<QuestionBank />} />
             <Route path="/admin/study-materials" element={<StudyMaterialManagement />} />
             <Route path="/admin/attendance" element={<AttendanceManagement />} />
