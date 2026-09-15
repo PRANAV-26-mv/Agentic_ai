@@ -586,11 +586,13 @@ export const QuestionBank: React.FC = () => {
       )}
 
       {/* PDF AI Question Generator Wizard Modal */}
-      <PdfGeneratorWizard
-        isOpen={showPdfWizard}
-        onClose={() => setShowPdfWizard(false)}
-        onSuccess={fetchQuestions}
-      />
+      {showPdfWizard && (
+        <PdfGeneratorWizard
+          isOpen={showPdfWizard}
+          onClose={() => setShowPdfWizard(false)}
+          onSuccess={fetchQuestions}
+        />
+      )}
 
     </div>
   );

@@ -26,8 +26,6 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
   const [filterType, setFilterType] = useState<'ALL' | 'MCQ' | 'WRITING'>('ALL');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'APPROVED' | 'REVIEW' | 'REJECTED'>('ALL');
 
-  if (!isOpen) return null;
-
   const totalRequested = mcqCount + writingCount;
 
   const handleApplyPreset = (mcqs: number, writings: number) => {
@@ -134,6 +132,8 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
   const approvedCount = generatedQuestions.filter(q => q.status === 'APPROVED').length;
   const reviewCount = generatedQuestions.filter(q => q.status === 'REVIEW' || q.status === 'DRAFT').length;
   const rejectedCount = generatedQuestions.filter(q => q.status === 'REJECTED').length;
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
