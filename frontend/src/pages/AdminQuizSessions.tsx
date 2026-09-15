@@ -20,7 +20,8 @@ import {
   Search, 
   Filter,
   X,
-  Radio
+  Radio,
+  ExternalLink
 } from 'lucide-react';
 
 const DEPARTMENTS = ['CS', 'AD', 'IT', 'ECE', 'EEE', 'MECH'];
@@ -638,6 +639,18 @@ export const AdminQuizSessions: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-2">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 pb-1">
+                      <span>Select questions below ({selectedQuestionIds.length} of {availableQuestions.length} chosen):</span>
+                      <a 
+                        href="/admin/question-bank" 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="font-bold text-purple-600 hover:text-purple-700 hover:underline flex items-center space-x-1 cursor-pointer"
+                      >
+                        <span>Add / Generate Questions</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="relative flex-1">
                         <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />

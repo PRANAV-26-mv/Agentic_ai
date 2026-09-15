@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Question, QuestionPool } from '../types';
-import { HelpCircle, Sparkles, Plus, CheckCircle2, XCircle, RefreshCw, Layers, Trash2 } from 'lucide-react';
+import { HelpCircle, Sparkles, Plus, CheckCircle2, XCircle, RefreshCw, Layers, Trash2, AlertCircle } from 'lucide-react';
 import { PdfGeneratorWizard } from './PdfGeneratorWizard';
 
 export const QuestionBank: React.FC = () => {
@@ -14,6 +14,26 @@ export const QuestionBank: React.FC = () => {
   const [showPdfWizard, setShowPdfWizard] = useState<boolean>(false);
   const [showPoolModal, setShowPoolModal] = useState<boolean>(false);
   const [poolName, setPoolName] = useState<string>('');
+
+  // Add Question Modal state
+  const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const [savingQuestion, setSavingQuestion] = useState<boolean>(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [newQuestion, setNewQuestion] = useState({
+    question_type: 'MCQ' as 'MCQ' | 'WRITING',
+    question_text: '',
+    option_a: '',
+    option_b: '',
+    option_c: '',
+    option_d: '',
+    correct_answer: 'A' as 'A' | 'B' | 'C' | 'D',
+    difficulty: 'Medium' as 'Easy' | 'Medium' | 'Hard',
+    topic: 'Artificial Intelligence',
+    marks: 2,
+    explanation: '',
+    rubric: '',
+    expected_answer: ''
+  });
 
   const fetchQuestions = () => {
     setLoading(true);
@@ -64,6 +84,46 @@ export const QuestionBank: React.FC = () => {
       });
   };
 
+  const handleCreateQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newQuestion.question_text.trim()) {
+      setAddError('Question text is required.');
+      return;
+    }
+    if (newQuestion.question_type === 'MCQ') {
+      if (!newQuestion.option_a.trim() || !newQuestion.option_b.trim() || !newQuestion.option_c.trim() || !newQuestion.option_d.trim()) {
+        setAddError('Please fill in all 4 options (A, B, C, D) for the MCQ.');
+        return;
+      }
+    }
+    setSavingQuestion(true);
+    setAddError(null);
+    try {
+      await api.post('/questions', newQuestion);
+      setShowAddModal(false);
+      setNewQuestion({
+        question_type: 'MCQ',
+        question_text: '',
+        option_a: '',
+        option_b: '',
+        option_c: '',
+        option_d: '',
+        correct_answer: 'A',
+        difficulty: 'Medium',
+        topic: 'Artificial Intelligence',
+        marks: 2,
+        explanation: '',
+        rubric: '',
+        expected_answer: ''
+      });
+      fetchQuestions();
+    } catch (err: any) {
+      setAddError(err.response?.data?.message || 'Failed to add question.');
+    } finally {
+      setSavingQuestion(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       
@@ -74,34 +134,45 @@ export const QuestionBank: React.FC = () => {
             <HelpCircle className="w-6 h-6 text-purple-600" />
             <span>Question Repository & Pools</span>
           </h2>
-          <p className="text-slate-500 text-xs mt-1">Manage MCQ & Writing questions, approve AI-generated items, and build pools.</p>
+          <p className="text-slate-500 text-xs mt-1">Manage MCQ & Writing questions, approve AI-generated items, and build pools for Live Quiz Sessions.</p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           {questions.length > 0 && (
             <button
               onClick={handleDeleteAllQuestions}
-              className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl flex items-center space-x-2 transition-colors border border-rose-200"
+              className="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors border border-rose-200 cursor-pointer"
             >
               <Trash2 className="w-4 h-4 text-rose-600" />
-              <span>Delete All Questions ({questions.length})</span>
+              <span>Delete All ({questions.length})</span>
             </button>
           )}
 
           <button
             onClick={() => setShowPoolModal(true)}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-2 transition-colors border border-slate-200"
+            className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors border border-slate-200 cursor-pointer"
           >
             <Layers className="w-4 h-4 text-purple-600" />
-            <span>Manage Pools ({pools.length})</span>
+            <span>Pools ({pools.length})</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setAddError(null);
+              setShowAddModal(true);
+            }}
+            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Question</span>
           </button>
 
           <button
             onClick={() => setShowPdfWizard(true)}
-            className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-colors"
+            className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-colors cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />
-            <span>PDF AI Question Generator</span>
+            <span>PDF AI Generator</span>
           </button>
         </div>
       </div>
@@ -258,6 +329,258 @@ export const QuestionBank: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Question Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] flex flex-col">
+            
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3 flex-shrink-0">
+              <h3 className="font-bold text-slate-900 text-base flex items-center space-x-2">
+                <Plus className="w-5 h-5 text-indigo-600" />
+                <span>Add Question to Repository</span>
+              </h3>
+              <button 
+                onClick={() => setShowAddModal(false)} 
+                className="text-slate-400 font-bold hover:text-slate-600 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {addError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center space-x-2 text-rose-700 text-xs font-medium">
+                <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                <span>{addError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateQuestion} className="space-y-4 text-xs overflow-y-auto pr-1 flex-1">
+              
+              {/* Question Type & Difficulty */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Question Type *</label>
+                  <select
+                    value={newQuestion.question_type}
+                    onChange={e => setNewQuestion({ ...newQuestion, question_type: e.target.value as any })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none"
+                  >
+                    <option value="MCQ">Multiple Choice (MCQ)</option>
+                    <option value="WRITING">Open Writing / Essay</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Difficulty *</label>
+                  <select
+                    value={newQuestion.difficulty}
+                    onChange={e => setNewQuestion({ ...newQuestion, difficulty: e.target.value as any })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none"
+                  >
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Question Text */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Question Statement / Prompt *</label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="e.g. Which algorithm is best suited for shortest path search with non-negative weights?"
+                  value={newQuestion.question_text}
+                  onChange={e => setNewQuestion({ ...newQuestion, question_text: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              {/* MCQ Options */}
+              {newQuestion.question_type === 'MCQ' ? (
+                <div className="space-y-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                  <label className="block font-bold text-slate-800 mb-1">Options & Correct Answer *</label>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-600">Option A</span>
+                        <label className="flex items-center space-x-1 cursor-pointer text-[10px] font-bold text-emerald-700">
+                          <input
+                            type="radio"
+                            name="correct_ans"
+                            checked={newQuestion.correct_answer === 'A'}
+                            onChange={() => setNewQuestion({ ...newQuestion, correct_answer: 'A' })}
+                          />
+                          <span>Correct</span>
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Option A text"
+                        value={newQuestion.option_a}
+                        onChange={e => setNewQuestion({ ...newQuestion, option_a: e.target.value })}
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:border-indigo-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-600">Option B</span>
+                        <label className="flex items-center space-x-1 cursor-pointer text-[10px] font-bold text-emerald-700">
+                          <input
+                            type="radio"
+                            name="correct_ans"
+                            checked={newQuestion.correct_answer === 'B'}
+                            onChange={() => setNewQuestion({ ...newQuestion, correct_answer: 'B' })}
+                          />
+                          <span>Correct</span>
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Option B text"
+                        value={newQuestion.option_b}
+                        onChange={e => setNewQuestion({ ...newQuestion, option_b: e.target.value })}
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:border-indigo-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-600">Option C</span>
+                        <label className="flex items-center space-x-1 cursor-pointer text-[10px] font-bold text-emerald-700">
+                          <input
+                            type="radio"
+                            name="correct_ans"
+                            checked={newQuestion.correct_answer === 'C'}
+                            onChange={() => setNewQuestion({ ...newQuestion, correct_answer: 'C' })}
+                          />
+                          <span>Correct</span>
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Option C text"
+                        value={newQuestion.option_c}
+                        onChange={e => setNewQuestion({ ...newQuestion, option_c: e.target.value })}
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:border-indigo-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-600">Option D</span>
+                        <label className="flex items-center space-x-1 cursor-pointer text-[10px] font-bold text-emerald-700">
+                          <input
+                            type="radio"
+                            name="correct_ans"
+                            checked={newQuestion.correct_answer === 'D'}
+                            onChange={() => setNewQuestion({ ...newQuestion, correct_answer: 'D' })}
+                          />
+                          <span>Correct</span>
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Option D text"
+                        value={newQuestion.option_d}
+                        onChange={e => setNewQuestion({ ...newQuestion, option_d: e.target.value })}
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:border-indigo-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] text-slate-500 font-medium">
+                    Current Correct Answer: <span className="font-bold text-emerald-700">Option {newQuestion.correct_answer}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Expected Keywords / Model Answer</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Key concepts, terms, and facts expected in student answer..."
+                      value={newQuestion.expected_answer}
+                      onChange={e => setNewQuestion({ ...newQuestion, expected_answer: e.target.value })}
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Evaluation Rubric</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Clarity: 2 pts, Technical Accuracy: 3 pts"
+                      value={newQuestion.rubric}
+                      onChange={e => setNewQuestion({ ...newQuestion, rubric: e.target.value })}
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Topic & Marks */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Topic / Subject</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Machine Learning"
+                    value={newQuestion.topic}
+                    onChange={e => setNewQuestion({ ...newQuestion, topic: e.target.value })}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Marks / Points</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={newQuestion.marks}
+                    onChange={e => setNewQuestion({ ...newQuestion, marks: parseInt(e.target.value, 10) || 2 })}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Explanation (Optional) */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Answer Explanation (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="Brief reason why the answer is correct for post-quiz review..."
+                  value={newQuestion.explanation}
+                  onChange={e => setNewQuestion({ ...newQuestion, explanation: e.target.value })}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingQuestion}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  {savingQuestion ? 'Saving Question...' : 'Save Question'}
+                </button>
+              </div>
+
+            </form>
           </div>
         </div>
       )}
