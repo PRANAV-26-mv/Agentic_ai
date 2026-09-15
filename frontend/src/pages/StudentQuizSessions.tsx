@@ -182,8 +182,8 @@ export const StudentQuizSessions: React.FC = () => {
                       </span>
                     </div>
 
-                    <h3 className="font-extrabold text-slate-900 text-base">{session.title}</h3>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                    <h3 className="font-extrabold text-slate-900 text-base break-words line-clamp-2">{session.title}</h3>
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 break-words">
                       {session.description || 'Synchronized timed quiz session.'}
                     </p>
 
@@ -250,8 +250,8 @@ export const StudentQuizSessions: React.FC = () => {
                     </span>
                   </div>
 
-                  <h3 className="font-bold text-slate-900 text-sm">{session.title}</h3>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">{session.description}</p>
+                  <h3 className="font-bold text-slate-900 text-sm break-words line-clamp-2">{session.title}</h3>
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2 break-words">{session.description}</p>
                 </div>
 
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">

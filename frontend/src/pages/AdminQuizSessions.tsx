@@ -386,8 +386,8 @@ export const AdminQuizSessions: React.FC = () => {
                     </div>
                   </div>
 
-                  <h3 className="font-bold text-slate-900 text-base line-clamp-1">{session.title}</h3>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                  <h3 className="font-bold text-slate-900 text-base break-words line-clamp-1">{session.title}</h3>
+                  <p className="text-xs text-slate-500 mt-1 break-words line-clamp-2">
                     {session.description || 'No instructions provided.'}
                   </p>
 
@@ -786,7 +786,7 @@ export const AdminQuizSessions: React.FC = () => {
             <div className="flex justify-between items-start border-b border-slate-100 pb-3">
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="font-extrabold text-slate-900 text-base">{selectedSessionForRoster.title}</h3>
+                  <h3 className="font-extrabold text-slate-900 text-base break-words line-clamp-2">{selectedSessionForRoster.title}</h3>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                     selectedSessionForRoster.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
                   }`}>
@@ -860,7 +860,7 @@ export const AdminQuizSessions: React.FC = () => {
                               <td className="p-2.5 font-black">
                                 {lb.rank === 1 ? '🥇 1' : lb.rank === 2 ? '🥈 2' : lb.rank === 3 ? '🥉 3' : lb.rank}
                               </td>
-                              <td className="p-2.5 font-bold text-slate-800">{lb.student_name}</td>
+                              <td className="p-2.5 font-bold text-slate-800 max-w-[150px] truncate">{lb.student_name}</td>
                               <td className="p-2.5 font-mono text-slate-500">{lb.student_reg}</td>
                               <td className="p-2.5 font-black text-emerald-700">{lb.score} / {lb.max_score}</td>
                               <td className="p-2.5 font-bold text-purple-700">{lb.percentage}%</td>
@@ -885,10 +885,10 @@ export const AdminQuizSessions: React.FC = () => {
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
                     {sessionDetails.participants?.map((p: QuizSessionParticipant) => (
-                      <div key={p.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-                        <div>
-                          <p className="font-bold text-slate-800">{p.student_name}</p>
-                          <p className="text-[10px] text-slate-400 font-mono">{p.student_reg} • {p.student_department}</p>
+                      <div key={p.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between min-w-0">
+                        <div className="min-w-0 flex-1 mr-2">
+                          <p className="font-bold text-slate-800 truncate">{p.student_name}</p>
+                          <p className="text-[10px] text-slate-400 font-mono truncate">{p.student_reg} • {p.student_department}</p>
                         </div>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           p.status === 'SUBMITTED' ? 'bg-emerald-100 text-emerald-800' :

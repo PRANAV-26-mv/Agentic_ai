@@ -929,6 +929,69 @@
   ],
   "audit_logs": [
     {
+      "id": "audit-1789494353091-26",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-15T17:45:53.091Z"
+    },
+    {
+      "id": "audit-1789494298957-525",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-15T17:44:58.957Z"
+    },
+    {
+      "id": "audit-1789494243930-575",
+      "actor_id": "std-001",
+      "actor_role": "STUDENT",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "std-001",
+      "timestamp": "2026-09-15T17:44:03.930Z"
+    },
+    {
+      "id": "audit-1789494235230-983",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-15T17:43:55.230Z"
+    },
+    {
+      "id": "audit-1789494213955-794",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-15T17:43:33.955Z"
+    },
+    {
+      "id": "audit-1789490786363-93",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-15T16:46:26.363Z"
+    },
+    {
+      "id": "audit-1789489833879-395",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-15T16:30:33.879Z"
+    },
+    {
       "id": "audit-1789326302286-464",
       "actor_id": "std-001",
       "actor_role": "STUDENT",

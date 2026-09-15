@@ -37,9 +37,66 @@ export const StudentQuizLobby: React.FC = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [resultData, setResultData] = useState<any | null>(null);
 
-  // Countdown timer state (seconds remaining)
+  // Countdown timer state & refs
   const [timeLeftSeconds, setTimeLeftSeconds] = useState<number>(0);
   const timerRef = useRef<any>(null);
+  const targetEndTimeRef = useRef<number | null>(null);
+  const hasAutoSubmittedRef = useRef<boolean>(false);
+  const answersRef = useRef<{ [qId: string]: string }>({});
+  const submittingRef = useRef<boolean>(false);
+  const stageRef = useRef<'LOBBY' | 'QUIZ' | 'RESULTS'>('LOBBY');
+  const navContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Sync refs to prevent stale closures in async intervals & callbacks
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+
+  useEffect(() => {
+    submittingRef.current = submitting;
+  }, [submitting]);
+
+  useEffect(() => {
+    stageRef.current = stage;
+  }, [stage]);
+
+  // Auto-scroll current question pill into view in navigator rail
+  useEffect(() => {
+    if (navContainerRef.current) {
+      const activeBtn = navContainerRef.current.children[currentQIndex] as HTMLElement;
+      if (activeBtn && typeof activeBtn.scrollIntoView === 'function') {
+        activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [currentQIndex]);
+
+  const startTimerWithTarget = (targetMs: number) => {
+    targetEndTimeRef.current = targetMs;
+
+    const updateTimer = () => {
+      if (!targetEndTimeRef.current) return;
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((targetEndTimeRef.current - now) / 1000));
+      setTimeLeftSeconds(remaining);
+
+      if (remaining <= 0) {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        if (!hasAutoSubmittedRef.current && !submittingRef.current) {
+          hasAutoSubmittedRef.current = true;
+          handleAutoSubmit();
+        }
+      }
+    };
+
+    // Immediate calculation to avoid 1-second visual latency
+    updateTimer();
+
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(updateTimer, 1000);
+  };
 
   const fetchSessionDetails = () => {
     if (!id) return;
@@ -50,6 +107,10 @@ export const StudentQuizLobby: React.FC = () => {
 
         // If user already submitted this quiz, show results directly
         if (data.my_participant?.status === 'SUBMITTED') {
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
           setStage('RESULTS');
           setResultData({
             participant: data.my_participant,
@@ -58,9 +119,22 @@ export const StudentQuizLobby: React.FC = () => {
             leaderboard: data.leaderboard || []
           });
         } else if (data.my_participant?.status === 'IN_PROGRESS') {
-          // If in progress, resume quiz
+          // Resume quiz
           setStage('QUIZ');
-          initTimer(data.duration_minutes * 60);
+
+          // Compute target end time from server timestamp
+          const startedAtMs = data.my_participant.started_at
+            ? new Date(data.my_participant.started_at).getTime()
+            : Date.now();
+          const targetMs = startedAtMs + (data.duration_minutes || 15) * 60 * 1000;
+
+          // CRITICAL: Do NOT reset the timer if it's already actively ticking!
+          if (!timerRef.current || !targetEndTimeRef.current) {
+            startTimerWithTarget(targetMs);
+          } else if (Math.abs(targetEndTimeRef.current - targetMs) > 4000) {
+            // Re-sync only if significant drift detected (> 4s)
+            targetEndTimeRef.current = targetMs;
+          }
         }
       })
       .catch(err => {
@@ -71,24 +145,9 @@ export const StudentQuizLobby: React.FC = () => {
 
   useEffect(() => {
     fetchSessionDetails();
-    const interval = setInterval(fetchSessionDetails, 8000); // Polling for lobby updates
+    const interval = setInterval(fetchSessionDetails, 8000); // Polling for lobby & participant updates
     return () => clearInterval(interval);
   }, [id]);
-
-  const initTimer = (seconds: number) => {
-    setTimeLeftSeconds(seconds);
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setTimeLeftSeconds(prev => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          handleAutoSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
 
   useEffect(() => {
     return () => {
@@ -99,9 +158,11 @@ export const StudentQuizLobby: React.FC = () => {
   const handleStartQuiz = async () => {
     if (!session) return;
     try {
-      await api.post(`/quiz-sessions/${session.id}/start-quiz`);
+      const res = await api.post(`/quiz-sessions/${session.id}/start-quiz`);
       setStage('QUIZ');
-      initTimer(session.duration_minutes * 60);
+      const startIso = res.data.participant?.started_at || new Date().toISOString();
+      const targetMs = new Date(startIso).getTime() + (session.duration_minutes || 15) * 60 * 1000;
+      startTimerWithTarget(targetMs);
     } catch (err: any) {
       alert(err.response?.data?.message || 'Unable to start quiz.');
     }
@@ -119,26 +180,32 @@ export const StudentQuizLobby: React.FC = () => {
   };
 
   const handleSubmitQuiz = async (isAuto = false) => {
-    if (!session || submitting) return;
+    if (!session || submittingRef.current) return;
 
-    const unansweredCount = (session.questions?.length || 0) - Object.keys(answers).length;
+    const currentAnswers = answersRef.current;
+    const unansweredCount = (session.questions?.length || 0) - Object.keys(currentAnswers).length;
     if (!isAuto && unansweredCount > 0) {
       if (!window.confirm(`You have ${unansweredCount} unanswered questions. Submit quiz now?`)) {
         return;
       }
     }
 
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     setSubmitting(true);
+    submittingRef.current = true;
 
     try {
-      const res = await api.post(`/quiz-sessions/${session.id}/submit`, { answers });
+      const res = await api.post(`/quiz-sessions/${session.id}/submit`, { answers: currentAnswers });
       setResultData(res.data);
       setStage('RESULTS');
     } catch (err: any) {
       alert(err.response?.data?.message || 'Error submitting quiz.');
     } finally {
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 
@@ -195,10 +262,10 @@ export const StudentQuizLobby: React.FC = () => {
         </button>
 
         {/* Room Header Card */}
-        <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-6">
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 max-w-full overflow-hidden">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div>
-              <div className="flex items-center space-x-2 mb-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center space-x-2 mb-2 flex-wrap gap-y-1">
                 <span className={`text-[10px] font-extrabold px-3 py-1 rounded-full flex items-center space-x-1 ${
                   isLive ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'
                 }`}>
@@ -211,11 +278,11 @@ export const StudentQuizLobby: React.FC = () => {
                 </span>
               </div>
 
-              <h1 className="text-2xl font-black text-slate-900">{session.title}</h1>
-              <p className="text-xs text-slate-500 mt-1">{session.description || 'Welcome to the live quiz room.'}</p>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 break-words">{session.title}</h1>
+              <p className="text-xs text-slate-500 mt-1 break-words leading-relaxed">{session.description || 'Welcome to the live quiz room.'}</p>
             </div>
 
-            <div className="text-right sm:border-l sm:border-slate-100 sm:pl-6">
+            <div className="text-left sm:text-right sm:border-l sm:border-slate-100 sm:pl-6 shrink-0">
               <p className="text-[11px] font-bold text-slate-400">Duration</p>
               <p className="text-xl font-black text-slate-900">{session.duration_minutes} Mins</p>
               <p className="text-[10px] text-purple-600 font-bold mt-0.5">{questions.length} Questions</p>
@@ -270,7 +337,7 @@ export const StudentQuizLobby: React.FC = () => {
               {session.participants?.map((p: QuizSessionParticipant) => (
                 <div 
                   key={p.id}
-                  className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center space-x-2.5"
+                  className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center space-x-2.5 min-w-0"
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-black text-xs flex items-center justify-center shrink-0">
                     {p.student_name.slice(0, 2).toUpperCase()}
@@ -300,29 +367,29 @@ export const StudentQuizLobby: React.FC = () => {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
         
-        {/* Top Control Bar */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <span className="text-xs font-bold text-slate-400">
+        {/* Top Control Bar - Responsive & Wrapping Protection */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 w-full min-w-0">
+          <div className="flex items-center space-x-2.5 shrink-0 min-w-0">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">
               Question <strong className="text-slate-900 font-black">{currentQIndex + 1}</strong> of {questions.length}
             </span>
-            <span className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full font-bold">
+            <span className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap">
               {answeredCount} Answered
             </span>
           </div>
 
           {/* Synchronized Live Timer */}
-          <div className={`px-4 py-2 rounded-xl flex items-center space-x-2 font-mono font-black text-sm transition-colors ${
+          <div className={`px-4 py-2 rounded-xl flex items-center space-x-2 font-mono font-black text-sm shrink-0 transition-colors ${
             isUrgent ? 'bg-rose-100 text-rose-800 animate-pulse border border-rose-300' : 'bg-amber-100 text-amber-900'
           }`}>
-            <Clock className={`w-4 h-4 ${isUrgent ? 'text-rose-600' : 'text-amber-600'}`} />
-            <span>{formatTimer(timeLeftSeconds)}</span>
+            <Clock className={`w-4 h-4 shrink-0 ${isUrgent ? 'text-rose-600' : 'text-amber-600'}`} />
+            <span className="tabular-nums">{formatTimer(timeLeftSeconds)}</span>
           </div>
 
           <button
             onClick={() => handleSubmitQuiz(false)}
             disabled={submitting}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
           >
             {submitting ? (
               <>
@@ -340,23 +407,25 @@ export const StudentQuizLobby: React.FC = () => {
 
         {/* Question Card */}
         {currentQuestion && (
-          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-6 animate-in fade-in">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-lg">
+          <div className="bg-white rounded-3xl border border-slate-200 p-5 sm:p-8 shadow-sm space-y-6 animate-in fade-in max-w-full overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 gap-2 flex-wrap sm:flex-nowrap">
+              <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-lg truncate max-w-xs">
                 Topic: {currentQuestion.topic || 'General'}
               </span>
-              <span className="text-xs font-bold text-slate-400">
+              <span className="text-xs font-bold text-slate-400 shrink-0">
                 Marks: <strong className="text-slate-700">{currentQuestion.marks || 1}</strong>
               </span>
             </div>
 
-            {/* Question Text */}
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">
-              {currentQuestion.question_text}
-            </h2>
+            {/* Question Text with robust overflow protection */}
+            <div className="w-full min-w-0 overflow-hidden">
+              <h2 className="text-base sm:text-xl font-bold text-slate-900 leading-relaxed break-words whitespace-pre-wrap">
+                {currentQuestion.question_text}
+              </h2>
+            </div>
 
-            {/* MCQ Options */}
-            <div className="space-y-3 pt-2">
+            {/* MCQ Options with overflow wrap & aligned layout */}
+            <div className="space-y-3 pt-2 w-full min-w-0">
               {(['option_a', 'option_b', 'option_c', 'option_d'] as const).map((optKey, idx) => {
                 const optText = (currentQuestion as any)[optKey];
                 if (!optText) return null;
@@ -368,40 +437,43 @@ export const StudentQuizLobby: React.FC = () => {
                     key={optKey}
                     type="button"
                     onClick={() => handleSelectOption(currentQuestion.id, letter)}
-                    className={`w-full p-4 rounded-2xl text-left border-2 flex items-center space-x-3 transition-all cursor-pointer ${
+                    className={`w-full p-4 rounded-2xl text-left border-2 flex items-start space-x-3 transition-all cursor-pointer min-w-0 max-w-full overflow-hidden ${
                       isSelected
                         ? 'border-amber-500 bg-amber-50/70 text-slate-900 shadow-xs'
                         : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
                     }`}
                   >
-                    <span className={`w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                    <span className={`w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 ${
                       isSelected ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-500'
                     }`}>
                       {letter}
                     </span>
-                    <span className="text-xs sm:text-sm font-semibold flex-1 leading-relaxed">
+                    <span className="text-xs sm:text-sm font-semibold flex-1 min-w-0 break-words leading-relaxed">
                       {optText}
                     </span>
-                    {isSelected && <Check className="w-5 h-5 text-amber-600 shrink-0" />}
+                    {isSelected && <Check className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 ml-2" />}
                   </button>
                 );
               })}
             </div>
 
-            {/* Bottom Nav: Prev / Next / Submit */}
-            <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+            {/* Bottom Nav: Prev / Question Rail / Next / Submit */}
+            <div className="pt-6 border-t border-slate-100 flex items-center justify-between gap-2 sm:gap-4 w-full min-w-0">
               <button
                 type="button"
                 disabled={currentQIndex === 0}
                 onClick={() => setCurrentQIndex(prev => Math.max(0, prev - 1))}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer"
+                className="px-3 sm:px-4 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer shrink-0"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Previous</span>
+                <span className="hidden xs:inline sm:inline">Previous</span>
               </button>
 
-              {/* Question Navigator Pills */}
-              <div className="hidden sm:flex items-center space-x-1 max-w-sm sm:max-w-md md:max-w-lg overflow-x-auto py-1 px-1">
+              {/* Responsive Question Navigator Rail (smooth horizontal scroll for 50+ questions on all screens) */}
+              <div 
+                ref={navContainerRef}
+                className="flex items-center space-x-1.5 overflow-x-auto py-1 px-2 min-w-0 flex-1 max-w-[220px] xs:max-w-[300px] sm:max-w-md md:max-w-xl scrollbar-thin scrollbar-thumb-slate-200"
+              >
                 {questions.map((q, idx) => {
                   const isCurrent = idx === currentQIndex;
                   const isAns = Boolean(answers[q.id]);
@@ -409,13 +481,14 @@ export const StudentQuizLobby: React.FC = () => {
                     <button
                       key={q.id}
                       onClick={() => setCurrentQIndex(idx)}
-                      className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      className={`w-8 h-8 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center justify-center cursor-pointer ${
                         isCurrent
-                          ? 'bg-slate-900 text-white shadow-xs'
+                          ? 'bg-slate-900 text-white shadow-md ring-2 ring-amber-400'
                           : isAns
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                       }`}
+                      title={`Go to Question ${idx + 1}`}
                     >
                       {idx + 1}
                     </button>
@@ -428,18 +501,18 @@ export const StudentQuizLobby: React.FC = () => {
                   type="button"
                   onClick={() => handleSubmitQuiz(false)}
                   disabled={submitting}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-sm transition-colors cursor-pointer"
+                  className="px-4 sm:px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-sm transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                 >
-                  <span>Finish Quiz</span>
+                  <span>Finish</span>
                   <Check className="w-4 h-4" />
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={() => setCurrentQIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer"
+                  className="px-3 sm:px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer shrink-0"
                 >
-                  <span>Next</span>
+                  <span className="hidden xs:inline sm:inline">Next</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               )}
@@ -462,14 +535,14 @@ export const StudentQuizLobby: React.FC = () => {
     <div className="max-w-3xl mx-auto space-y-6">
       
       {/* Celebration Score Hero Banner */}
-      <div className="bg-gradient-to-br from-amber-500 via-amber-600 to-purple-800 text-white rounded-3xl p-8 shadow-xl text-center space-y-4">
+      <div className="bg-gradient-to-br from-amber-500 via-amber-600 to-purple-800 text-white rounded-3xl p-8 shadow-xl text-center space-y-4 max-w-full overflow-hidden">
         <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto shadow-inner">
           <Trophy className="w-8 h-8 text-amber-200 fill-amber-200" />
         </div>
 
         <div>
           <h1 className="text-2xl sm:text-3xl font-black">Quiz Completed!</h1>
-          <p className="text-amber-100 text-xs mt-1">{session.title}</p>
+          <p className="text-amber-100 text-xs mt-1 break-words">{session.title}</p>
         </div>
 
         {/* Score Metrics */}
@@ -498,13 +571,13 @@ export const StudentQuizLobby: React.FC = () => {
       </div>
 
       {/* Live Session Leaderboard */}
-      <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4 max-w-full overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3 gap-2 flex-wrap sm:flex-nowrap">
           <h3 className="font-extrabold text-slate-900 text-sm flex items-center space-x-2">
-            <Trophy className="w-4 h-4 text-amber-500" />
+            <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
             <span>Session Leaderboard ({leaderboard.length} submissions)</span>
           </h3>
-          <span className="text-[11px] text-slate-400 font-semibold">Fastest submissions break ties</span>
+          <span className="text-[11px] text-slate-400 font-semibold shrink-0">Fastest submissions break ties</span>
         </div>
 
         {leaderboard.length === 0 ? (
@@ -522,17 +595,17 @@ export const StudentQuizLobby: React.FC = () => {
                     isMe ? 'bg-amber-50/80 font-bold border border-amber-200' : 'hover:bg-slate-50'
                   }`}
                 >
-                  <div className="flex items-center space-x-3">
-                    <span className="w-8 font-black text-center text-sm">{badge}</span>
-                    <div>
-                      <p className={`font-bold ${isMe ? 'text-amber-950' : 'text-slate-800'}`}>
+                  <div className="flex items-center space-x-3 min-w-0 flex-1">
+                    <span className="w-8 font-black text-center text-sm shrink-0">{badge}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className={`font-bold truncate ${isMe ? 'text-amber-950' : 'text-slate-800'}`}>
                         {lb.student_name} {isMe && <span className="text-[10px] text-amber-600 font-extrabold ml-1">(You)</span>}
                       </p>
-                      <p className="text-[10px] text-slate-400 font-mono">{lb.student_reg} • {lb.student_department}</p>
+                      <p className="text-[10px] text-slate-400 font-mono truncate">{lb.student_reg} • {lb.student_department}</p>
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-right shrink-0 ml-3">
                     <p className="font-black text-emerald-700">{lb.score} / {lb.max_score} pts</p>
                     <p className="text-[10px] text-slate-400 font-semibold">{lb.time_taken_seconds}s</p>
                   </div>
