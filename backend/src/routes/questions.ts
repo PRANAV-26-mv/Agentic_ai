@@ -63,6 +63,30 @@ router.put('/:id', requireAdmin, (req: AuthRequest, res: Response) => {
   res.json(updated);
 });
 
+// POST /api/questions/batch-approve
+router.post('/batch-approve', requireAdmin, (req: AuthRequest, res: Response) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    res.status(400).json({ message: 'ids array is required.' });
+    return;
+  }
+  const updated = QuestionsModel.batchApprove(ids);
+  AuditLogsModel.log(req.user!.id, 'ADMIN', 'BATCH_APPROVE_QUESTIONS', 'QUESTION', 'BATCH', { count: updated.length });
+  res.json({ message: `Successfully approved ${updated.length} questions.`, updatedCount: updated.length, questions: updated });
+});
+
+// POST /api/questions/batch-reject
+router.post('/batch-reject', requireAdmin, (req: AuthRequest, res: Response) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    res.status(400).json({ message: 'ids array is required.' });
+    return;
+  }
+  const updated = QuestionsModel.batchReject(ids);
+  AuditLogsModel.log(req.user!.id, 'ADMIN', 'BATCH_REJECT_QUESTIONS', 'QUESTION', 'BATCH', { count: updated.length });
+  res.json({ message: `Successfully rejected ${updated.length} questions.`, updatedCount: updated.length, questions: updated });
+});
+
 // POST /api/questions/:id/approve
 router.post('/:id/approve', requireAdmin, (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;

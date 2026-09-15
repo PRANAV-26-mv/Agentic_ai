@@ -432,9 +432,11 @@ export const QuestionsModel = {
     return memoryDb.table('questions').find(q => q.id === id);
   },
   create(q: Omit<Question, 'id' | 'created_at'>): Question {
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    const counter = Math.floor(Math.random() * 10000);
     const newQ: Question = {
       ...q,
-      id: `q-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: `q-${Date.now()}-${randomSuffix}-${counter}`,
       created_at: new Date().toISOString()
     };
     memoryDb.table('questions').push(newQ);
@@ -455,6 +457,32 @@ export const QuestionsModel = {
   },
   reject(id: string): Question | undefined {
     return this.update(id, { status: 'REJECTED' });
+  },
+  batchApprove(ids: string[]): Question[] {
+    const idSet = new Set(ids);
+    const list = memoryDb.table('questions');
+    const updated: Question[] = [];
+    list.forEach(q => {
+      if (idSet.has(q.id)) {
+        q.status = 'APPROVED';
+        updated.push(q);
+      }
+    });
+    if (updated.length > 0) db.save();
+    return updated;
+  },
+  batchReject(ids: string[]): Question[] {
+    const idSet = new Set(ids);
+    const list = memoryDb.table('questions');
+    const updated: Question[] = [];
+    list.forEach(q => {
+      if (idSet.has(q.id)) {
+        q.status = 'REJECTED';
+        updated.push(q);
+      }
+    });
+    if (updated.length > 0) db.save();
+    return updated;
   },
   delete(id: string): boolean {
     const list = memoryDb.table('questions');

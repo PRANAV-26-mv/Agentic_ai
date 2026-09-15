@@ -13,8 +13,16 @@ router.post('/generate-questions', requireAdmin, upload.single('file'), async (r
   try {
     const { mcq_count, writing_count, difficulty } = req.body;
 
-    const mcqCount = parseInt(mcq_count || '5', 10);
-    const writingCount = parseInt(writing_count || '2', 10);
+    const rawMcq = parseInt(mcq_count !== undefined ? String(mcq_count) : '5', 10);
+    const rawWriting = parseInt(writing_count !== undefined ? String(writing_count) : '2', 10);
+
+    const mcqCount = Math.max(0, Math.min(150, isNaN(rawMcq) ? 5 : rawMcq));
+    const writingCount = Math.max(0, Math.min(50, isNaN(rawWriting) ? 2 : rawWriting));
+
+    if (mcqCount === 0 && writingCount === 0) {
+      res.status(400).json({ message: 'Please specify at least 1 question to generate (MCQ or Writing).' });
+      return;
+    }
 
     let textContent = '';
     if (req.file) {
