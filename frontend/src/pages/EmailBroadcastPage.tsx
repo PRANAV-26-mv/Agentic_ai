@@ -21,7 +21,13 @@ import {
   X, 
   ChevronRight,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  Settings,
+  Key,
+  ExternalLink,
+  Lock,
+  Check,
+  Info
 } from 'lucide-react';
 
 interface RecipientStudent {
@@ -80,6 +86,138 @@ export const EmailBroadcastPage: React.FC = () => {
   const [previewLogItem, setPreviewLogItem] = useState<EmailLog | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // SMTP Configuration State
+  const [showSmtpModal, setShowSmtpModal] = useState<boolean>(false);
+  const [smtpForm, setSmtpForm] = useState({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    user: user?.email || 'pranavannur9659@gmail.com',
+    pass: '',
+    from: user?.email || 'pranavannur9659@gmail.com'
+  });
+  const [testingConnection, setTestingConnection] = useState<boolean>(false);
+  const [savingSmtp, setSavingSmtp] = useState<boolean>(false);
+  const [smtpFeedback, setSmtpFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Test Email to Inbox State
+  const [testEmailRecipient, setTestEmailRecipient] = useState<string>(user?.email || 'pranavannur9659@gmail.com');
+  const [sendingTestEmail, setSendingTestEmail] = useState<boolean>(false);
+  const [testEmailFeedback, setTestEmailFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Sync user info and existing smtp config into form
+  useEffect(() => {
+    if (user?.email) {
+      setTestEmailRecipient(user.email);
+      setSmtpForm(prev => ({
+        ...prev,
+        user: prev.user || user.email,
+        from: prev.from || user.email
+      }));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (smtpStatus?.host) {
+      setSmtpForm(prev => ({
+        ...prev,
+        host: smtpStatus.host || 'smtp.gmail.com',
+        port: smtpStatus.port || 465,
+        secure: smtpStatus.secure !== undefined ? smtpStatus.secure : true,
+        user: smtpStatus.user || prev.user
+      }));
+    }
+  }, [smtpStatus]);
+
+  // SMTP Actions
+  const handleApplyGmailPreset = () => {
+    setSmtpForm(prev => ({
+      ...prev,
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      user: prev.user || user?.email || 'pranavannur9659@gmail.com',
+      from: prev.from || user?.email || 'pranavannur9659@gmail.com'
+    }));
+    setSmtpFeedback({
+      type: 'success',
+      message: 'Gmail preset applied (Host: smtp.gmail.com, Port: 465 SSL). Enter your 16-character App Password to complete.'
+    });
+  };
+
+  const handleTestConnection = async () => {
+    setTestingConnection(true);
+    setSmtpFeedback(null);
+    try {
+      if (smtpForm.host && smtpForm.user && smtpForm.pass) {
+        const res = await api.post('/email-broadcast/smtp-config', smtpForm);
+        setSmtpStatus(res.data.smtp_status);
+        setSmtpFeedback({ type: 'success', message: 'SMTP connection verified successfully! Email credentials are valid.' });
+        fetchData();
+      } else {
+        const res = await api.post('/email-broadcast/test-connection');
+        setSmtpFeedback({ type: 'success', message: res.data.message || 'SMTP connection verified!' });
+      }
+    } catch (err: any) {
+      setSmtpFeedback({
+        type: 'error',
+        message: err.response?.data?.message || err.response?.data?.error || 'Connection failed. Please check host, port, email, and app password.'
+      });
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
+  const handleSaveSmtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!smtpForm.host || !smtpForm.user || !smtpForm.pass) {
+      setSmtpFeedback({ type: 'error', message: 'SMTP Host, Username/Email, and App Password are required.' });
+      return;
+    }
+    setSavingSmtp(true);
+    setSmtpFeedback(null);
+    try {
+      const res = await api.post('/email-broadcast/smtp-config', smtpForm);
+      setSmtpStatus(res.data.smtp_status);
+      setSmtpFeedback({ type: 'success', message: 'SMTP credentials successfully validated and saved to backend!' });
+      showNotification('success', 'SMTP settings saved! Live email dispatching is now active.');
+      fetchData();
+    } catch (err: any) {
+      setSmtpFeedback({
+        type: 'error',
+        message: err.response?.data?.message || err.response?.data?.error || 'Failed to save SMTP credentials.'
+      });
+    } finally {
+      setSavingSmtp(false);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    if (!testEmailRecipient || !testEmailRecipient.includes('@')) {
+      setTestEmailFeedback({ type: 'error', message: 'Please enter a valid recipient email address.' });
+      return;
+    }
+    setSendingTestEmail(true);
+    setTestEmailFeedback(null);
+    try {
+      const res = await api.post('/email-broadcast/send-test-email', {
+        test_email: testEmailRecipient.trim()
+      });
+      setTestEmailFeedback({
+        type: 'success',
+        message: res.data.message || `Test email dispatched to ${testEmailRecipient}!`
+      });
+      fetchData();
+    } catch (err: any) {
+      setTestEmailFeedback({
+        type: 'error',
+        message: err.response?.data?.message || err.response?.data?.error || 'Failed to send test email. Ensure SMTP is configured.'
+      });
+    } finally {
+      setSendingTestEmail(false);
+    }
+  };
 
   // Fetch initial data
   const fetchData = async () => {
@@ -256,7 +394,10 @@ export const EmailBroadcastPage: React.FC = () => {
       return;
     }
 
-    const confirmMsg = `Are you sure you want to DISPATCH this email broadcast?\n\nSubject: "${subject}"\nTotal Recipients: ${allSelectedEmails.length}\n• Students: ${selectedStudentEmails.size}\n• Admins: ${selectedAdminEmails.size}\n• Custom: ${parsedCustomEmails.length}`;
+    const isLive = smtpStatus?.is_configured;
+    const confirmMsg = isLive
+      ? `Are you sure you want to DISPATCH this live email broadcast?\n\nSubject: "${subject}"\nDelivery Engine: LIVE INBOX DELIVERY (via ${smtpStatus.host})\nTotal Recipients: ${allSelectedEmails.length}\n• Students: ${selectedStudentEmails.size}\n• Admins: ${selectedAdminEmails.size}\n• Custom: ${parsedCustomEmails.length}`
+      : `⚠️ NOTICE: SMTP is not configured yet. This broadcast will be recorded in SIMULATED mode (saved to portal database, but not delivered to real inboxes).\n\nTo send to real inboxes, click 'Connect Gmail / SMTP' first.\n\nDo you want to proceed with simulated dispatch?\nSubject: "${subject}"\nTotal Recipients: ${allSelectedEmails.length}`;
     if (!window.confirm(confirmMsg)) return;
 
     setSending(true);
@@ -321,6 +462,14 @@ export const EmailBroadcastPage: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={() => setShowSmtpModal(true)}
+              className="px-4 py-2.5 bg-purple-600/90 hover:bg-purple-600 text-white text-xs font-bold rounded-xl border border-purple-400/40 flex items-center space-x-2 transition-all cursor-pointer shadow-sm"
+              title="Configure Live Email Delivery (SMTP / Gmail)"
+            >
+              <Settings className="w-4 h-4" />
+              <span>{smtpStatus?.is_configured ? 'SMTP Active' : 'Setup Live Email'}</span>
+            </button>
+            <button
               onClick={fetchData}
               disabled={loading}
               className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center space-x-2 transition-all cursor-pointer shadow-sm disabled:opacity-50"
@@ -356,18 +505,89 @@ export const EmailBroadcastPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-slate-800/60 backdrop-blur-xs p-3.5 rounded-2xl border border-slate-700/50">
-            <div className="text-slate-400 text-[11px] font-semibold">Delivery Engine</div>
-            <div className="text-xs font-mono font-bold text-amber-300 mt-2 truncate">
-              {smtpStatus?.is_configured ? 'Live SMTP Active' : 'Persistent Storage Dispatch'}
+          <div className="bg-slate-800/60 backdrop-blur-xs p-3.5 rounded-2xl border border-slate-700/50 flex flex-col justify-between">
+            <div>
+              <div className="text-slate-400 text-[11px] font-semibold">Delivery Engine</div>
+              <div className={`text-xs font-mono font-bold mt-1 truncate ${smtpStatus?.is_configured ? 'text-emerald-400' : 'text-amber-300'}`}>
+                {smtpStatus?.is_configured ? 'Live SMTP Active' : 'Simulated (No SMTP)'}
+              </div>
             </div>
-            <div className="text-[10px] text-emerald-400 mt-0.5 flex items-center space-x-1">
-              <CheckCircle2 className="w-3 h-3 inline" />
-              <span>Ready to Send</span>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowSmtpModal(true)}
+              className="mt-2 text-[10px] text-purple-300 hover:text-purple-200 underline font-bold flex items-center space-x-1 cursor-pointer"
+            >
+              <Settings className="w-3 h-3" />
+              <span>{smtpStatus?.is_configured ? 'Configure SMTP' : 'Setup Gmail SMTP'}</span>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Delivery Mode Status Banner */}
+      {!smtpStatus?.is_configured ? (
+        <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-start space-x-3.5">
+            <div className="p-2.5 bg-amber-100 text-amber-800 rounded-xl shrink-0 border border-amber-200">
+              <AlertTriangle className="w-5 h-5 text-amber-700" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <h3 className="font-extrabold text-amber-950 text-sm">Real Email Delivery Is In Simulated Mode</h3>
+                <span className="px-2 py-0.5 bg-amber-200 text-amber-900 text-[10px] font-black rounded-md uppercase tracking-wider">No SMTP Connected</span>
+              </div>
+              <p className="text-xs text-amber-900/85 leading-relaxed max-w-3xl">
+                Emails are currently safely recorded in the database, but <strong>cannot reach real inboxes</strong> until an SMTP mail server is configured. Connect your <strong>Gmail account</strong> using a 16-character Google App Password to deliver live emails directly to student and faculty inboxes.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
+            <button
+              onClick={() => setShowSmtpModal(true)}
+              className="w-full md:w-auto px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer flex items-center justify-center space-x-2"
+            >
+              <Settings className="w-4 h-4" />
+              <span>Connect Gmail / SMTP</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-start space-x-3.5">
+            <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-xl shrink-0 border border-emerald-200">
+              <CheckCircle2 className="w-5 h-5 text-emerald-700" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <h3 className="font-extrabold text-emerald-950 text-sm">Live Email Delivery Active</h3>
+                <span className="px-2 py-0.5 bg-emerald-200 text-emerald-900 text-[10px] font-black rounded-md uppercase tracking-wider">Connected</span>
+              </div>
+              <p className="text-xs text-emerald-900/85 leading-relaxed">
+                Direct inbox delivery is active via <strong>{smtpStatus.host}</strong> ({smtpStatus.user || 'authenticated'}). Broadcasts land directly in recipients' email inboxes.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
+            <button
+              onClick={() => setShowSmtpModal(true)}
+              className="px-3.5 py-2 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center space-x-1.5"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>SMTP Settings</span>
+            </button>
+            <button
+              onClick={() => {
+                setTestEmailRecipient(user?.email || 'pranavannur9659@gmail.com');
+                setShowSmtpModal(true);
+              }}
+              className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center space-x-1.5"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Send Test Email</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Notifications */}
       {successMsg && (
@@ -1058,6 +1278,270 @@ export const EmailBroadcastPage: React.FC = () => {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: SMTP MAIL SERVER CONFIGURATION */}
+      {showSmtpModal && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl space-y-6 animate-in zoom-in-95 my-8 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2.5 bg-purple-100 text-purple-700 rounded-2xl">
+                  <Mail className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-lg tracking-tight">
+                    Live Email Delivery Setup (SMTP / Gmail)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Connect your email account so broadcasts land directly in real email inboxes.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSmtpModal(false);
+                  setSmtpFeedback(null);
+                  setTestEmailFeedback(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl cursor-pointer hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Google Gmail Guidance Box */}
+            <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 border border-purple-200/80 rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-xs font-black text-purple-950">
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  <span>How To Send Real Emails Using Gmail (60 Seconds):</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleApplyGmailPreset}
+                  className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] rounded-lg shadow-xs cursor-pointer transition-all flex items-center space-x-1"
+                >
+                  <Check className="w-3 h-3" />
+                  <span>Fill Gmail Presets</span>
+                </button>
+              </div>
+
+              <div className="text-[11px] text-slate-700 space-y-2 leading-relaxed">
+                <p>
+                  Google requires a 16-character <strong>App Password</strong> instead of your regular account password:
+                </p>
+                <ol className="list-decimal list-inside space-y-1 pl-1 font-medium text-slate-600">
+                  <li>
+                    Visit Google Account Security:&nbsp;
+                    <a
+                      href="https://myaccount.google.com/apppasswords"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-purple-700 font-bold underline inline-flex items-center space-x-0.5 hover:text-purple-900"
+                    >
+                      <span>myaccount.google.com/apppasswords</span>
+                      <ExternalLink className="w-3 h-3 inline ml-0.5" />
+                    </a>
+                  </li>
+                  <li>Ensure <strong>2-Step Verification</strong> is ON for your Google account.</li>
+                  <li>Under App Name, enter <span className="font-bold text-slate-800">"StudentPortal"</span> and click <strong>Create</strong>.</li>
+                  <li>Copy the <strong>16-character password</strong> (e.g. <code className="bg-white px-1.5 py-0.5 rounded border border-purple-200 font-mono text-purple-700 font-bold">abcd efgh ijkl mnop</code>).</li>
+                  <li>Paste it into the <strong>Google App Password</strong> field below and click <strong>Save & Verify Credentials</strong>.</li>
+                </ol>
+              </div>
+            </div>
+
+            {/* SMTP Form */}
+            <form onSubmit={handleSaveSmtp} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    SMTP Host <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={smtpForm.host}
+                    onChange={(e) => setSmtpForm({ ...smtpForm, host: e.target.value })}
+                    placeholder="e.g. smtp.gmail.com"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Port & SSL <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      required
+                      value={smtpForm.port}
+                      onChange={(e) => setSmtpForm({ ...smtpForm, port: Number(e.target.value) })}
+                      placeholder="465"
+                      className="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:bg-white outline-none"
+                    />
+                    <label className="flex items-center space-x-1.5 text-xs text-slate-600 font-semibold cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={smtpForm.secure}
+                        onChange={(e) => setSmtpForm({ ...smtpForm, secure: e.target.checked })}
+                        className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 w-4 h-4 cursor-pointer"
+                      />
+                      <span>SSL</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Email Address / Username <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={smtpForm.user}
+                    onChange={(e) => setSmtpForm({ ...smtpForm, user: e.target.value, from: e.target.value })}
+                    placeholder="e.g. pranavannur9659@gmail.com"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:bg-white outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Google 16-Char App Password <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      required
+                      value={smtpForm.pass}
+                      onChange={(e) => setSmtpForm({ ...smtpForm, pass: e.target.value })}
+                      placeholder="e.g. abcd efgh ijkl mnop"
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-purple-500 focus:bg-white outline-none"
+                    />
+                    <Key className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Sender From Header (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={smtpForm.from}
+                  onChange={(e) => setSmtpForm({ ...smtpForm, from: e.target.value })}
+                  placeholder='e.g. "Student Assessment Portal" <pranavannur9659@gmail.com>'
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:bg-white outline-none"
+                />
+              </div>
+
+              {/* Feedback Alert */}
+              {smtpFeedback && (
+                <div
+                  className={`p-3 rounded-xl border text-xs font-bold flex items-center space-x-2 ${
+                    smtpFeedback.type === 'success'
+                      ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                      : 'bg-rose-50 text-rose-900 border-rose-200'
+                  }`}
+                >
+                  {smtpFeedback.type === 'success' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  )}
+                  <span>{smtpFeedback.message}</span>
+                </div>
+              )}
+
+              {/* Form Buttons */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleTestConnection}
+                  disabled={testingConnection || savingSmtp}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center space-x-1.5 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${testingConnection ? 'animate-spin' : ''}`} />
+                  <span>{testingConnection ? 'Testing Connection...' : 'Test Connection'}</span>
+                </button>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowSmtpModal(false)}
+                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-bold text-xs rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingSmtp || testingConnection}
+                    className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center space-x-1.5 disabled:opacity-50"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>{savingSmtp ? 'Saving...' : 'Save & Activate Credentials'}</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* Real Test Email Delivery Box */}
+            <div className="pt-4 border-t border-slate-100 space-y-3">
+              <div className="flex items-center space-x-2 text-xs font-black text-slate-800">
+                <Send className="w-4 h-4 text-purple-600" />
+                <span>Send A Real Test Email To Verify Inbox Delivery</span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Want to confirm immediately that emails reach your personal inbox? Type your email below and send a test message right now.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <input
+                  type="email"
+                  value={testEmailRecipient}
+                  onChange={(e) => setTestEmailRecipient(e.target.value)}
+                  placeholder="Enter your email to receive test message"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:bg-white outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleSendTestEmail}
+                  disabled={sendingTestEmail || !testEmailRecipient}
+                  className="w-full sm:w-auto px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-xs transition-all cursor-pointer shrink-0 flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                >
+                  <Send className={`w-3.5 h-3.5 ${sendingTestEmail ? 'animate-pulse' : ''}`} />
+                  <span>{sendingTestEmail ? 'Sending...' : 'Send Test Email'}</span>
+                </button>
+              </div>
+
+              {testEmailFeedback && (
+                <div
+                  className={`p-3 rounded-xl border text-xs font-bold flex items-center space-x-2 ${
+                    testEmailFeedback.type === 'success'
+                      ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                      : 'bg-rose-50 text-rose-900 border-rose-200'
+                  }`}
+                >
+                  {testEmailFeedback.type === 'success' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  )}
+                  <span>{testEmailFeedback.message}</span>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       )}

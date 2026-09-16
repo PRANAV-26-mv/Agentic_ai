@@ -129,4 +129,86 @@ router.post('/send', requireAdmin, async (req: AuthRequest, res: Response): Prom
   }
 });
 
+// POST /api/email-broadcast/test-connection (Test current SMTP credentials connection)
+router.post('/test-connection', requireAdmin, async (_req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const result = await emailService.testConnection();
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/email-broadcast/send-test-email (Send an actual test email to recipient inbox)
+router.post('/send-test-email', requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const targetEmail = (req.body.test_email || req.user?.email || '').trim().toLowerCase();
+    if (!targetEmail) {
+      res.status(400).json({ message: 'Target test email is required.' });
+      return;
+    }
+
+    const result = await emailService.sendTestEmail(targetEmail, req.user?.name || 'Administrator');
+    if (result.success) {
+      res.json({
+        message: `Test email sent to ${targetEmail}! Please check your inbox or spam folder.`,
+        status: result.status
+      });
+    } else {
+      res.status(500).json({
+        message: `Failed to deliver test email: ${result.error || result.message}`,
+        error: result.error
+      });
+    }
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Error occurred during test email dispatch.' });
+  }
+});
+
+// POST /api/email-broadcast/smtp-config (Configure / Save SMTP credentials directly from UI)
+router.post('/smtp-config', requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    // Only super admin or admin can configure SMTP
+    const { host, port, secure, user, pass, from } = req.body;
+
+    if (!host || !user || !pass) {
+      res.status(400).json({ message: 'SMTP Host, User (Email), and Password / App Password are required.' });
+      return;
+    }
+
+    const result = await emailService.updateConfig({
+      host: host.trim(),
+      port: Number(port) || 587,
+      secure: Boolean(secure),
+      user: user.trim(),
+      pass: pass.trim(),
+      from: from ? from.trim() : undefined
+    });
+
+    if (result.success) {
+      AuditLogsModel.log(
+        req.user!.id,
+        'ADMIN',
+        'UPDATE_SMTP_CONFIG',
+        'SYSTEM',
+        'SMTP',
+        { host: host.trim(), user: user.trim() }
+      );
+      res.json({
+        message: result.message,
+        smtp_status: emailService.getStatus()
+      });
+    } else {
+      res.status(400).json({ message: result.message });
+    }
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Failed to update SMTP configuration.' });
+  }
+});
+
 export default router;
+

@@ -1,4 +1,6 @@
 import nodemailer, { Transporter } from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
 
 export interface SendBroadcastOptions {
   subject: string;
@@ -16,6 +18,15 @@ export interface SendBroadcastResult {
   validRecipients: string[];
   message: string;
   error?: string;
+}
+
+export interface SmtpConfigInput {
+  host: string;
+  port: number;
+  secure?: boolean;
+  user: string;
+  pass: string;
+  from?: string;
 }
 
 class EmailService {
@@ -58,9 +69,129 @@ class EmailService {
     return {
       is_configured: this.isConfigured,
       smtp_host: process.env.SMTP_HOST || 'Not Configured (Simulation Mode)',
-      smtp_user: process.env.SMTP_USER ? `${process.env.SMTP_USER.slice(0, 3)}***` : 'None',
+      smtp_user: process.env.SMTP_USER ? `${process.env.SMTP_USER.slice(0, 4)}***@${process.env.SMTP_USER.split('@')[1] || ''}` : 'None',
       from_address: process.env.EMAIL_FROM || 'portal-notifications@college.edu'
     };
+  }
+
+  public async testConnection(): Promise<{ success: boolean; message: string }> {
+    if (!this.transporter || !this.isConfigured) {
+      return { 
+        success: false, 
+        message: 'SMTP is not configured yet. Please configure your SMTP Host, User email, and App Password.' 
+      };
+    }
+    try {
+      await this.transporter.verify();
+      return { 
+        success: true, 
+        message: `SMTP connection to ${process.env.SMTP_HOST} verified successfully! Ready to deliver live emails.` 
+      };
+    } catch (err: any) {
+      return { 
+        success: false, 
+        message: `SMTP Connection test failed: ${err.message}` 
+      };
+    }
+  }
+
+  public async sendTestEmail(toEmail: string, senderName: string = 'Portal Administrator'): Promise<SendBroadcastResult> {
+    return this.sendBroadcast({
+      subject: '✅ Portal Test Email: Real Delivery Verified',
+      message: `Hello!\n\nThis is a live test email from the Student Assessment & Learning Portal.\n\nIf you see this in your inbox, your SMTP configuration is active and working properly! You can now send real emails to all students and faculty.`,
+      recipients: [toEmail],
+      senderName,
+      senderEmail: process.env.EMAIL_FROM || process.env.SMTP_USER || toEmail,
+      category: 'ANNOUNCEMENT'
+    });
+  }
+
+  public async updateConfig(config: SmtpConfigInput): Promise<{ success: boolean; message: string }> {
+    try {
+      const port = Number(config.port) || 587;
+      const secure = config.secure ?? (port === 465);
+
+      const newTransporter = nodemailer.createTransport({
+        host: config.host.trim(),
+        port,
+        secure,
+        auth: {
+          user: config.user.trim(),
+          pass: config.pass.trim()
+        }
+      });
+
+      // Verify connection with mail server before saving
+      await newTransporter.verify();
+
+      this.transporter = newTransporter;
+      this.isConfigured = true;
+
+      // Update process.env
+      process.env.SMTP_HOST = config.host.trim();
+      process.env.SMTP_PORT = String(port);
+      process.env.SMTP_SECURE = String(secure);
+      process.env.SMTP_USER = config.user.trim();
+      process.env.SMTP_PASS = config.pass.trim();
+      if (config.from) {
+        process.env.EMAIL_FROM = config.from.trim();
+      }
+
+      // Persist to .env file
+      this.persistToEnv({
+        ...config,
+        port,
+        secure
+      });
+
+      return {
+        success: true,
+        message: `Connected successfully to ${config.host}! Live SMTP email delivery is now active.`
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: `SMTP verification failed: ${err.message}. Please check your email and app password.`
+      };
+    }
+  }
+
+  private persistToEnv(config: SmtpConfigInput) {
+    try {
+      const candidates = [
+        path.resolve(process.cwd(), '.env'),
+        path.resolve(process.cwd(), 'backend/.env'),
+        path.resolve(__dirname, '../../.env'),
+        path.resolve(__dirname, '../../../.env')
+      ];
+
+      for (const envPath of candidates) {
+        if (fs.existsSync(envPath)) {
+          let content = fs.readFileSync(envPath, 'utf-8');
+
+          const setOrAppend = (key: string, val: string) => {
+            const regex = new RegExp(`^${key}=.*$`, 'm');
+            if (regex.test(content)) {
+              content = content.replace(regex, `${key}=${val}`);
+            } else {
+              content += `\n${key}=${val}`;
+            }
+          };
+
+          setOrAppend('SMTP_HOST', config.host);
+          setOrAppend('SMTP_PORT', String(config.port));
+          setOrAppend('SMTP_SECURE', String(config.secure));
+          setOrAppend('SMTP_USER', config.user);
+          setOrAppend('SMTP_PASS', config.pass);
+          if (config.from) setOrAppend('EMAIL_FROM', config.from);
+
+          fs.writeFileSync(envPath, content.trim() + '\n', 'utf-8');
+          console.log(`Updated SMTP credentials in ${envPath}`);
+        }
+      }
+    } catch (err: any) {
+      console.error('Failed to persist SMTP config to .env:', err.message);
+    }
   }
 
   private buildHtmlEmail(subject: string, message: string, senderName: string, category: string = 'GENERAL'): string {
