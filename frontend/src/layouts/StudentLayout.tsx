@@ -18,7 +18,7 @@ export const StudentLayout: React.FC = () => {
           mobileOpen={mobileMenuOpen}
           onCloseMobile={() => setMobileMenuOpen(false)}
         />
-        <main className="flex-1 p-3 sm:p-6 max-w-7xl mx-auto w-full overflow-x-hidden">
+        <main className="flex-1 p-3 sm:p-6 max-w-7xl mx-auto w-full overflow-x-hidden page-enter-animation">
           <Outlet />
         </main>
       </div>

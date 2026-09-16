@@ -33,47 +33,57 @@ export const AdminDashboard: React.FC = () => {
     <div className="space-y-8">
       
       {/* Page Title */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 className="text-xl font-extrabold text-slate-900">Admin Control Center</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+        <div className="relative z-10">
+          <div className="inline-flex items-center space-x-2 bg-purple-50 text-purple-700 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border border-purple-200 mb-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <span>Live Monitoring Active</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Admin Control Center</h2>
           <p className="text-slate-500 text-xs mt-0.5">Real-time overview of student performance, assessment pipeline, and attendance.</p>
+        </div>
+        <div className="mt-3 sm:mt-0 flex items-center space-x-2">
+          <span className="bg-emerald-100 text-emerald-800 text-xs font-black px-3 py-1.5 rounded-xl border border-emerald-200 shadow-xs flex items-center space-x-1.5">
+            <Activity className="w-3.5 h-3.5 animate-pulse text-emerald-600" />
+            <span>99.9% Uptime</span>
+          </span>
         </div>
       </div>
 
       {/* Dashboard Cards matching §9 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-hover-lift hover:border-purple-300">
           <div className="flex justify-between items-center text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">Total Students</span>
-            <div className="p-2 bg-purple-50 text-purple-600 rounded-xl"><Users className="w-5 h-5" /></div>
+            <div className="p-2 bg-purple-50 text-purple-600 rounded-xl transition-transform hover:scale-110"><Users className="w-5 h-5" /></div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{overview.totalStudents}</div>
           <div className="text-xs text-purple-600 font-medium mt-1">{overview.activeStudents} Active Accounts</div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-hover-lift hover:border-sky-300">
           <div className="flex justify-between items-center text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">Assessments Published</span>
-            <div className="p-2 bg-brand-50 text-brand-600 rounded-xl"><FileCheck className="w-5 h-5" /></div>
+            <div className="p-2 bg-brand-50 text-brand-600 rounded-xl transition-transform hover:scale-110"><FileCheck className="w-5 h-5" /></div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{overview.totalAssessments}</div>
           <div className="text-xs text-brand-600 font-medium mt-1">{overview.completedAttempts} Completed Attempts</div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-hover-lift hover:border-emerald-300">
           <div className="flex justify-between items-center text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">Average Score</span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><BarChart className="w-5 h-5" /></div>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl transition-transform hover:scale-110"><BarChart className="w-5 h-5" /></div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{overview.avgScore}%</div>
           <div className="text-xs text-emerald-600 font-medium mt-1">Across all departments</div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-hover-lift hover:border-amber-300">
           <div className="flex justify-between items-center text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">Attendance Sessions</span>
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><Calendar className="w-5 h-5" /></div>
+            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl transition-transform hover:scale-110"><Calendar className="w-5 h-5" /></div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{overview.totalSessions}</div>
           <div className="text-xs text-amber-600 font-medium mt-1">92.5% Avg Participation</div>

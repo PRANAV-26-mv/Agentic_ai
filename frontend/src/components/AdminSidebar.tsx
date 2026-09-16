@@ -72,21 +72,30 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
 
         {navItems.map((item) => {
           const Icon = item.icon;
+          const isLiveQuiz = item.to === '/admin/quiz-sessions';
           return (
             <NavLink
               key={item.to}
               to={item.to}
               onClick={() => onCloseMobile && onCloseMobile()}
               className={({ isActive }) =>
-                `flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                `group flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all transform hover:translate-x-1 ${
                   isActive
                     ? 'bg-purple-600 text-white shadow-md font-bold'
                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`
               }
             >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span>{item.label}</span>
+              <div className="flex items-center space-x-3 min-w-0">
+                <Icon className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform duration-200 text-slate-400 group-hover:text-white" />
+                <span className="truncate">{item.label}</span>
+              </div>
+              {isLiveQuiz && (
+                <span className="flex h-2 w-2 relative shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+              )}
             </NavLink>
           );
         })}

@@ -28,6 +28,7 @@ import {
   Medal,
   Crown
 } from 'lucide-react';
+import { GiftBurstModal } from '../components/GiftBurstModal';
 
 // Helper to determine if an answer matches the question's correct answer
 const checkIsCorrect = (q: Question, userAns?: string): boolean => {
@@ -98,6 +99,8 @@ export const StudentQuizLobby: React.FC = () => {
   // Results page state: 'REVIEW' | 'LEADERBOARD'
   const [activeResultTab, setActiveResultTab] = useState<'REVIEW' | 'LEADERBOARD'>('REVIEW');
   const [reviewFilter, setReviewFilter] = useState<'ALL' | 'CORRECT' | 'INCORRECT' | 'SKIPPED'>('ALL');
+  const [showGiftBurst, setShowGiftBurst] = useState<boolean>(false);
+  const hasBurstTriggeredRef = useRef<boolean>(false);
 
   // Countdown timer state & refs
   const [timeLeftSeconds, setTimeLeftSeconds] = useState<number>(0);
@@ -668,6 +671,14 @@ export const StudentQuizLobby: React.FC = () => {
   const leaderboard: QuizLeaderboardEntry[] = resultData?.leaderboard || session.leaderboard || [];
   const myRank = resultData?.rank || leaderboard.find(l => l.student_id === pRecord?.student_id)?.rank || pRecord?.rank || 1;
 
+  // Automatically trigger celebration burst for 1st rank
+  useEffect(() => {
+    if (stage === 'RESULTS' && myRank === 1 && !hasBurstTriggeredRef.current) {
+      hasBurstTriggeredRef.current = true;
+      setShowGiftBurst(true);
+    }
+  }, [stage, myRank]);
+
   // Calculate detailed performance breakdown with verified logic
   let correctCount = 0;
   let incorrectCount = 0;
@@ -733,6 +744,18 @@ export const StudentQuizLobby: React.FC = () => {
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Quiz Completed!</h1>
             <p className="text-white/80 text-xs mt-1 break-words max-w-lg mx-auto">{session.title}</p>
+            {myRank === 1 && (
+              <div className="pt-3">
+                <button
+                  onClick={() => setShowGiftBurst(true)}
+                  className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs px-5 py-2.5 rounded-2xl shadow-xl shadow-amber-500/40 border-2 border-yellow-100 cursor-pointer transform hover:scale-105 active:scale-95 transition-all shimmer-badge animate-float"
+                >
+                  <span className="text-base">🎁</span>
+                  <span>Open 1st Place Gift Burst</span>
+                  <Sparkles className="w-4 h-4 text-slate-950" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* 4 Performance Metric Cards */}
@@ -1123,6 +1146,18 @@ export const StudentQuizLobby: React.FC = () => {
           <span>Return to Live Quiz Sessions</span>
         </button>
       </div>
+
+      {/* 1st Place Champion Gift Burst Celebration */}
+      <GiftBurstModal
+        isOpen={showGiftBurst}
+        onClose={() => setShowGiftBurst(false)}
+        quizTitle={session.title}
+        score={earnedScore}
+        maxScore={maxScore}
+        accuracy={accuracyPercentage}
+        timeTaken={pRecord?.time_taken_seconds ? `${Math.floor(pRecord.time_taken_seconds / 60)}m ${pRecord.time_taken_seconds % 60}s` : undefined}
+        totalParticipants={leaderboard.length || 1}
+      />
 
     </div>
   );

@@ -11,9 +11,13 @@ import {
   BookOpen, 
   ArrowRight,
   Sparkles,
-  MessageSquare
+  MessageSquare,
+  Trophy,
+  Crown,
+  Zap
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { GiftBurstModal } from '../components/GiftBurstModal';
 
 export const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -21,19 +25,23 @@ export const StudentDashboard: React.FC = () => {
   const [materials, setMaterials] = useState<any[]>([]);
   const [attendanceStats, setAttendanceStats] = useState<any>({ percentage: 100, present: 0, total: 0 });
   const [completedResults, setCompletedResults] = useState<any[]>([]);
+  const [quizSessions, setQuizSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [showGiftBurst, setShowGiftBurst] = useState<boolean>(false);
 
   useEffect(() => {
     Promise.all([
       api.get('/assessments'),
       api.get('/materials'),
       api.get('/attendance'),
-      api.get('/results')
-    ]).then(([assRes, matRes, attRes, resRes]) => {
+      api.get('/results'),
+      api.get('/quiz-sessions')
+    ]).then(([assRes, matRes, attRes, resRes, quizRes]) => {
       setAssessments(assRes.data);
       setMaterials(matRes.data);
       setAttendanceStats(attRes.data);
       setCompletedResults(resRes.data);
+      setQuizSessions(quizRes.data || []);
     }).catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, []);
@@ -43,6 +51,9 @@ export const StudentDashboard: React.FC = () => {
   const avgScore = completedResults.length > 0
     ? Math.round(completedResults.reduce((acc, curr) => acc + (curr.percentage || 0), 0) / completedResults.length)
     : 85;
+
+  // Check if student attended and won 1st place in any live quiz
+  const championQuiz = quizSessions.find(q => q.my_rank === 1);
 
   if (loading) {
     return (
@@ -86,40 +97,106 @@ export const StudentDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Champion Victory Banner (When student won 1st place in a live quiz) */}
+      {championQuiz && (
+        <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 border-2 border-amber-400/80 rounded-2xl p-5 sm:p-6 shadow-2xl relative overflow-hidden animate-champion-glow">
+          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-amber-400/10 blur-2xl pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-start sm:items-center space-x-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-300 p-0.5 shadow-lg shadow-amber-500/40 shrink-0">
+                <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                  <Trophy className="w-7 h-7 text-amber-300 fill-amber-300 filter drop-shadow animate-float" />
+                </div>
+              </div>
+
+              <div>
+                <div className="inline-flex items-center space-x-1.5 bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border border-amber-400/30 mb-1">
+                  <Crown className="w-3 h-3 text-amber-300 fill-amber-300 animate-bounce" />
+                  <span>1st Place Champion Record</span>
+                </div>
+                <h3 className="text-lg font-black text-white">
+                  You Won 1st Place in {championQuiz.title}! 🥇
+                </h3>
+                <p className="text-xs text-amber-200/80 mt-0.5">
+                  Top Score: <strong className="text-white">{championQuiz.my_score} / {championQuiz.my_max_score} pts</strong> ({championQuiz.my_percentage}%) • Ranked #1 among your cohort
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowGiftBurst(true)}
+              className="px-5 py-2.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/40 cursor-pointer transform hover:scale-105 active:scale-95 transition-all inline-flex items-center space-x-2 shrink-0 shimmer-badge"
+            >
+              <span className="text-base">🎁</span>
+              <span>Open Champion Gift Burst</span>
+              <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Live Quiz Callout Banner if an active session exists and student isn't champion yet */}
+      {!championQuiz && quizSessions.some(q => q.status === 'ACTIVE') && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-purple-500/10 border border-amber-300/60 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 animate-pulse-glow">
+          <div className="flex items-center space-x-3">
+            <div className="p-2.5 bg-amber-500 text-white rounded-xl shadow-md">
+              <Zap className="w-5 h-5 fill-white" />
+            </div>
+            <div>
+              <div className="inline-flex items-center space-x-1.5 text-amber-800 text-[10px] font-extrabold uppercase tracking-wide">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <span>Live Quiz Session Active Now</span>
+              </div>
+              <p className="text-xs font-bold text-slate-900 mt-0.5">
+                Join the live quiz room, answer fast, and conquer 1st Place to unlock your Champion Gift Burst!
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/quiz-sessions"
+            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl shadow-md transition-all shrink-0 inline-flex items-center space-x-1.5"
+          >
+            <span>Enter Quiz Room</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
+
       {/* Dashboard Cards matching §6 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-hover-lift hover:border-sky-300">
           <div className="flex justify-between items-center text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">Total Assessments</span>
-            <div className="p-2 bg-sky-50 text-sky-600 rounded-xl"><FileText className="w-5 h-5" /></div>
+            <div className="p-2 bg-sky-50 text-sky-600 rounded-xl transition-transform hover:scale-110"><FileText className="w-5 h-5" /></div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{assessments.length}</div>
           <div className="text-xs text-slate-500 mt-1">Assigned for your cohort</div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-hover-lift hover:border-emerald-300">
           <div className="flex justify-between items-center text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">Completed / Pending</span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><CheckCircle2 className="w-5 h-5" /></div>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl transition-transform hover:scale-110"><CheckCircle2 className="w-5 h-5" /></div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{completedCount} <span className="text-slate-400 font-medium text-base">/ {pendingCount} pending</span></div>
           <div className="text-xs text-emerald-600 font-medium mt-1">Active evaluation pipeline</div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-hover-lift hover:border-purple-300">
           <div className="flex justify-between items-center text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">Attendance %</span>
-            <div className="p-2 bg-purple-50 text-purple-600 rounded-xl"><Calendar className="w-5 h-5" /></div>
+            <div className="p-2 bg-purple-50 text-purple-600 rounded-xl transition-transform hover:scale-110"><Calendar className="w-5 h-5" /></div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{attendanceStats.percentage || 100}%</div>
           <div className="text-xs text-slate-500 mt-1">{attendanceStats.present || 1} present of {attendanceStats.total || 1} sessions</div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-hover-lift hover:border-amber-300">
           <div className="flex justify-between items-center text-slate-500 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">Average Score</span>
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><Award className="w-5 h-5" /></div>
+            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl transition-transform hover:scale-110"><Award className="w-5 h-5" /></div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{avgScore}%</div>
           <div className="text-xs text-amber-600 font-medium mt-1">Top 15% in Community</div>
@@ -201,6 +278,20 @@ export const StudentDashboard: React.FC = () => {
         </div>
 
       </div>
+
+      {/* 1st Place Champion Gift Burst Modal */}
+      {championQuiz && (
+        <GiftBurstModal
+          isOpen={showGiftBurst}
+          onClose={() => setShowGiftBurst(false)}
+          quizTitle={championQuiz.title}
+          score={championQuiz.my_score}
+          maxScore={championQuiz.my_max_score}
+          accuracy={championQuiz.my_percentage}
+          timeTaken={championQuiz.my_time_taken_seconds ? `${Math.floor(championQuiz.my_time_taken_seconds / 60)}m ${championQuiz.my_time_taken_seconds % 60}s` : undefined}
+          totalParticipants={championQuiz.participant_count || 1}
+        />
+      )}
 
     </div>
   );
