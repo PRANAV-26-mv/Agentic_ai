@@ -38,6 +38,25 @@ export interface RestrictedEmail {
   restricted_at: string;
 }
 
+export interface EmailLog {
+  id: string;
+  subject: string;
+  message: string;
+  recipients_count: number;
+  recipients: string[];
+  recipient_types: {
+    students: number;
+    admins: number;
+    custom: number;
+  };
+  sent_by_id: string;
+  sent_by_name: string;
+  sent_by_email: string;
+  status: 'SENT' | 'SIMULATED' | 'FAILED';
+  error_details?: string;
+  sent_at: string;
+}
+
 export interface StudyMaterial {
   id: string;
   title: string;
@@ -1326,3 +1345,25 @@ export const RestrictedEmailsModel = {
     return false;
   }
 };
+
+export const EmailLogsModel = {
+  findAll(): EmailLog[] {
+    const list = (memoryDb.table('email_logs') || []) as EmailLog[];
+    return [...list].sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime());
+  },
+  findById(id: string): EmailLog | undefined {
+    const list = (memoryDb.table('email_logs') || []) as EmailLog[];
+    return list.find(l => l.id === id);
+  },
+  create(data: Omit<EmailLog, 'id' | 'sent_at'>): EmailLog {
+    const newLog: EmailLog = {
+      ...data,
+      id: `elog-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      sent_at: new Date().toISOString()
+    };
+    memoryDb.table('email_logs').push(newLog);
+    db.save();
+    return newLog;
+  }
+};
+

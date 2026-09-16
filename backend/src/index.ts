@@ -23,6 +23,7 @@ import auditLogsRouter from './routes/auditLogs.js';
 import adminsRouter from './routes/admins.js';
 import quizSessionsRouter from './routes/quizSessions.js';
 import restrictionsRouter from './routes/restrictions.js';
+import emailBroadcastRouter from './routes/emailBroadcast.js';
 
 dotenv.config();
 
@@ -46,6 +47,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/admins', adminsRouter);
 app.use('/api/students', studentsRouter);
 app.use('/api/restrictions', restrictionsRouter);
+app.use('/api/email-broadcast', emailBroadcastRouter);
 app.use('/api/materials', materialsRouter);
 app.use('/api/assessments', assessmentsRouter);
 app.use('/api/pdf', pdfRouter);

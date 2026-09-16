@@ -946,6 +946,43 @@
   ],
   "audit_logs": [
     {
+      "id": "audit-1789530460133-903",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "SEND_EMAIL_BROADCAST",
+      "entity_type": "COMMUNICATION",
+      "entity_id": "elog-1789530460131-peqx",
+      "metadata": "{\"subject\":\"Automated Test: Assessment Schedule Update\",\"recipients_count\":3,\"status\":\"SIMULATED\"}",
+      "timestamp": "2026-09-16T03:47:40.133Z"
+    },
+    {
+      "id": "audit-1789530460111-677",
+      "actor_id": "std-001",
+      "actor_role": "STUDENT",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "std-001",
+      "timestamp": "2026-09-16T03:47:40.111Z"
+    },
+    {
+      "id": "audit-1789530460103-917",
+      "actor_id": "adm-1788626901288",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-1788626901288",
+      "timestamp": "2026-09-16T03:47:40.103Z"
+    },
+    {
+      "id": "audit-1789530460092-220",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-16T03:47:40.092Z"
+    },
+    {
       "id": "audit-1789529147580-434",
       "actor_id": "std-001",
       "actor_role": "STUDENT",
@@ -1478,5 +1515,6 @@
       "time_taken_seconds": 1
     }
   ],
-  "restricted_emails": []
+  "restricted_emails": [],
+  "email_logs": []
 }

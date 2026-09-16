@@ -15,6 +15,7 @@ import {
   Crown, 
   Zap,
   Ban,
+  Mail,
   LogOut,
   X 
 } from 'lucide-react';
@@ -35,6 +36,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
     { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/admin/manage-admins', label: 'Admin Members', icon: Crown, superOnly: true },
     { to: '/admin/restrictions', label: 'User Restrictions', icon: Ban, superOnly: true },
+    { to: '/admin/send-emails', label: 'Send Emails', icon: Mail },
     { to: '/admin/students', label: 'Students', icon: Users },
     { to: '/admin/assessments', label: 'Assessments', icon: FileCheck },
     { to: '/admin/quiz-sessions', label: 'Live Quiz Sessions', icon: Zap },

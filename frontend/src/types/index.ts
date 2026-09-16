@@ -49,6 +49,25 @@ export interface RestrictedEmail {
   restricted_at: string;
 }
 
+export interface EmailLog {
+  id: string;
+  subject: string;
+  message: string;
+  recipients_count: number;
+  recipients: string[];
+  recipient_types: {
+    students: number;
+    admins: number;
+    custom: number;
+  };
+  sent_by_id: string;
+  sent_by_name: string;
+  sent_by_email: string;
+  status: 'SENT' | 'SIMULATED' | 'FAILED';
+  error_details?: string;
+  sent_at: string;
+}
+
 export interface StudyMaterial {
   id: string;
   title: string;

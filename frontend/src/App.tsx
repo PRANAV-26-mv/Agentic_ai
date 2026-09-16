@@ -33,6 +33,7 @@ import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AuditLogPage } from './pages/AuditLogPage';
 import { AdminManagement } from './pages/AdminManagement';
 import { UserRestrictionsPage } from './pages/UserRestrictionsPage';
+import { EmailBroadcastPage } from './pages/EmailBroadcastPage';
 
 const ProtectedStudentRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, role, loading } = useAuth();
@@ -113,6 +114,7 @@ export function App() {
             }
           >
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/send-emails" element={<EmailBroadcastPage />} />
             <Route path="/admin/students" element={<StudentManagement />} />
             <Route path="/admin/assessments" element={<AssessmentManagement />} />
             <Route path="/admin/quiz-sessions" element={<AdminQuizSessions />} />
