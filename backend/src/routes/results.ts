@@ -1,5 +1,14 @@
 import { Router, Request, Response } from 'express';
-import { AssessmentAttemptsModel, StudentsModel, AssessmentsModel, QuestionsModel, AuditLogsModel, memoryDb } from '../models/dbModels.js';
+import { 
+  AssessmentAttemptsModel, 
+  StudentsModel, 
+  AssessmentsModel, 
+  QuestionsModel, 
+  QuizSessionsModel,
+  QuizSessionParticipantsModel,
+  AuditLogsModel, 
+  memoryDb 
+} from '../models/dbModels.js';
 import { requireAuth, requireAdmin, AuthRequest } from '../middleware/authMiddleware.js';
 import { aiService } from '../services/aiService.js';
 
@@ -39,6 +48,72 @@ router.get('/', requireAuth, (req: AuthRequest, res: Response) => {
   });
 
   res.json(enriched);
+});
+
+// GET /api/results/quiz-sessions - Student or admin gets quiz session results
+router.get('/quiz-sessions', requireAuth, (req: AuthRequest, res: Response) => {
+  try {
+    const isStudent = req.user?.role === 'STUDENT';
+    const student = isStudent ? req.user?.student : undefined;
+
+    const sessions = QuizSessionsModel.findAll(isStudent ? { student } : undefined);
+    const results = [];
+
+    for (const s of sessions) {
+      const participants = QuizSessionParticipantsModel.getParticipants(s.id);
+      const leaderboard = QuizSessionParticipantsModel.getLeaderboard(s.id);
+
+      if (isStudent && student) {
+        const p = participants.find(part => part.student_id === student.id);
+        if (p && p.status === 'SUBMITTED') {
+          const rank = leaderboard.find(l => l.student_id === student.id)?.rank || p.rank || 1;
+          results.push({
+            id: p.id,
+            session_id: s.id,
+            session_title: s.title,
+            pin: s.pin,
+            target_type: s.target_type,
+            duration_minutes: s.duration_minutes,
+            total_questions: s.question_ids.length,
+            score: p.score ?? 0,
+            max_score: p.max_score ?? s.question_ids.length,
+            percentage: p.percentage ?? 0,
+            rank: rank,
+            total_participants: leaderboard.length,
+            time_taken_seconds: p.time_taken_seconds ?? 0,
+            submitted_at: p.submitted_at || p.joined_at,
+            status: 'COMPLETED'
+          });
+        }
+      } else {
+        // Admin view
+        for (const p of participants.filter(part => part.status === 'SUBMITTED')) {
+          const rank = leaderboard.find(l => l.student_id === p.student_id)?.rank || p.rank || 1;
+          results.push({
+            id: p.id,
+            session_id: s.id,
+            session_title: s.title,
+            pin: s.pin,
+            student_name: p.student_name,
+            student_reg: p.student_reg,
+            student_department: p.student_department,
+            score: p.score ?? 0,
+            max_score: p.max_score ?? s.question_ids.length,
+            percentage: p.percentage ?? 0,
+            rank: rank,
+            total_participants: leaderboard.length,
+            time_taken_seconds: p.time_taken_seconds ?? 0,
+            submitted_at: p.submitted_at || p.joined_at,
+            status: 'COMPLETED'
+          });
+        }
+      }
+    }
+
+    res.json(results);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Error fetching quiz results.' });
+  }
 });
 
 // GET /api/results/:attemptId (Get attempt details with student answers for writing evaluation)

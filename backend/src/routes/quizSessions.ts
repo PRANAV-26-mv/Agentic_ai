@@ -20,20 +20,28 @@ router.get('/', requireAuth, (req: AuthRequest, res: Response): void => {
       student
     });
 
-    // Attach participant counts
+    // Attach participant counts and student performance details
     const enriched = sessions.map(s => {
       const participants = QuizSessionParticipantsModel.getParticipants(s.id);
       let studentParticipant = undefined;
       if (student) {
         studentParticipant = participants.find(p => p.student_id === student.id);
       }
+      const leaderboard = QuizSessionParticipantsModel.getLeaderboard(s.id);
+      const myRank = studentParticipant && studentParticipant.status === 'SUBMITTED'
+        ? leaderboard.find(l => l.student_id === studentParticipant.student_id)?.rank || studentParticipant.rank || null
+        : null;
+
       return {
         ...s,
         participant_count: participants.length,
         submitted_count: participants.filter(p => p.status === 'SUBMITTED').length,
         my_status: studentParticipant?.status || null,
         my_score: studentParticipant?.score ?? null,
-        my_rank: studentParticipant?.rank ?? null
+        my_max_score: studentParticipant?.max_score ?? null,
+        my_percentage: studentParticipant?.percentage ?? null,
+        my_time_taken_seconds: studentParticipant?.time_taken_seconds ?? null,
+        my_rank: myRank
       };
     });
 
@@ -294,7 +302,8 @@ router.post('/:id/submit', requireAuth, (req: AuthRequest, res: Response): void 
       participant,
       rank: myRank,
       total_participants: leaderboard.length,
-      leaderboard
+      leaderboard,
+      questions
     });
   } catch (err: any) {
     res.status(500).json({ message: err.message || 'Error submitting quiz.' });

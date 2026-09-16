@@ -459,6 +459,43 @@ export const StudyMaterialsModel = {
   }
 };
 
+export function isQuestionAnswerCorrect(q: Question, selected?: string): boolean {
+  if (!selected || !q.correct_answer) return false;
+  const sel = selected.trim().toUpperCase();
+  const corr = q.correct_answer.trim().toUpperCase();
+
+  // Direct match (e.g. 'A' === 'A' or 'B' === 'B')
+  if (sel === corr) return true;
+
+  // Normalized option letters to option text map
+  const letterMap: Record<string, string | undefined> = {
+    'A': q.option_a ? q.option_a.trim().toUpperCase() : undefined,
+    'B': q.option_b ? q.option_b.trim().toUpperCase() : undefined,
+    'C': q.option_c ? q.option_c.trim().toUpperCase() : undefined,
+    'D': q.option_d ? q.option_d.trim().toUpperCase() : undefined,
+  };
+
+  // Check if correct_answer was saved as 'OPTION_A', 'OPTION_B', etc.
+  if (corr === 'OPTION_A' && sel === 'A') return true;
+  if (corr === 'OPTION_B' && sel === 'B') return true;
+  if (corr === 'OPTION_C' && sel === 'C') return true;
+  if (corr === 'OPTION_D' && sel === 'D') return true;
+
+  if (sel === 'OPTION_A' && corr === 'A') return true;
+  if (sel === 'OPTION_B' && corr === 'B') return true;
+  if (sel === 'OPTION_C' && corr === 'C') return true;
+  if (sel === 'OPTION_D' && corr === 'D') return true;
+
+  // If correct_answer was stored as the option text
+  if (letterMap[sel] && letterMap[sel] === corr) return true;
+
+  // If selected was stored as the option text and correct_answer is letter
+  const corrLetter = ['A', 'B', 'C', 'D'].find(l => letterMap[l] && letterMap[l] === sel);
+  if (corrLetter && corrLetter === corr) return true;
+
+  return false;
+}
+
 export const QuestionsModel = {
   findAll(filters?: { type?: string; difficulty?: string; topic?: string; status?: string }): Question[] {
     let list = memoryDb.table('questions');
@@ -1249,7 +1286,7 @@ export const QuizSessionParticipantsModel = {
       const marks = q.marks || 1;
       maxScore += marks;
       const selected = answers[q.id];
-      if (selected && q.correct_answer && selected.trim().toUpperCase() === q.correct_answer.trim().toUpperCase()) {
+      if (selected && isQuestionAnswerCorrect(q, selected)) {
         score += marks;
       }
     });
@@ -1266,10 +1303,21 @@ export const QuizSessionParticipantsModel = {
       const startTime = new Date(participant.started_at).getTime();
       participant.time_taken_seconds = Math.max(1, Math.round((submittedAt.getTime() - startTime) / 1000));
     } else {
-      participant.time_taken_seconds = 0;
+      participant.started_at = participant.joined_at || submittedAt.toISOString();
+      participant.time_taken_seconds = 1;
     }
 
+    // Persist immediately and update ranks for all submitted participants in this session
     db.save();
+    const leaderboard = this.getLeaderboard(sessionId);
+    leaderboard.forEach(entry => {
+      const p = this.findBySessionAndStudent(sessionId, entry.student_id);
+      if (p) {
+        p.rank = entry.rank;
+      }
+    });
+    db.save();
+
     return participant;
   },
   getLeaderboard(sessionId: string) {

@@ -255,6 +255,9 @@ export interface QuizSession {
   submitted_count?: number;
   my_status?: 'LOBBY' | 'IN_PROGRESS' | 'SUBMITTED' | 'TIMED_OUT' | null;
   my_score?: number | null;
+  my_max_score?: number | null;
+  my_percentage?: number | null;
+  my_time_taken_seconds?: number | null;
   my_rank?: number | null;
   questions?: Question[];
   participants?: QuizSessionParticipant[];

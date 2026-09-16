@@ -1,105 +1,351 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { BarChart2, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  BarChart2, 
+  CheckCircle2, 
+  Clock, 
+  AlertCircle, 
+  Zap, 
+  Trophy, 
+  Award, 
+  BookOpen, 
+  ChevronRight, 
+  Calendar,
+  Sparkles,
+  Medal,
+  Crown
+} from 'lucide-react';
+
+interface QuizResultItem {
+  id: string;
+  session_id: string;
+  session_title: string;
+  pin: string;
+  target_type: string;
+  duration_minutes: number;
+  total_questions: number;
+  score: number;
+  max_score: number;
+  percentage: number;
+  rank: number;
+  total_participants: number;
+  time_taken_seconds: number;
+  submitted_at: string;
+  status: string;
+}
 
 export const StudentResults: React.FC = () => {
-  const [results, setResults] = useState<any[]>([]);
+  const [assessmentResults, setAssessmentResults] = useState<any[]>([]);
+  const [quizResults, setQuizResults] = useState<QuizResultItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<'QUIZZES' | 'ASSESSMENTS'>('QUIZZES');
 
-  const fetchResults = () => {
+  const navigate = useNavigate();
+
+  const fetchAllResults = async () => {
     setLoading(true);
-    api.get('/results')
-      .then(async (res) => {
-        const serverResults: any[] = res.data;
-        try {
-          const localSubmitted = JSON.parse(localStorage.getItem('portal_submitted_attempts') || '[]');
-          const missing = localSubmitted.filter((sub: any) => 
-            !serverResults.some((sr: any) => sr.attempt_id === sub.attempt_id || sr.id === sub.attempt_id)
-          );
+    try {
+      // 1. Fetch formal assessment results
+      const resAssessments = await api.get('/results');
+      const serverResults: any[] = resAssessments.data;
 
-          if (missing.length > 0) {
-            console.log('Auto-restoring student exam submissions after Render disk reload:', missing);
-            for (const item of missing) {
-              try {
-                if (item.answers) {
-                  for (const [qid, ans] of Object.entries(item.answers as Record<string, any>)) {
-                    await api.post(`/assessments/${item.assessment_id}/answer`, {
-                      attempt_id: item.attempt_id,
-                      question_id: qid,
-                      ...ans
-                    });
-                  }
+      // Auto-heal logic from local storage if any
+      try {
+        const localSubmitted = JSON.parse(localStorage.getItem('portal_submitted_attempts') || '[]');
+        const missing = localSubmitted.filter((sub: any) => 
+          !serverResults.some((sr: any) => sr.attempt_id === sub.attempt_id || sr.id === sub.attempt_id)
+        );
+
+        if (missing.length > 0) {
+          for (const item of missing) {
+            try {
+              if (item.answers) {
+                for (const [qid, ans] of Object.entries(item.answers as Record<string, any>)) {
+                  await api.post(`/assessments/${item.assessment_id}/answer`, {
+                    attempt_id: item.attempt_id,
+                    question_id: qid,
+                    ...ans
+                  });
                 }
-                await api.post(`/assessments/${item.assessment_id}/submit`, { attempt_id: item.attempt_id });
-              } catch (e) {
-                console.error('Failed to auto-heal student submission:', item.attempt_id, e);
               }
+              await api.post(`/assessments/${item.assessment_id}/submit`, { attempt_id: item.attempt_id });
+            } catch (e) {
+              console.error('Failed to auto-heal student submission:', item.attempt_id, e);
             }
-            const refreshed = await api.get('/results');
-            setResults(refreshed.data);
-          } else {
-            setResults(serverResults);
           }
-        } catch (e) {
-          setResults(serverResults);
+          const refreshed = await api.get('/results');
+          setAssessmentResults(refreshed.data);
+        } else {
+          setAssessmentResults(serverResults);
         }
-      })
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
+      } catch (e) {
+        setAssessmentResults(serverResults);
+      }
+
+      // 2. Fetch live quiz session results
+      try {
+        const resQuizzes = await api.get('/results/quiz-sessions');
+        setQuizResults(resQuizzes.data || []);
+      } catch (e) {
+        console.error('Failed to load quiz session results:', e);
+      }
+    } catch (err) {
+      console.error('Error fetching student results:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchResults();
+    fetchAllResults();
   }, []);
 
+  // Compute performance metrics
+  const totalCompleted = assessmentResults.length + quizResults.length;
+  const allPercentages = [
+    ...assessmentResults.map(r => r.percentage || 0),
+    ...quizResults.map(q => q.percentage || 0)
+  ];
+  const averagePercentage = allPercentages.length > 0 
+    ? Math.round(allPercentages.reduce((a, b) => a + b, 0) / allPercentages.length) 
+    : 0;
+
+  const bestQuizRank = quizResults.reduce<number | null>((min, q) => {
+    return min === null ? q.rank : Math.min(min, q.rank);
+  }, null);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl mx-auto">
       
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
+      {/* Header Banner */}
+      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-            <BarChart2 className="w-6 h-6 text-brand-600" />
-            <span>My Assessment Results</span>
-          </h2>
-          <p className="text-slate-500 text-xs mt-1">Review your score history, MCQ breakdown, and writing evaluation feedback.</p>
+          <div className="inline-flex items-center space-x-2 bg-purple-50 text-purple-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-2">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Academic Performance Dashboard</span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-2.5">
+            <BarChart2 className="w-7 h-7 text-purple-600" />
+            <span>My Results & Performance</span>
+          </h1>
+          <p className="text-slate-500 text-xs sm:text-sm mt-1">
+            Review your live quiz session rankings, question breakdowns, and formal assessment evaluation feedback.
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate('/quiz-sessions')}
+          className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center space-x-1.5 shrink-0"
+        >
+          <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+          <span>Go to Live Quizzes</span>
+        </button>
+      </div>
+
+      {/* Top Overview Metric Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase text-slate-400">Total Completed</p>
+            <p className="text-lg font-black text-slate-900">{totalCompleted} Tests</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <BarChart2 className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase text-slate-400">Avg Accuracy</p>
+            <p className="text-lg font-black text-emerald-600">{averagePercentage}%</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+            <Trophy className="w-5 h-5 fill-amber-500" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase text-slate-400">Best Quiz Rank</p>
+            <p className="text-lg font-black text-amber-700">{bestQuizRank ? `#${bestQuizRank}` : '—'}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+            <Zap className="w-5 h-5 fill-sky-600" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase text-slate-400">Live Quizzes</p>
+            <p className="text-lg font-black text-sky-700">{quizResults.length} Submissions</p>
+          </div>
         </div>
       </div>
 
+      {/* Tabs Navigation */}
+      <div className="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl w-fit text-xs font-extrabold">
+        <button
+          onClick={() => setActiveTab('QUIZZES')}
+          className={`px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center space-x-2 ${
+            activeTab === 'QUIZZES'
+              ? 'bg-white text-slate-900 shadow-xs'
+              : 'text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+          <span>Live Quiz Sessions ({quizResults.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('ASSESSMENTS')}
+          className={`px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center space-x-2 ${
+            activeTab === 'ASSESSMENTS'
+              ? 'bg-white text-slate-900 shadow-xs'
+              : 'text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Award className="w-4 h-4 text-purple-600" />
+          <span>Formal Assessments ({assessmentResults.length})</span>
+        </button>
+      </div>
+
+      {/* Loading State */}
       {loading ? (
-        <div className="h-48 bg-slate-200 rounded-2xl animate-pulse"></div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200">
-                <th className="p-4">Assessment</th>
-                <th className="p-4">MCQ Score</th>
-                <th className="p-4">Writing Score</th>
-                <th className="p-4">Total Score</th>
-                <th className="p-4">Percentage</th>
-                <th className="p-4">Status</th>
-                <th className="p-4">Submitted Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-              {results.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-4 font-bold text-slate-900">{r.assessment_title}</td>
-                  <td className="p-4 font-semibold text-brand-600">{r.mcq_score} pts</td>
-                  <td className="p-4 font-semibold text-purple-600">{r.writing_score} pts</td>
-                  <td className="p-4 font-extrabold text-slate-900">{r.total_score} pts</td>
-                  <td className="p-4 font-bold text-emerald-600">{r.percentage}%</td>
-                  <td className="p-4">
-                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
-                      {r.status}
+        <div className="h-64 bg-slate-100 rounded-3xl animate-pulse" />
+      ) : activeTab === 'QUIZZES' ? (
+        /* ---------------------------------------------------- */
+        /* TAB 1: LIVE QUIZ SESSION RESULTS                     */
+        /* ---------------------------------------------------- */
+        quizResults.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-12 text-center space-y-3">
+            <Zap className="w-10 h-10 text-slate-300 mx-auto" />
+            <h3 className="font-extrabold text-slate-800 text-sm">No Live Quiz Results Yet</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              You have not participated in any live quiz sessions yet. Join an active room using a 6-digit PIN!
+            </p>
+            <button
+              onClick={() => navigate('/quiz-sessions')}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+            >
+              Browse Quiz Rooms
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {quizResults.map((q) => (
+              <div 
+                key={q.id}
+                className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs hover:border-amber-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div className="space-y-2 min-w-0 flex-1">
+                  <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                    <span className="bg-purple-100 text-purple-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center space-x-1">
+                      <CheckCircle2 className="w-3 h-3 text-purple-600" />
+                      <span>COMPLETED</span>
                     </span>
-                  </td>
-                  <td className="p-4 text-slate-500">{new Date(r.submitted_at || r.started_at).toLocaleDateString()}</td>
+                    <span className="bg-amber-50 text-amber-900 border border-amber-200 font-mono text-[10px] font-black px-2 py-0.5 rounded-md">
+                      PIN: {q.pin}
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      {new Date(q.submitted_at).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <h3 className="font-extrabold text-slate-900 text-base leading-snug break-words">
+                    {q.session_title}
+                  </h3>
+
+                  <div className="flex items-center space-x-4 text-xs text-slate-500 pt-1">
+                    <span>
+                      Duration: <strong>{q.duration_minutes} mins</strong>
+                    </span>
+                    <span>•</span>
+                    <span>
+                      Completed in: <strong>{q.time_taken_seconds}s</strong>
+                    </span>
+                    <span>•</span>
+                    <span>
+                      Questions: <strong>{q.total_questions}</strong>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Score & Rank Badges */}
+                <div className="flex items-center space-x-4 shrink-0 sm:border-l sm:border-slate-100 sm:pl-6">
+                  <div className="text-right space-y-0.5">
+                    <p className="font-black text-slate-900 text-base">
+                      {q.score} / {q.max_score} <span className="text-xs text-slate-400 font-normal">pts</span>
+                    </p>
+                    <p className="text-xs font-bold text-emerald-600">{q.percentage}% Accuracy</p>
+                    <div className="inline-flex items-center space-x-1 bg-amber-50 text-amber-900 px-2 py-0.5 rounded-md border border-amber-200 text-[11px] font-black">
+                      <Trophy className="w-3 h-3 text-amber-500 fill-amber-500" />
+                      <span>Rank #{q.rank} of {q.total_participants}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => navigate(`/quiz-sessions/${q.session_id}`)}
+                    className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-xs transition-colors cursor-pointer"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Review</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : (
+        /* ---------------------------------------------------- */
+        /* TAB 2: FORMAL ASSESSMENT RESULTS                     */
+        /* ---------------------------------------------------- */
+        assessmentResults.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-12 text-center space-y-3">
+            <Award className="w-10 h-10 text-slate-300 mx-auto" />
+            <h3 className="font-extrabold text-slate-800 text-sm">No Formal Assessment Results</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              You haven't completed any formal exams or assessments yet.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200">
+                  <th className="p-4">Assessment</th>
+                  <th className="p-4">MCQ Score</th>
+                  <th className="p-4">Writing Score</th>
+                  <th className="p-4">Total Score</th>
+                  <th className="p-4">Percentage</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4">Submitted Date</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                {assessmentResults.map((r) => (
+                  <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-4 font-bold text-slate-900">{r.assessment_title}</td>
+                    <td className="p-4 font-semibold text-brand-600">{r.mcq_score} pts</td>
+                    <td className="p-4 font-semibold text-purple-600">{r.writing_score} pts</td>
+                    <td className="p-4 font-extrabold text-slate-900">{r.total_score} pts</td>
+                    <td className="p-4 font-bold text-emerald-600">{r.percentage}%</td>
+                    <td className="p-4">
+                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-slate-500">{new Date(r.submitted_at || r.started_at).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
 
     </div>
