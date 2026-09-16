@@ -337,6 +337,27 @@ router.get('/:id/leaderboard', requireAuth, (req: AuthRequest, res: Response): v
   }
 });
 
+// POST /api/quiz-sessions/bulk-delete - Admin deletes multiple quiz sessions
+router.post('/bulk-delete', requireAdmin, (req: AuthRequest, res: Response): void => {
+  try {
+    const { session_ids } = req.body;
+    if (!Array.isArray(session_ids) || session_ids.length === 0) {
+      res.status(400).json({ message: 'List of session IDs required.' });
+      return;
+    }
+    let count = 0;
+    for (const id of session_ids) {
+      if (QuizSessionsModel.delete(id)) {
+        AuditLogsModel.log(req.user!.id, 'ADMIN', 'DELETE_QUIZ_SESSION', 'QUIZ_SESSION', id);
+        count++;
+      }
+    }
+    res.json({ message: `Successfully deleted ${count} quiz sessions.`, deleted_count: count });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Error bulk deleting quiz sessions.' });
+  }
+});
+
 // DELETE /api/quiz-sessions/:id - Admin deletes quiz session
 router.delete('/:id', requireAdmin, (req: AuthRequest, res: Response): void => {
   try {

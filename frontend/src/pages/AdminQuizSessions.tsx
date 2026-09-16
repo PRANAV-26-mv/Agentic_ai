@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
 import { QuizSession, QuizSessionParticipant, Question, Assessment } from '../types';
 import { 
@@ -21,7 +21,16 @@ import {
   Filter,
   X,
   Radio,
-  ExternalLink
+  ExternalLink,
+  Sparkles,
+  AlertTriangle,
+  Flame,
+  Layers,
+  BookOpen,
+  ArrowRight,
+  RefreshCw,
+  Hash,
+  Award
 } from 'lucide-react';
 
 const DEPARTMENTS = ['CS', 'AD', 'IT', 'ECE', 'EEE', 'MECH'];
@@ -37,12 +46,18 @@ export const AdminQuizSessions: React.FC = () => {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [filterTab, setFilterTab] = useState<'ALL' | 'ACTIVE' | 'SCHEDULED' | 'COMPLETED'>('ALL');
+  const [sessionSearch, setSessionSearch] = useState<string>('');
   
   // Modals state
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [selectedSessionForRoster, setSelectedSessionForRoster] = useState<QuizSession | null>(null);
   const [rosterLoading, setRosterLoading] = useState<boolean>(false);
   const [sessionDetails, setSessionDetails] = useState<QuizSession | null>(null);
+
+  // Delete modal state
+  const [sessionToDelete, setSessionToDelete] = useState<QuizSession | null>(null);
+  const [deletingSession, setDeletingSession] = useState<boolean>(false);
+  const [bulkDeleting, setBulkDeleting] = useState<boolean>(false);
 
   // Available questions and assessments for creation
   const [availableQuestions, setAvailableQuestions] = useState<Question[]>([]);
@@ -194,18 +209,53 @@ export const AdminQuizSessions: React.FC = () => {
     }
   };
 
-  const handleDeleteSession = async (sessionId: string, title: string) => {
-    if (!window.confirm(`Are you sure you want to delete quiz session "${title}"? All participant responses will be erased.`)) return;
+  // Trigger Safe Delete Modal
+  const handlePromptDelete = (session: QuizSession, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSessionToDelete(session);
+  };
+
+  // Execute single session deletion
+  const handleExecuteDelete = async () => {
+    if (!sessionToDelete) return;
+    setDeletingSession(true);
     try {
-      await api.delete(`/quiz-sessions/${sessionId}`);
-      setSuccessMsg('Quiz session deleted.');
-      setTimeout(() => setSuccessMsg(null), 3000);
-      fetchSessions();
-      if (selectedSessionForRoster?.id === sessionId) {
+      await api.delete(`/quiz-sessions/${sessionToDelete.id}`);
+      setSuccessMsg(`Quiz session "${sessionToDelete.title}" was successfully deleted.`);
+      setTimeout(() => setSuccessMsg(null), 3500);
+      
+      // If roster modal is currently showing this session, close it
+      if (selectedSessionForRoster?.id === sessionToDelete.id) {
         setSelectedSessionForRoster(null);
+        setSessionDetails(null);
       }
+      setSessionToDelete(null);
+      fetchSessions();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to delete session.');
+      alert(err.response?.data?.message || 'Failed to delete quiz session.');
+    } finally {
+      setDeletingSession(false);
+    }
+  };
+
+  // Bulk delete completed sessions
+  const handleBulkDeleteCompleted = async () => {
+    const completed = sessions.filter(s => s.status === 'COMPLETED');
+    if (completed.length === 0) return;
+    if (!window.confirm(`Are you sure you want to permanently delete all ${completed.length} completed quiz sessions? This action cannot be undone.`)) return;
+
+    setBulkDeleting(true);
+    try {
+      const res = await api.post('/quiz-sessions/bulk-delete', {
+        session_ids: completed.map(s => s.id)
+      });
+      setSuccessMsg(res.data.message || `Deleted ${completed.length} completed quiz sessions.`);
+      setTimeout(() => setSuccessMsg(null), 3500);
+      fetchSessions();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to delete completed sessions.');
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -221,11 +271,22 @@ export const AdminQuizSessions: React.FC = () => {
       .finally(() => setRosterLoading(false));
   };
 
-  // Filtered sessions
-  const filteredSessions = sessions.filter(s => {
-    if (filterTab === 'ALL') return true;
-    return s.status === filterTab;
-  });
+  // Filtered sessions with search
+  const filteredSessions = useMemo(() => {
+    return sessions.filter(s => {
+      if (filterTab !== 'ALL' && s.status !== filterTab) return false;
+      if (sessionSearch.trim()) {
+        const q = sessionSearch.toLowerCase();
+        const matchTitle = s.title.toLowerCase().includes(q);
+        const matchPin = s.pin.includes(q);
+        const matchDesc = (s.description || '').toLowerCase().includes(q);
+        const matchDept = (s.target_department || '').toLowerCase().includes(q);
+        const matchComm = (s.target_community || '').toLowerCase().includes(q);
+        return matchTitle || matchPin || matchDesc || matchDept || matchComm;
+      }
+      return true;
+    });
+  }, [sessions, filterTab, sessionSearch]);
 
   const activeCount = sessions.filter(s => s.status === 'ACTIVE').length;
   const scheduledCount = sessions.filter(s => s.status === 'SCHEDULED').length;
@@ -233,118 +294,200 @@ export const AdminQuizSessions: React.FC = () => {
   const totalParticipants = sessions.reduce((acc, s) => acc + (s.participant_count || 0), 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-            <Zap className="w-6 h-6 text-amber-500 fill-amber-500" />
-            <span>Dedicated Live Quiz Sessions</span>
-          </h2>
-          <p className="text-slate-500 text-xs mt-1">
-            Conduct synchronized timed quiz competitions among students with instant Join PINs, live participant lobby, and real-time leaderboards.
-          </p>
+      {/* Header Banner - Rich Dark Aesthetic matching Email Hub */}
+      <div className="bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl border border-amber-800/40 shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute left-1/3 bottom-0 w-48 h-48 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2.5">
+              <span className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-[11px] font-extrabold tracking-wide uppercase flex items-center space-x-1.5">
+                <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span>Live Quiz Session Arena</span>
+              </span>
+              <span className="px-3 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full text-[11px] font-mono flex items-center space-x-1.5">
+                <Flame className="w-3.5 h-3.5 text-purple-400" />
+                <span>Synchronized Timed Competitions</span>
+              </span>
+            </div>
+            
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              Interactive Quiz Sessions & Leaderboards
+            </h1>
+            <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
+              Host real-time speed tests and peer competitions. Students enter via 6-digit Join PINs into the live lobby, submit timed answers simultaneously, and rank on live leaderboards.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={openCreateModal}
+              className="px-5 py-3 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-600 hover:to-amber-700 text-white font-black text-xs rounded-2xl shadow-lg shadow-amber-500/20 flex items-center space-x-2 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create New Quiz Session</span>
+            </button>
+
+            <button
+              onClick={fetchSessions}
+              disabled={loading}
+              className="p-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-2xl border border-slate-700 transition-all cursor-pointer shadow-sm disabled:opacity-50"
+              title="Refresh Quiz Sessions"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-amber-400' : ''}`} />
+            </button>
+          </div>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Quiz Session</span>
-        </button>
+        {/* Stats Row inside banner */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-amber-800/30 text-xs">
+          <div className="bg-slate-800/60 backdrop-blur-xs p-3.5 rounded-2xl border border-slate-700/50">
+            <div className="text-slate-400 text-[11px] font-semibold">Total Quiz Sessions</div>
+            <div className="text-2xl font-black text-amber-300 mt-1">{sessions.length}</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Created across departments</div>
+          </div>
+
+          <div className="bg-slate-800/60 backdrop-blur-xs p-3.5 rounded-2xl border border-slate-700/50">
+            <div className="text-slate-400 text-[11px] font-semibold">Active Live Rooms</div>
+            <div className="text-2xl font-black text-emerald-400 mt-1 flex items-center space-x-2">
+              <span>{activeCount}</span>
+              {activeCount > 0 && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block" />}
+            </div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Accepting student entries</div>
+          </div>
+
+          <div className="bg-slate-800/60 backdrop-blur-xs p-3.5 rounded-2xl border border-slate-700/50">
+            <div className="text-slate-400 text-[11px] font-semibold">Completed Sessions</div>
+            <div className="text-2xl font-black text-purple-300 mt-1">{completedCount}</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">{scheduledCount} scheduled upcoming</div>
+          </div>
+
+          <div className="bg-slate-800/60 backdrop-blur-xs p-3.5 rounded-2xl border border-slate-700/50">
+            <div className="text-slate-400 text-[11px] font-semibold">Total Students Competed</div>
+            <div className="text-2xl font-black text-sky-300 mt-1">{totalParticipants}</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Submissions recorded</div>
+          </div>
+        </div>
       </div>
 
-      {/* Success Alert */}
+      {/* Notifications */}
       {successMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center space-x-2 text-emerald-800 text-xs font-semibold animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 px-5 py-4 rounded-2xl flex items-center space-x-3 text-xs font-bold animate-in fade-in shadow-sm">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
-      {/* Metric Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-            <Zap className="w-5 h-5 fill-amber-500 text-amber-500" />
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold text-slate-400">Live Active Now</p>
-            <p className="text-xl font-black text-slate-900">{activeCount}</p>
-          </div>
+      {errorMsg && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-900 px-5 py-4 rounded-2xl flex items-center space-x-3 text-xs font-bold animate-in fade-in shadow-sm">
+          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
+      {/* Filter Tabs & Search Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        
+        {/* Status Pills */}
+        <div className="flex items-center space-x-1.5 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+          {(['ALL', 'ACTIVE', 'SCHEDULED', 'COMPLETED'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setFilterTab(tab)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer shrink-0 flex items-center space-x-1.5 ${
+                filterTab === tab
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <span>{tab === 'ALL' ? 'All Quizzes' : tab.charAt(0) + tab.slice(1).toLowerCase()}</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                filterTab === tab ? 'bg-slate-800 text-amber-300' : 'bg-slate-100 text-slate-500'
+              }`}>
+                {tab === 'ALL' ? sessions.length :
+                 tab === 'ACTIVE' ? activeCount :
+                 tab === 'SCHEDULED' ? scheduledCount : completedCount}
+              </span>
+            </button>
+          ))}
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
-          <div className="p-3 bg-sky-50 text-sky-600 rounded-xl">
-            <Calendar className="w-5 h-5" />
+        {/* Right Tools: Live Search & Bulk Delete */}
+        <div className="flex items-center gap-2.5 w-full md:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by title, PIN, department..."
+              value={sessionSearch}
+              onChange={e => setSessionSearch(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white outline-none"
+            />
+            {sessionSearch && (
+              <button
+                onClick={() => setSessionSearch('')}
+                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-          <div>
-            <p className="text-[11px] font-semibold text-slate-400">Scheduled</p>
-            <p className="text-xl font-black text-slate-900">{scheduledCount}</p>
-          </div>
-        </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
-            <Users className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold text-slate-400">Total Joined</p>
-            <p className="text-xl font-black text-slate-900">{totalParticipants}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-            <Trophy className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold text-slate-400">Completed</p>
-            <p className="text-xl font-black text-slate-900">{completedCount}</p>
-          </div>
+          {/* Bulk delete completed quizzes button */}
+          {completedCount > 0 && (
+            <button
+              onClick={handleBulkDeleteCompleted}
+              disabled={bulkDeleting}
+              className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer shrink-0 disabled:opacity-50"
+              title="Delete all finished quiz sessions"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+              <span className="hidden sm:inline">Clean Completed ({completedCount})</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center space-x-2 border-b border-slate-200 pb-3">
-        {(['ALL', 'ACTIVE', 'SCHEDULED', 'COMPLETED'] as const).map(tab => (
-          <button
-            key={tab}
-            onClick={() => setFilterTab(tab)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              filterTab === tab
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-          >
-            {tab === 'ALL' ? 'All Sessions' : tab.charAt(0) + tab.slice(1).toLowerCase()}
-          </button>
-        ))}
-      </div>
-
-      {/* Sessions Grid */}
+      {/* Quiz Sessions Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="h-64 bg-slate-100 rounded-2xl animate-pulse"></div>
-          <div className="h-64 bg-slate-100 rounded-2xl animate-pulse"></div>
-          <div className="h-64 bg-slate-100 rounded-2xl animate-pulse"></div>
+          <div className="h-64 bg-slate-100 rounded-3xl animate-pulse border border-slate-200" />
+          <div className="h-64 bg-slate-100 rounded-3xl animate-pulse border border-slate-200" />
+          <div className="h-64 bg-slate-100 rounded-3xl animate-pulse border border-slate-200" />
         </div>
       ) : filteredSessions.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
-          <Zap className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-sm font-bold text-slate-700">No quiz sessions found</h3>
-          <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-            Create a live quiz session to conduct synchronized speed tests or competitions among students.
+        <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center shadow-xs">
+          <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-500">
+            <Zap className="w-8 h-8 fill-amber-400" />
+          </div>
+          <h3 className="text-base font-extrabold text-slate-800">
+            {sessionSearch ? 'No matching quiz sessions found' : 'No quiz sessions created yet'}
+          </h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
+            {sessionSearch
+              ? `No quiz matches "${sessionSearch}". Try adjusting your keyword or reset filters.`
+              : 'Create your first live quiz session to conduct synchronized speed tests or competitions among students.'}
           </p>
-          <button
-            onClick={openCreateModal}
-            className="mt-4 px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-xs rounded-xl transition-colors inline-flex items-center space-x-2 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create First Quiz Session</span>
-          </button>
+          <div className="mt-5 flex justify-center gap-3">
+            {sessionSearch && (
+              <button
+                onClick={() => setSessionSearch('')}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                Clear Search
+              </button>
+            )}
+            <button
+              onClick={openCreateModal}
+              className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all inline-flex items-center space-x-2 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create First Quiz Session</span>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -356,58 +499,62 @@ export const AdminQuizSessions: React.FC = () => {
             return (
               <div 
                 key={session.id} 
-                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between space-y-4"
+                className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between space-y-4 hover:border-amber-400/50 group"
               >
                 <div>
-                  {/* Top Bar: Status & PIN */}
+                  {/* Top Bar: Status Badge & Interactive PIN Pill */}
                   <div className="flex justify-between items-center mb-3">
-                    <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center space-x-1 ${
-                      isActive ? 'bg-emerald-100 text-emerald-800' :
-                      isScheduled ? 'bg-sky-100 text-sky-800' :
-                      'bg-slate-100 text-slate-600'
+                    <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider flex items-center space-x-1.5 ${
+                      isActive ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                      isScheduled ? 'bg-sky-100 text-sky-800 border border-sky-300' :
+                      'bg-slate-100 text-slate-600 border border-slate-200'
                     }`}>
-                      {isActive && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping mr-1" />}
+                      {isActive && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping mr-0.5" />}
                       <span>{session.status}</span>
                     </span>
 
-                    {/* Join PIN Pill */}
-                    <div 
+                    {/* Join PIN Pill with Click-To-Copy */}
+                    <button 
+                      type="button"
                       onClick={() => handleCopyPin(session.pin)}
-                      className="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-mono font-black text-xs px-2.5 py-1 rounded-xl flex items-center space-x-1.5 cursor-pointer transition-colors"
+                      className="bg-gradient-to-r from-amber-50 to-amber-100/80 hover:from-amber-100 hover:to-amber-200 border border-amber-300 text-amber-950 font-mono font-black text-xs px-3 py-1 rounded-xl flex items-center space-x-1.5 cursor-pointer shadow-2xs transition-all transform active:scale-95"
                       title="Click to copy 6-digit Join PIN"
                     >
-                      <span className="text-[10px] text-amber-700 font-sans font-bold">PIN:</span>
-                      <span>{session.pin}</span>
+                      <span className="text-[10px] text-amber-700 font-sans font-extrabold uppercase tracking-wide">PIN:</span>
+                      <span className="tracking-wider">{session.pin}</span>
                       {copiedPin === session.pin ? (
                         <Check className="w-3.5 h-3.5 text-emerald-600" />
                       ) : (
-                        <Copy className="w-3.5 h-3.5 text-amber-600" />
+                        <Copy className="w-3.5 h-3.5 text-amber-700" />
                       )}
-                    </div>
+                    </button>
                   </div>
 
-                  <h3 className="font-bold text-slate-900 text-base break-words line-clamp-1">{session.title}</h3>
-                  <p className="text-xs text-slate-500 mt-1 break-words line-clamp-2">
-                    {session.description || 'No instructions provided.'}
+                  {/* Title & Description */}
+                  <h3 className="font-extrabold text-slate-900 text-base break-words line-clamp-1 group-hover:text-amber-800 transition-colors">
+                    {session.title}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 break-words line-clamp-2 leading-relaxed">
+                    {session.description || 'No specific instructions provided.'}
                   </p>
 
-                  {/* Metadata Chips */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 space-y-2 text-[11px] text-slate-500">
+                  {/* Metadata Chips Grid */}
+                  <div className="mt-4 pt-3.5 border-t border-slate-100 space-y-2 text-[11px]">
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center space-x-1 text-slate-600">
+                      <span className="flex items-center space-x-1.5 text-slate-600 font-medium">
                         <Clock className="w-3.5 h-3.5 text-slate-400" />
                         <span>Duration: <strong>{session.duration_minutes} mins</strong></span>
                       </span>
-                      <span className="font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md">
+                      <span className="font-extrabold text-purple-700 bg-purple-50 border border-purple-200/60 px-2.5 py-0.5 rounded-lg">
                         {session.question_ids?.length || 0} Questions
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-400">Target:</span>
-                      <span className="font-bold text-slate-700">
+                      <span className="text-slate-400">Target Audience:</span>
+                      <span className="font-extrabold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200/60 truncate max-w-[180px]">
                         {session.target_type === 'ALL'
-                          ? 'All Cohorts'
+                          ? 'All Students'
                           : session.target_type === 'DEPARTMENT'
                           ? `Dept: ${session.target_department}`
                           : session.target_community}
@@ -415,49 +562,50 @@ export const AdminQuizSessions: React.FC = () => {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center space-x-1 text-slate-600">
+                      <span className="flex items-center space-x-1.5 text-slate-600 font-medium">
                         <Users className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Lobby Joined:</span>
+                        <span>Participants:</span>
                       </span>
-                      <span className="font-bold text-slate-900">
-                        {session.participant_count || 0} students ({session.submitted_count || 0} submitted)
+                      <span className="font-black text-slate-900">
+                        {session.participant_count || 0} joined ({session.submitted_count || 0} submitted)
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Card Actions */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                {/* Card Action Row with Clear Delete Option */}
+                <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
                   <button
                     onClick={() => openRoster(session.id)}
-                    className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+                    className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl flex items-center justify-center space-x-1.5 shadow-xs transition-all cursor-pointer"
                   >
-                    <BarChart2 className="w-3.5 h-3.5" />
+                    <BarChart2 className="w-3.5 h-3.5 text-amber-400" />
                     <span>Live Roster ({session.participant_count || 0})</span>
                   </button>
 
                   {isActive ? (
                     <button
                       onClick={() => handleStatusChange(session.id, 'COMPLETED')}
-                      className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl font-bold text-xs transition-colors cursor-pointer"
-                      title="End Session"
+                      className="p-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                      title="End Active Quiz Session"
                     >
                       <Square className="w-4 h-4" />
                     </button>
                   ) : isScheduled ? (
                     <button
                       onClick={() => handleStatusChange(session.id, 'ACTIVE')}
-                      className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl font-bold text-xs transition-colors cursor-pointer"
-                      title="Start Session Now"
+                      className="p-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                      title="Activate / Start Session Now"
                     >
                       <Play className="w-4 h-4" />
                     </button>
                   ) : null}
 
+                  {/* PROMINENT DELETE BUTTON */}
                   <button
-                    onClick={() => handleDeleteSession(session.id, session.title)}
-                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-                    title="Delete Session"
+                    onClick={(e) => handlePromptDelete(session, e)}
+                    className="p-2.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                    title={`Delete Quiz: "${session.title}"`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -468,26 +616,94 @@ export const AdminQuizSessions: React.FC = () => {
         </div>
       )}
 
+      {/* DEDICATED DELETE CONFIRMATION MODAL */}
+      {sessionToDelete && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-5 animate-in zoom-in-95 border border-rose-100">
+            <div className="flex items-center space-x-3.5">
+              <div className="p-3 bg-rose-100 text-rose-600 rounded-2xl">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-black text-slate-900 text-base tracking-tight">
+                  Delete Quiz Session
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Permanent removal from portal database
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-rose-50/80 border border-rose-200 rounded-2xl p-4 space-y-2.5 text-xs text-rose-950">
+              <div>
+                <span className="font-bold text-slate-600 text-[11px] block">Quiz Session Title:</span>
+                <span className="font-black text-sm text-slate-900">{sessionToDelete.title}</span>
+              </div>
+              
+              <div className="flex items-center space-x-2 font-mono text-xs pt-1">
+                <span className="px-2.5 py-0.5 bg-white border border-rose-200 rounded-lg font-bold text-rose-800">
+                  PIN: {sessionToDelete.pin}
+                </span>
+                <span className="text-slate-600">
+                  • {sessionToDelete.participant_count || 0} participants recorded
+                </span>
+              </div>
+
+              <p className="text-[11px] text-rose-800 pt-1 leading-relaxed">
+                ⚠️ All participant responses, MCQ submissions, accuracy metrics, and leaderboard records for this quiz will be <strong>permanently deleted</strong>.
+              </p>
+            </div>
+
+            <div className="flex justify-end items-center space-x-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setSessionToDelete(null)}
+                disabled={deletingSession}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteDelete}
+                disabled={deletingSession}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{deletingSession ? 'Deleting Quiz...' : 'Yes, Delete Quiz Session'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CREATE SESSION MODAL */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col animate-in zoom-in-95">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-base flex items-center space-x-2">
-                <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
-                <span>Create Live Quiz Session</span>
-              </h3>
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl space-y-5 max-h-[90vh] flex flex-col animate-in zoom-in-95 my-8">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2.5 bg-amber-100 text-amber-700 rounded-2xl">
+                  <Zap className="w-6 h-6 fill-amber-500" />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-base tracking-tight">
+                    Create Live Quiz Session
+                  </h3>
+                  <p className="text-xs text-slate-500">Configure quiz parameters, question pool, and 6-digit Join PIN</p>
+                </div>
+              </div>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg cursor-pointer hover:bg-slate-100"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {errorMsg && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center space-x-2 text-rose-700 text-xs font-medium">
-                <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-center space-x-2 text-rose-800 text-xs font-bold">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
             )}
@@ -504,7 +720,7 @@ export const AdminQuizSessions: React.FC = () => {
                     placeholder="e.g. Unit 2 Multi-Agent Speed Quiz"
                     value={formData.title}
                     onChange={e => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 focus:outline-none font-medium"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none font-medium"
                   />
                 </div>
 
@@ -517,7 +733,7 @@ export const AdminQuizSessions: React.FC = () => {
                     required
                     value={formData.duration_minutes}
                     onChange={e => setFormData({ ...formData, duration_minutes: parseInt(e.target.value, 10) || 15 })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 focus:outline-none font-bold"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none font-bold"
                   />
                 </div>
               </div>
@@ -527,24 +743,24 @@ export const AdminQuizSessions: React.FC = () => {
                 <label className="block font-bold text-slate-700 mb-1">Description / Rules</label>
                 <textarea
                   rows={2}
-                  placeholder="e.g. 10 MCQs. Synchronized timed session. Fastest answers receive rank advantage."
+                  placeholder="e.g. Synchronized timed session. Fastest correct answers receive rank advantage."
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 focus:outline-none"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none leading-relaxed"
                 />
               </div>
 
               {/* 6-Digit PIN & Target Cohort */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-amber-50/50 p-3 rounded-2xl border border-amber-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-amber-50/70 p-4 rounded-2xl border border-amber-200">
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="font-bold text-amber-900">6-Digit Join PIN *</label>
+                    <label className="font-extrabold text-amber-950">6-Digit Join PIN *</label>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, pin: generateRandomPin() })}
-                      className="text-[10px] text-amber-700 font-bold hover:underline cursor-pointer"
+                      className="text-[10px] text-amber-800 font-bold hover:underline cursor-pointer"
                     >
-                      Regenerate
+                      Generate New
                     </button>
                   </div>
                   <input
@@ -553,16 +769,16 @@ export const AdminQuizSessions: React.FC = () => {
                     maxLength={6}
                     value={formData.pin}
                     onChange={e => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '') })}
-                    className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-mono text-center font-black text-lg tracking-widest text-amber-900 focus:outline-none"
+                    className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-mono text-center font-black text-xl tracking-widest text-amber-950 focus:ring-2 focus:ring-amber-500 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-amber-900 mb-1">Target Audience</label>
+                  <label className="block font-extrabold text-amber-950 mb-1">Target Audience</label>
                   <select
                     value={formData.target_type}
                     onChange={e => setFormData({ ...formData, target_type: e.target.value as any })}
-                    className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-bold text-slate-700 focus:outline-none"
+                    className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-bold text-slate-800 outline-none"
                   >
                     <option value="ALL">All Students (Whole Portal)</option>
                     <option value="DEPARTMENT">Specific Department</option>
@@ -600,26 +816,28 @@ export const AdminQuizSessions: React.FC = () => {
 
               {/* Question Selection Mode */}
               <div className="border border-slate-200 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-800">Quiz Content Source</label>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <label className="font-extrabold text-slate-800">Quiz Questions Source</label>
                   <div className="flex items-center space-x-3 text-xs">
-                    <label className="flex items-center space-x-1 cursor-pointer font-bold">
+                    <label className="flex items-center space-x-1.5 cursor-pointer font-bold">
                       <input
                         type="radio"
                         name="source_type"
                         checked={formData.source_type === 'QUESTIONS'}
                         onChange={() => setFormData({ ...formData, source_type: 'QUESTIONS' })}
+                        className="text-amber-600 focus:ring-amber-500"
                       />
                       <span>Question Bank ({selectedQuestionIds.length} chosen)</span>
                     </label>
-                    <label className="flex items-center space-x-1 cursor-pointer font-bold">
+                    <label className="flex items-center space-x-1.5 cursor-pointer font-bold">
                       <input
                         type="radio"
                         name="source_type"
                         checked={formData.source_type === 'ASSESSMENT'}
                         onChange={() => setFormData({ ...formData, source_type: 'ASSESSMENT' })}
+                        className="text-amber-600 focus:ring-amber-500"
                       />
-                      <span>Use Existing Assessment</span>
+                      <span>From Assessment</span>
                     </label>
                   </div>
                 </div>
@@ -638,16 +856,16 @@ export const AdminQuizSessions: React.FC = () => {
                     </select>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     <div className="flex items-center justify-between text-[11px] text-slate-500 pb-1">
-                      <span>Select questions below ({selectedQuestionIds.length} of {availableQuestions.length} chosen):</span>
+                      <span>Select questions ({selectedQuestionIds.length} of {availableQuestions.length} selected):</span>
                       <a 
                         href="/admin/question-bank" 
                         target="_blank" 
                         rel="noreferrer" 
-                        className="font-bold text-purple-600 hover:text-purple-700 hover:underline flex items-center space-x-1 cursor-pointer"
+                        className="font-bold text-amber-700 hover:text-amber-800 hover:underline flex items-center space-x-1 cursor-pointer"
                       >
-                        <span>Add / Generate Questions</span>
+                        <span>Add Questions</span>
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
@@ -656,7 +874,7 @@ export const AdminQuizSessions: React.FC = () => {
                         <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
                         <input
                           type="text"
-                          placeholder="Search questions by topic or text..."
+                          placeholder="Search questions by topic or keyword..."
                           value={questionSearch}
                           onChange={e => setQuestionSearch(e.target.value)}
                           className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none"
@@ -680,16 +898,9 @@ export const AdminQuizSessions: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleSelectRandomQuestions(25)}
-                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[10px] cursor-pointer"
-                        >
-                          Random 25
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSelectRandomQuestions(50)}
                           className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-lg text-[10px] cursor-pointer"
                         >
-                          Random 50
+                          Random 25
                         </button>
                         <button
                           type="button"
@@ -710,7 +921,7 @@ export const AdminQuizSessions: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="max-h-48 overflow-y-auto border border-slate-100 rounded-xl divide-y divide-slate-100">
+                    <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
                       {availableQuestions
                         .filter(q => !questionSearch || q.question_text.toLowerCase().includes(questionSearch.toLowerCase()) || q.topic?.toLowerCase().includes(questionSearch.toLowerCase()))
                         .map(q => {
@@ -720,7 +931,7 @@ export const AdminQuizSessions: React.FC = () => {
                               key={q.id} 
                               onClick={() => toggleQuestionSelection(q.id)}
                               className={`p-2.5 flex items-start space-x-2.5 cursor-pointer hover:bg-slate-50 transition-colors ${
-                                isSelected ? 'bg-amber-50/60' : ''
+                                isSelected ? 'bg-amber-50/70' : ''
                               }`}
                             >
                               <input 
@@ -747,31 +958,22 @@ export const AdminQuizSessions: React.FC = () => {
                 )}
               </div>
 
-              {/* Submit Buttons */}
-              <div className="pt-2 flex justify-end space-x-2 border-t border-slate-100">
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-md flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer disabled:opacity-50"
                 >
-                  {creating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Creating Session...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 fill-white" />
-                      <span>Launch Session Now</span>
-                    </>
-                  )}
+                  {creating && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>{creating ? 'Creating Session...' : 'Activate & Launch Quiz'}</span>
                 </button>
               </div>
             </form>
@@ -779,22 +981,26 @@ export const AdminQuizSessions: React.FC = () => {
         </div>
       )}
 
-      {/* LIVE ROSTER & LEADERBOARD DRAWER */}
+      {/* LIVE ROSTER & LEADERBOARD MODAL (WITH DIRECT DELETE OPTION) */}
       {selectedSessionForRoster && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col animate-in zoom-in-95">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-7 shadow-2xl space-y-5 max-h-[90vh] flex flex-col animate-in zoom-in-95 my-8">
+            
+            {/* Modal Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="font-extrabold text-slate-900 text-base break-words line-clamp-2">{selectedSessionForRoster.title}</h3>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    selectedSessionForRoster.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                  <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase ${
+                    selectedSessionForRoster.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' :
+                    selectedSessionForRoster.status === 'SCHEDULED' ? 'bg-sky-100 text-sky-800' :
+                    'bg-slate-100 text-slate-600'
                   }`}>
                     {selectedSessionForRoster.status}
                   </span>
+                  <h3 className="font-extrabold text-slate-900 text-base">{selectedSessionForRoster.title}</h3>
                 </div>
-                <div className="flex items-center space-x-3 text-xs text-slate-500 mt-1">
-                  <span className="font-mono font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                <div className="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-3">
+                  <span className="font-mono font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
                     PIN: {selectedSessionForRoster.pin}
                   </span>
                   <span>Duration: {selectedSessionForRoster.duration_minutes} mins</span>
@@ -802,95 +1008,114 @@ export const AdminQuizSessions: React.FC = () => {
                 </div>
               </div>
 
+              {/* Header Actions: Refresh, Delete, Close */}
               <div className="flex items-center space-x-2">
                 <button
+                  type="button"
                   onClick={() => openRoster(selectedSessionForRoster.id)}
                   className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center space-x-1 cursor-pointer"
                 >
+                  <RefreshCw className="w-3.5 h-3.5" />
                   <span>Refresh</span>
                 </button>
+
+                {/* DIRECT DELETE OPTION INSIDE ROSTER MODAL */}
                 <button
-                  onClick={() => setSelectedSessionForRoster(null)}
-                  className="text-slate-400 hover:text-slate-600 font-bold text-lg p-1 cursor-pointer"
+                  type="button"
+                  onClick={() => handlePromptDelete(selectedSessionForRoster)}
+                  className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs flex items-center space-x-1.5 cursor-pointer transition-all"
+                  title="Delete this quiz session"
                 >
-                  ✕
+                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Delete Quiz</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedSessionForRoster(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl cursor-pointer hover:bg-slate-100"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
             {/* Roster / Leaderboard Content */}
             {rosterLoading ? (
-              <div className="p-12 text-center text-xs text-slate-400 font-semibold animate-pulse">
-                Loading live session roster & leaderboard...
+              <div className="p-12 text-center text-xs text-slate-400 font-bold flex flex-col items-center justify-center space-y-2">
+                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+                <span>Loading live session roster & leaderboard...</span>
               </div>
             ) : !sessionDetails || (sessionDetails.participants?.length === 0) ? (
               <div className="p-12 text-center">
-                <Users className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                <h4 className="font-bold text-slate-700 text-sm">No students joined this session yet</h4>
-                <p className="text-xs text-slate-400 mt-1">
-                  Share the 6-digit Join PIN <strong className="text-amber-600 font-mono text-sm">{selectedSessionForRoster.pin}</strong> with your students to enter the lobby.
+                <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <h4 className="font-extrabold text-slate-800 text-base">No students joined this session yet</h4>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                  Share the 6-digit Join PIN <strong className="text-amber-800 font-mono text-sm bg-amber-50 px-2 py-0.5 rounded border border-amber-200">{selectedSessionForRoster.pin}</strong> with your students to enter the live room.
                 </p>
               </div>
             ) : (
-              <div className="overflow-y-auto flex-1 space-y-4 pr-1">
+              <div className="overflow-y-auto flex-1 space-y-5 pr-1 text-xs">
                 
                 {/* Leaderboard Table */}
                 <div>
-                  <h4 className="font-bold text-slate-900 text-xs mb-2 flex items-center space-x-1.5">
-                    <Trophy className="w-4 h-4 text-amber-500" />
-                    <span>Live Leaderboard & Submissions ({sessionDetails.leaderboard?.length || 0})</span>
-                  </h4>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <h4 className="font-extrabold text-slate-900 flex items-center space-x-1.5">
+                      <Trophy className="w-4 h-4 text-amber-500" />
+                      <span>Live Leaderboard & Submissions ({sessionDetails.leaderboard?.length || 0})</span>
+                    </h4>
+                  </div>
                   
                   {sessionDetails.leaderboard && sessionDetails.leaderboard.length > 0 ? (
-                    <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                    <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
                       <table className="w-full text-left">
-                        <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                        <thead className="bg-slate-50 text-slate-600 font-extrabold text-[11px] border-b border-slate-200">
                           <tr>
-                            <th className="p-2.5">Rank</th>
-                            <th className="p-2.5">Student</th>
-                            <th className="p-2.5">Reg No.</th>
-                            <th className="p-2.5">Score</th>
-                            <th className="p-2.5">Accuracy</th>
-                            <th className="p-2.5">Time Taken</th>
+                            <th className="p-3">Rank</th>
+                            <th className="p-3">Student Name</th>
+                            <th className="p-3">Reg Number</th>
+                            <th className="p-3">Score</th>
+                            <th className="p-3">Accuracy</th>
+                            <th className="p-3">Time</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {sessionDetails.leaderboard.map((lb) => (
-                            <tr key={lb.student_id} className="hover:bg-slate-50">
-                              <td className="p-2.5 font-black">
-                                {lb.rank === 1 ? '🥇 1' : lb.rank === 2 ? '🥈 2' : lb.rank === 3 ? '🥉 3' : lb.rank}
+                            <tr key={lb.student_id} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="p-3 font-black">
+                                {lb.rank === 1 ? '🥇 1st' : lb.rank === 2 ? '🥈 2nd' : lb.rank === 3 ? '🥉 3rd' : `#${lb.rank}`}
                               </td>
-                              <td className="p-2.5 font-bold text-slate-800 max-w-[150px] truncate">{lb.student_name}</td>
-                              <td className="p-2.5 font-mono text-slate-500">{lb.student_reg}</td>
-                              <td className="p-2.5 font-black text-emerald-700">{lb.score} / {lb.max_score}</td>
-                              <td className="p-2.5 font-bold text-purple-700">{lb.percentage}%</td>
-                              <td className="p-2.5 text-slate-500">{lb.time_taken_seconds}s</td>
+                              <td className="p-3 font-extrabold text-slate-800 max-w-[160px] truncate">{lb.student_name}</td>
+                              <td className="p-3 font-mono text-slate-500 font-medium">{lb.student_reg}</td>
+                              <td className="p-3 font-black text-emerald-700">{lb.score} / {lb.max_score}</td>
+                              <td className="p-3 font-bold text-purple-700">{lb.percentage}%</td>
+                              <td className="p-3 text-slate-500 font-mono">{lb.time_taken_seconds}s</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl">
-                      Students are currently in the lobby or taking the quiz. Submissions will appear here live.
+                    <p className="text-xs text-slate-400 italic bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      Students are currently in the lobby or taking the quiz. Submissions will populate here live upon completion.
                     </p>
                   )}
                 </div>
 
                 {/* All Joined Participants List */}
                 <div>
-                  <h4 className="font-bold text-slate-900 text-xs mb-2 flex items-center space-x-1.5">
+                  <h4 className="font-extrabold text-slate-900 mb-2.5 flex items-center space-x-1.5">
                     <Users className="w-4 h-4 text-purple-600" />
                     <span>Lobby Participants ({sessionDetails.participants?.length || 0})</span>
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                     {sessionDetails.participants?.map((p: QuizSessionParticipant) => (
-                      <div key={p.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between min-w-0">
+                      <div key={p.id} className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between min-w-0">
                         <div className="min-w-0 flex-1 mr-2">
-                          <p className="font-bold text-slate-800 truncate">{p.student_name}</p>
+                          <p className="font-extrabold text-slate-800 truncate">{p.student_name}</p>
                           <p className="text-[10px] text-slate-400 font-mono truncate">{p.student_reg} • {p.student_department}</p>
                         </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase ${
                           p.status === 'SUBMITTED' ? 'bg-emerald-100 text-emerald-800' :
                           p.status === 'IN_PROGRESS' ? 'bg-amber-100 text-amber-800' :
                           'bg-sky-100 text-sky-800'
@@ -904,6 +1129,27 @@ export const AdminQuizSessions: React.FC = () => {
 
               </div>
             )}
+
+            {/* Modal Footer with Close and Delete */}
+            <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => handlePromptDelete(selectedSessionForRoster)}
+                className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <span>Delete This Quiz</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedSessionForRoster(null)}
+                className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                Close View
+              </button>
+            </div>
+
           </div>
         </div>
       )}
@@ -911,3 +1157,5 @@ export const AdminQuizSessions: React.FC = () => {
     </div>
   );
 };
+
+export default AdminQuizSessions;
