@@ -39,10 +39,15 @@ export const getFileUrl = (url?: string): string => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Clear token if unauthenticated/expired
+    if (error.response?.status === 401 || (error.response?.status === 403 && error.response?.data?.is_restricted)) {
+      // Clear token if unauthenticated, expired, or restricted
       localStorage.removeItem('portal_auth_token');
       localStorage.removeItem('portal_auth_user');
+
+      if (error.response?.data?.is_restricted && error.response?.data?.message) {
+        sessionStorage.setItem('portal_restriction_msg', error.response.data.message);
+      }
+
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

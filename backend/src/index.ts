@@ -22,6 +22,7 @@ import analyticsRouter from './routes/analytics.js';
 import auditLogsRouter from './routes/auditLogs.js';
 import adminsRouter from './routes/admins.js';
 import quizSessionsRouter from './routes/quizSessions.js';
+import restrictionsRouter from './routes/restrictions.js';
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.use('/uploads', express.static(uploadsDir));
 app.use('/api/auth', authRouter);
 app.use('/api/admins', adminsRouter);
 app.use('/api/students', studentsRouter);
+app.use('/api/restrictions', restrictionsRouter);
 app.use('/api/materials', materialsRouter);
 app.use('/api/assessments', assessmentsRouter);
 app.use('/api/pdf', pdfRouter);

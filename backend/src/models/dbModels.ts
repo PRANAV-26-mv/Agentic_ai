@@ -30,6 +30,14 @@ export interface Student {
   created_at: string;
 }
 
+export interface RestrictedEmail {
+  id: string;
+  email: string;
+  reason?: string;
+  restricted_by: string;
+  restricted_at: string;
+}
+
 export interface StudyMaterial {
   id: string;
   title: string;
@@ -1252,5 +1260,69 @@ export const QuizSessionParticipantsModel = {
       time_taken_seconds: p.time_taken_seconds ?? 0,
       submitted_at: p.submitted_at
     }));
+  }
+};
+
+export const RestrictedEmailsModel = {
+  findAll(): RestrictedEmail[] {
+    const list = (memoryDb.table('restricted_emails') || []) as RestrictedEmail[];
+    return [...list];
+  },
+  findByEmail(email: string): RestrictedEmail | undefined {
+    if (!email) return undefined;
+    const clean = email.trim().toLowerCase();
+    const list = (memoryDb.table('restricted_emails') || []) as RestrictedEmail[];
+    return list.find(r => r.email.toLowerCase() === clean);
+  },
+  findById(id: string): RestrictedEmail | undefined {
+    const list = (memoryDb.table('restricted_emails') || []) as RestrictedEmail[];
+    return list.find(r => r.id === id);
+  },
+  isEmailRestricted(email: string): boolean {
+    if (!email) return false;
+    const clean = email.trim().toLowerCase();
+    // Super Admin can NEVER be restricted
+    if (clean === 'pranavannur9659@gmail.com') return false;
+    const list = (memoryDb.table('restricted_emails') || []) as RestrictedEmail[];
+    return list.some(r => r.email.toLowerCase() === clean);
+  },
+  add(email: string, reason?: string, restrictedBy: string = 'pranavannur9659@gmail.com'): RestrictedEmail {
+    if (!email || !email.trim()) {
+      throw new Error('Email address is required to restrict access.');
+    }
+    const clean = email.trim().toLowerCase();
+    if (clean === 'pranavannur9659@gmail.com') {
+      throw new Error('The Super Admin (pranavannur9659@gmail.com) cannot be restricted.');
+    }
+    const existing = this.findByEmail(clean);
+    if (existing) {
+      if (reason && reason !== existing.reason) {
+        existing.reason = reason;
+        db.save();
+      }
+      return existing;
+    }
+    const newRestricted: RestrictedEmail = {
+      id: `restr-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      email: clean,
+      reason: reason?.trim() || 'Restricted by Super Admin',
+      restricted_by: restrictedBy,
+      restricted_at: new Date().toISOString()
+    };
+    memoryDb.table('restricted_emails').push(newRestricted);
+    db.save();
+    return newRestricted;
+  },
+  remove(idOrEmail: string): boolean {
+    if (!idOrEmail) return false;
+    const clean = idOrEmail.trim().toLowerCase();
+    const list = (memoryDb.table('restricted_emails') || []) as RestrictedEmail[];
+    const index = list.findIndex(r => r.id === idOrEmail || r.email.toLowerCase() === clean);
+    if (index !== -1) {
+      list.splice(index, 1);
+      db.save();
+      return true;
+    }
+    return false;
   }
 };

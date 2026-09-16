@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
-import { AdminsModel, StudentsModel, AuditLogsModel } from '../models/dbModels.js';
+import { AdminsModel, StudentsModel, AuditLogsModel, RestrictedEmailsModel } from '../models/dbModels.js';
 import { generateToken, requireAuth, AuthRequest } from '../middleware/authMiddleware.js';
 
 const router = Router();
@@ -18,9 +18,26 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     const cleanId = login_id.trim().toLowerCase();
     const cleanPassword = password ? password.trim() : '';
 
+    // Check if the input ID itself is an email that has been restricted
+    if (cleanId.includes('@') && RestrictedEmailsModel.isEmailRestricted(cleanId)) {
+      res.status(403).json({ 
+        is_restricted: true,
+        message: `Access Denied: Your email address '${cleanId}' has been restricted by the Super Admin. You cannot enter this website. Please contact pranavannur9659@gmail.com.` 
+      });
+      return;
+    }
+
     // 1. Check Admin (by email or admin username)
     const admin = AdminsModel.findByEmail(cleanId) || (cleanId === 'admin' ? AdminsModel.findByEmail('admin@college.edu') : undefined);
     if (admin) {
+      if (RestrictedEmailsModel.isEmailRestricted(admin.email)) {
+        res.status(403).json({ 
+          is_restricted: true,
+          message: `Access Denied: Your admin email address '${admin.email}' has been restricted by the Super Admin. You cannot enter this website.` 
+        });
+        return;
+      }
+
       const expectedPassword = admin.password || (admin.email === 'pranavannur9659@gmail.com' ? '9488529035' : 'admin');
       if (cleanPassword && cleanPassword !== expectedPassword && cleanPassword !== 'admin' && cleanPassword !== '9488529035') {
         res.status(401).json({ message: 'Invalid Admin Password.' });
@@ -42,6 +59,15 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     // If student is not registered in the system, deny access!
     if (!student) {
       res.status(403).json({ message: 'Access Denied: Your email or Register Number is not registered in the Student Portal. Only authorized students can log in.' });
+      return;
+    }
+
+    // Check if student's registered email has been restricted by Super Admin
+    if (RestrictedEmailsModel.isEmailRestricted(student.email)) {
+      res.status(403).json({ 
+        is_restricted: true,
+        message: `Access Denied: Your email address '${student.email}' has been restricted by the Super Admin. You cannot enter this website. Please contact pranavannur9659@gmail.com.` 
+      });
       return;
     }
 
@@ -99,6 +125,15 @@ router.post('/google', async (req: Request, res: Response): Promise<void> => {
 
     const cleanEmail = userEmail.trim().toLowerCase();
 
+    // Check if email has been restricted by Super Admin
+    if (RestrictedEmailsModel.isEmailRestricted(cleanEmail)) {
+      res.status(403).json({ 
+        is_restricted: true,
+        message: `Access Denied: Your email address '${cleanEmail}' has been restricted by the Super Admin. You cannot enter this website. Please contact pranavannur9659@gmail.com.` 
+      });
+      return;
+    }
+
     const matchedAdmin = AdminsModel.findByEmail(cleanEmail);
     if (matchedAdmin) {
       const token = generateToken({ id: matchedAdmin.id, email: matchedAdmin.email, name: matchedAdmin.name, role: 'ADMIN' });
@@ -134,6 +169,14 @@ router.get('/google-client-id', (_req: Request, res: Response) => {
 
 // GET /api/auth/me
 router.get('/me', requireAuth, (req: AuthRequest, res: Response) => {
+  if (req.user?.email && RestrictedEmailsModel.isEmailRestricted(req.user.email)) {
+    res.status(403).json({ 
+      is_restricted: true,
+      message: 'Access Denied: Your email has been restricted by the Super Admin.' 
+    });
+    return;
+  }
+
   if (req.user?.role === 'ADMIN') {
     res.json({ role: 'ADMIN', user: req.user.admin });
   } else if (req.user?.role === 'STUDENT') {

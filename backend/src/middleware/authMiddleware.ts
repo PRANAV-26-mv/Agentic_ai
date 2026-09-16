@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { AdminsModel, StudentsModel, Admin, Student } from '../models/dbModels.js';
+import { AdminsModel, StudentsModel, RestrictedEmailsModel, Admin, Student } from '../models/dbModels.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'portal-super-secret-jwt-key-2026';
 
@@ -41,6 +41,14 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as AuthenticatedUser;
     
+    // Check if the user's email has been restricted by Super Admin
+    if (decoded.email && RestrictedEmailsModel.isEmailRestricted(decoded.email)) {
+      res.status(403).json({ 
+        is_restricted: true,
+        message: 'Access Denied: Your email has been restricted by the Super Admin. You cannot enter or access this website.' 
+      });
+      return;
+    }
     if (decoded.role === 'ADMIN') {
       const admin = AdminsModel.findById(decoded.id);
       if (!admin) {

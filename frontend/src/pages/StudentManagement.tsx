@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Student } from '../types';
-import { Users, UserPlus, FileSpreadsheet, Search, Filter, Edit, Trash2, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Users, UserPlus, FileSpreadsheet, Search, Filter, Edit, Trash2, CheckCircle2, ShieldAlert, Ban, Unlock } from 'lucide-react';
 import { BulkImportModal } from './BulkImportModal';
+import { useAuth } from '../context/AuthContext';
 
 export const StudentManagement: React.FC = () => {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.email?.toLowerCase() === 'pranavannur9659@gmail.com' || user?.is_super_admin;
+
   const [students, setStudents] = useState<Student[]>([]);
+  const [restrictedEmails, setRestrictedEmails] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [deptFilter, setDeptFilter] = useState<string>('');
   const [yearFilter, setYearFilter] = useState<string>('');
@@ -44,9 +49,43 @@ export const StudentManagement: React.FC = () => {
       .finally(() => setLoading(false));
   };
 
+  const fetchRestrictions = () => {
+    if (!isSuperAdmin) return;
+    api.get('/restrictions')
+      .then(res => {
+        const set = new Set<string>();
+        (res.data || []).forEach((r: any) => set.add(r.email.toLowerCase()));
+        setRestrictedEmails(set);
+      })
+      .catch(() => {});
+  };
+
   useEffect(() => {
     fetchStudents();
+    fetchRestrictions();
   }, [searchTerm, deptFilter, yearFilter, commFilter]);
+
+  const handleRestrictStudent = async (email: string, name: string) => {
+    if (!window.confirm(`RESTRICT ACCESS for student:\n${name} (${email})?\n\nOnce restricted, this student CANNOT log in or enter the website.`)) return;
+    try {
+      await api.post('/restrictions', { email, reason: `Restricted student: ${name}` });
+      alert(`Access restricted for ${email}. Student cannot enter the website.`);
+      fetchRestrictions();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to restrict student.');
+    }
+  };
+
+  const handleUnrestrictStudent = async (email: string) => {
+    if (!window.confirm(`RESTORE ACCESS for student:\n${email}?\n\nThey will be able to log in and use the portal again.`)) return;
+    try {
+      await api.delete(`/restrictions/${encodeURIComponent(email)}`);
+      alert(`Access restored for ${email}.`);
+      fetchRestrictions();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to lift restriction.');
+    }
+  };
 
   const handleAddStudent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,7 +205,40 @@ export const StudentManagement: React.FC = () => {
                   <td className="p-4 font-bold font-mono text-purple-700">{std.student_id}</td>
                   <td className="p-4">
                     <div className="font-bold text-slate-900">{std.name}</div>
-                    <div className="text-slate-500 text-[11px]">{std.email}</div>
+                    <div className="flex items-center space-x-1.5 mt-0.5">
+                      {isSuperAdmin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const isRestricted = restrictedEmails.has(std.email.toLowerCase());
+                            if (isRestricted) {
+                              handleUnrestrictStudent(std.email);
+                            } else {
+                              handleRestrictStudent(std.email, std.name);
+                            }
+                          }}
+                          className={`text-[11px] font-mono font-bold transition-all text-left ${
+                            restrictedEmails.has(std.email.toLowerCase())
+                              ? 'text-rose-700 bg-rose-50 hover:bg-rose-100 line-through px-1.5 py-0.5 rounded cursor-pointer'
+                              : 'text-purple-700 hover:text-purple-900 underline decoration-purple-300 underline-offset-2 cursor-pointer'
+                          }`}
+                          title={
+                            restrictedEmails.has(std.email.toLowerCase())
+                              ? 'Restricted: Click email to unblock'
+                              : 'Click email to restrict access for this student'
+                          }
+                        >
+                          {std.email}
+                        </button>
+                      ) : (
+                        <span className="text-slate-500 text-[11px] font-mono">{std.email}</span>
+                      )}
+                      {restrictedEmails.has(std.email.toLowerCase()) && (
+                        <span className="bg-rose-100 text-rose-800 text-[9px] font-extrabold px-1.5 py-0.2 rounded uppercase">
+                          Restricted
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="p-4 font-medium">{std.department} (Yr {std.year})</td>
                   <td className="p-4 text-slate-800 font-medium">{std.community}</td>
@@ -177,6 +249,25 @@ export const StudentManagement: React.FC = () => {
                   </td>
                   <td className="p-4 font-semibold text-purple-700">{std.suggested_role || 'AI Developer'}</td>
                   <td className="p-4 text-right space-x-2">
+                    {isSuperAdmin && (
+                      restrictedEmails.has(std.email.toLowerCase()) ? (
+                        <button
+                          onClick={() => handleUnrestrictStudent(std.email)}
+                          className="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors cursor-pointer"
+                          title="Unrestrict / Restore Website Access"
+                        >
+                          <Unlock className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleRestrictStudent(std.email, std.name)}
+                          className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
+                          title="Restrict Access by Email (Blocks entry into website)"
+                        >
+                          <Ban className="w-4 h-4" />
+                        </button>
+                      )
+                    )}
                     <button
                       onClick={() => handleDeleteStudent(std.id, std.name)}
                       className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"

@@ -1,4 +1,5 @@
 {
+  "restricted_emails": [],
   "admins": [
     {
       "id": "adm-002",

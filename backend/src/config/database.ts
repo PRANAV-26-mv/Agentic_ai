@@ -79,6 +79,7 @@ export interface DbData {
   doubt_messages: any[];
   quiz_sessions: any[];
   quiz_session_participants: any[];
+  restricted_emails: any[];
 }
 
 const initialData: DbData = {
@@ -104,7 +105,8 @@ const initialData: DbData = {
   doubt_conversations: [],
   doubt_messages: [],
   quiz_sessions: [],
-  quiz_session_participants: []
+  quiz_session_participants: [],
+  restricted_emails: []
 };
 
 export type StorageMode = 'postgres' | 'cloud_sync' | 'persistent_disk' | 'ephemeral_local';
@@ -320,7 +322,8 @@ class MemoryDb {
         attempts: this.data.assessment_attempts?.length || 0,
         attendance_sessions: this.data.attendance_sessions?.length || 0,
         notifications: this.data.notifications?.length || 0,
-        audit_logs: this.data.audit_logs?.length || 0
+        audit_logs: this.data.audit_logs?.length || 0,
+        restricted_emails: this.data.restricted_emails?.length || 0
       }
     };
   }

@@ -18,6 +18,12 @@ export const LoginPage: React.FC = () => {
   );
 
   useEffect(() => {
+    const restrictionMsg = sessionStorage.getItem('portal_restriction_msg');
+    if (restrictionMsg) {
+      setErrorMsg(restrictionMsg);
+      sessionStorage.removeItem('portal_restriction_msg');
+    }
+
     api.get('/auth/google-client-id')
       .then(res => {
         if (res.data?.google_client_id) {

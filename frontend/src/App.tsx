@@ -32,6 +32,7 @@ import { AssessmentMonitoring } from './pages/AssessmentMonitoring';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AuditLogPage } from './pages/AuditLogPage';
 import { AdminManagement } from './pages/AdminManagement';
+import { UserRestrictionsPage } from './pages/UserRestrictionsPage';
 
 const ProtectedStudentRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, role, loading } = useAuth();
@@ -136,6 +137,14 @@ export function App() {
               element={
                 <ProtectedSuperAdminRoute>
                   <AdminManagement />
+                </ProtectedSuperAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/restrictions"
+              element={
+                <ProtectedSuperAdminRoute>
+                  <UserRestrictionsPage />
                 </ProtectedSuperAdminRoute>
               }
             />

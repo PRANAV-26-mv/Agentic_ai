@@ -946,6 +946,44 @@
   ],
   "audit_logs": [
     {
+      "id": "audit-1789529147580-434",
+      "actor_id": "std-001",
+      "actor_role": "STUDENT",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "std-001",
+      "timestamp": "2026-09-16T03:25:47.580Z"
+    },
+    {
+      "id": "audit-1789529147574-191",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "UNRESTRICT_USER_EMAIL",
+      "entity_type": "USER",
+      "entity_id": "restr-1789529147558-iy6u",
+      "metadata": "{\"email\":\"deepikaj.ad24@bitsathy.ac.in\"}",
+      "timestamp": "2026-09-16T03:25:47.574Z"
+    },
+    {
+      "id": "audit-1789529147560-536",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "RESTRICT_USER_EMAIL",
+      "entity_type": "USER",
+      "entity_id": "restr-1789529147558-iy6u",
+      "metadata": "{\"email\":\"deepikaj.ad24@bitsathy.ac.in\",\"reason\":\"Automated test restriction\",\"restricted_by\":\"pranavannur9659@gmail.com\"}",
+      "timestamp": "2026-09-16T03:25:47.560Z"
+    },
+    {
+      "id": "audit-1789529147531-908",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-09-16T03:25:47.531Z"
+    },
+    {
       "id": "audit-1789496721921-774",
       "actor_id": "adm-002",
       "actor_role": "ADMIN",
@@ -1439,5 +1477,6 @@
       "answers_json": "{\"q-001\":\"A\",\"q-002\":\"B\",\"q-003\":\"A\"}",
       "time_taken_seconds": 1
     }
-  ]
+  ],
+  "restricted_emails": []
 }

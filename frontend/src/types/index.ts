@@ -41,6 +41,14 @@ export interface Admin {
   created_at: string;
 }
 
+export interface RestrictedEmail {
+  id: string;
+  email: string;
+  reason?: string;
+  restricted_by: string;
+  restricted_at: string;
+}
+
 export interface StudyMaterial {
   id: string;
   title: string;
