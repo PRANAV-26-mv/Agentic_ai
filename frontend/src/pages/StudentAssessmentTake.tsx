@@ -339,37 +339,69 @@ export const StudentAssessmentTake: React.FC = () => {
       </header>
 
       {/* Main Examination Grid */}
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         
         {/* Left Column: Question Card matching §17 & §18 */}
-        <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between space-y-6">
+        <div className="lg:col-span-3 bg-white rounded-3xl border border-slate-200 p-4 sm:p-8 shadow-xs flex flex-col justify-between space-y-5 sm:space-y-6">
           
+          {/* Mobile Question Quick Navigator Rail (Visible on Mobile/Tablet only) */}
+          <div className="block lg:hidden border-b border-slate-100 pb-3">
+            <div className="flex items-center justify-between text-xs mb-2">
+              <span className="font-extrabold text-slate-700">Question Navigator</span>
+              <span className="text-[11px] text-slate-400 font-semibold">
+                {Object.keys(answers).filter(k => answers[k]?.selected_option || answers[k]?.student_answer).length} of {questions.length} answered
+              </span>
+            </div>
+            <div className="flex items-center space-x-1.5 overflow-x-auto py-1 scrollbar-thin scrollbar-thumb-slate-200">
+              {questions.map((q, idx) => {
+                const ans = answers[q.id];
+                const isAns = ans && (ans.selected_option || (ans.student_answer && ans.student_answer.trim().length > 0));
+                const isCurrent = idx === currentIndex;
+                return (
+                  <button
+                    key={q.id}
+                    onClick={() => setCurrentIndex(idx)}
+                    className={`w-8 h-8 rounded-xl text-xs font-black shrink-0 flex items-center justify-center transition-all cursor-pointer ${
+                      isCurrent
+                        ? 'bg-brand-600 text-white shadow-md ring-2 ring-brand-400'
+                        : isAns
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    {idx + 1}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {currentQ && (
-            <div className="space-y-6">
+            <div className="space-y-5 sm:space-y-6">
               
               {/* Question Meta Header */}
-              <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-                <span className="text-xs font-extrabold text-brand-600 uppercase tracking-wider">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3 sm:pb-4 gap-2">
+                <span className="text-xs font-black text-brand-600 uppercase tracking-wider">
                   Question {currentIndex + 1} of {questions.length}
                 </span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs font-semibold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full">
+                <div className="flex items-center space-x-2 shrink-0">
+                  <span className="text-[11px] font-extrabold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full">
                     {currentQ.question_type}
                   </span>
-                  <span className="text-xs font-semibold bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full">
-                    {currentQ.marks} Marks
+                  <span className="text-[11px] font-extrabold bg-brand-50 text-brand-700 px-2.5 py-0.5 rounded-full border border-brand-100">
+                    {currentQ.marks} Mark{(currentQ.marks || 1) > 1 ? 's' : ''}
                   </span>
                 </div>
               </div>
 
               {/* Question Text */}
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-relaxed">
+              <h2 className="text-base sm:text-xl font-bold text-slate-900 leading-relaxed break-words whitespace-pre-wrap">
                 {currentQ.question_text}
               </h2>
 
               {/* MCQ Options matching §17 */}
               {currentQ.question_type === 'MCQ' && (
-                <div className="space-y-3 pt-2">
+                <div className="space-y-3 pt-1">
                   {[
                     { key: 'A', text: currentQ.option_a },
                     { key: 'B', text: currentQ.option_b },
@@ -381,18 +413,20 @@ export const StudentAssessmentTake: React.FC = () => {
                       <label
                         key={opt.key}
                         onClick={() => saveAnswerDraft(currentQ.id, { selected_option: opt.key })}
-                        className={`flex items-center space-x-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                        className={`flex items-start space-x-3 p-3.5 sm:p-4 rounded-2xl border-2 cursor-pointer transition-all min-w-0 ${
                           isSelected
-                            ? 'border-brand-600 bg-brand-50/50 text-brand-900 shadow-sm'
-                            : 'border-slate-200 hover:border-slate-300 text-slate-700'
+                            ? 'border-brand-600 bg-brand-50/70 text-brand-950 shadow-xs ring-2 ring-brand-500/20'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
                         }`}
                       >
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center font-bold text-xs ${
-                          isSelected ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 text-slate-500'
+                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs shrink-0 mt-0.5 transition-colors ${
+                          isSelected ? 'bg-brand-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600'
                         }`}>
                           {opt.key}
                         </div>
-                        <span className="text-sm font-medium">{opt.text}</span>
+                        <span className="text-xs sm:text-sm font-semibold flex-1 min-w-0 break-words leading-relaxed pt-0.5">
+                          {opt.text}
+                        </span>
                       </label>
                     );
                   })}
@@ -401,17 +435,17 @@ export const StudentAssessmentTake: React.FC = () => {
 
               {/* Writing Answer Box matching §18 */}
               {currentQ.question_type === 'WRITING' && (
-                <div className="space-y-2 pt-2">
+                <div className="space-y-2 pt-1">
                   <textarea
-                    rows={8}
-                    placeholder="Type your answer here..."
+                    rows={7}
+                    placeholder="Type your detailed answer response here..."
                     value={answers[currentQ.id]?.student_answer || ''}
                     onChange={(e) => saveAnswerDraft(currentQ.id, { student_answer: e.target.value })}
-                    className="w-full p-4 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none bg-slate-50/50"
+                    className="w-full p-4 border border-slate-300 rounded-2xl text-xs sm:text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none bg-slate-50/50 leading-relaxed transition-all"
                   />
-                  <div className="flex justify-between text-xs text-slate-400">
-                    <span>Answers are saved automatically periodically.</span>
-                    <span>{(answers[currentQ.id]?.student_answer || '').length} characters</span>
+                  <div className="flex flex-col sm:flex-row justify-between gap-1 text-[11px] text-slate-400">
+                    <span>Draft is automatically saved securely.</span>
+                    <span className="font-semibold text-slate-600">{(answers[currentQ.id]?.student_answer || '').length} characters</span>
                   </div>
                 </div>
               )}
@@ -420,32 +454,37 @@ export const StudentAssessmentTake: React.FC = () => {
           )}
 
           {/* Navigation Controls matching §17 */}
-          <div className="pt-6 border-t border-slate-100 flex justify-between items-center">
+          <div className="pt-5 sm:pt-6 border-t border-slate-100 flex items-center justify-between gap-3 w-full min-w-0">
             <button
               onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
               disabled={currentIndex === 0}
-              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors"
+              className="px-3.5 sm:px-4 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer shrink-0"
             >
               <ChevronLeft className="w-4 h-4" />
-              <span>Previous</span>
+              <span className="hidden xs:inline sm:inline">Previous</span>
             </button>
 
-            <div className="flex items-center space-x-3">
-              {saving && <span className="text-xs text-brand-600 font-semibold flex items-center"><Save className="w-3.5 h-3.5 mr-1 animate-spin" /> Saving...</span>}
+            <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+              {saving && (
+                <span className="text-[11px] text-brand-600 font-semibold flex items-center">
+                  <Save className="w-3.5 h-3.5 mr-1 animate-spin" />
+                  <span className="hidden sm:inline">Saving...</span>
+                </span>
+              )}
 
               {isLastQuestion ? (
                 <button
                   onClick={handleSubmitAssessment}
-                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-colors"
+                  className="px-4 sm:px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition-all cursor-pointer"
                 >
                   Submit Assessment
                 </button>
               ) : (
                 <button
                   onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                  className="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-md transition-colors"
+                  className="px-4 sm:px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-black text-xs rounded-xl flex items-center space-x-1.5 shadow-md transition-all cursor-pointer"
                 >
-                  <span>Save & Next</span>
+                  <span>Next</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               )}

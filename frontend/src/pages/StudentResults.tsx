@@ -186,30 +186,30 @@ export const StudentResults: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl w-fit text-xs font-extrabold">
+      {/* Tabs Navigation - Responsive Grid on Mobile */}
+      <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl w-full sm:w-fit text-xs font-extrabold">
         <button
           onClick={() => setActiveTab('QUIZZES')}
-          className={`px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center space-x-2 ${
+          className={`w-full sm:w-auto px-3 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1.5 text-center ${
             activeTab === 'QUIZZES'
               ? 'bg-white text-slate-900 shadow-xs'
               : 'text-slate-500 hover:text-slate-900'
           }`}
         >
-          <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-          <span>Live Quiz Sessions ({quizResults.length})</span>
+          <Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
+          <span className="truncate">Live Quizzes ({quizResults.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('ASSESSMENTS')}
-          className={`px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center space-x-2 ${
+          className={`w-full sm:w-auto px-3 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1.5 text-center ${
             activeTab === 'ASSESSMENTS'
               ? 'bg-white text-slate-900 shadow-xs'
               : 'text-slate-500 hover:text-slate-900'
           }`}
         >
-          <Award className="w-4 h-4 text-purple-600" />
-          <span>Formal Assessments ({assessmentResults.length})</span>
+          <Award className="w-4 h-4 text-purple-600 shrink-0" />
+          <span className="truncate">Assessments ({assessmentResults.length})</span>
         </button>
       </div>
 
@@ -221,7 +221,7 @@ export const StudentResults: React.FC = () => {
         /* TAB 1: LIVE QUIZ SESSION RESULTS                     */
         /* ---------------------------------------------------- */
         quizResults.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-12 text-center space-y-3">
+          <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-8 sm:p-12 text-center space-y-3">
             <Zap className="w-10 h-10 text-slate-300 mx-auto" />
             <h3 className="font-extrabold text-slate-800 text-sm">No Live Quiz Results Yet</h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
@@ -229,7 +229,7 @@ export const StudentResults: React.FC = () => {
             </p>
             <button
               onClick={() => navigate('/quiz-sessions')}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
             >
               Browse Quiz Rooms
             </button>
@@ -239,12 +239,12 @@ export const StudentResults: React.FC = () => {
             {quizResults.map((q) => (
               <div 
                 key={q.id}
-                className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs hover:border-amber-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-xs hover:border-amber-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="space-y-2 min-w-0 flex-1">
                   <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                     <span className="bg-purple-100 text-purple-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center space-x-1">
-                      <CheckCircle2 className="w-3 h-3 text-purple-600" />
+                      <CheckCircle2 className="w-3 h-3 text-purple-600 shrink-0" />
                       <span>COMPLETED</span>
                     </span>
                     <span className="bg-amber-50 text-amber-900 border border-amber-200 font-mono text-[10px] font-black px-2 py-0.5 rounded-md">
@@ -259,7 +259,7 @@ export const StudentResults: React.FC = () => {
                     {q.session_title}
                   </h3>
 
-                  <div className="flex items-center space-x-4 text-xs text-slate-500 pt-1">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 pt-1">
                     <span>
                       Duration: <strong>{q.duration_minutes} mins</strong>
                     </span>
@@ -274,22 +274,22 @@ export const StudentResults: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Score & Rank Badges */}
-                <div className="flex items-center space-x-4 shrink-0 sm:border-l sm:border-slate-100 sm:pl-6">
-                  <div className="text-right space-y-0.5">
+                {/* Score & Rank Badges - Full Width & Aligned on Mobile */}
+                <div className="flex items-center justify-between sm:justify-end space-x-4 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 sm:border-l sm:border-slate-100 sm:pl-6 w-full sm:w-auto">
+                  <div className="text-left sm:text-right space-y-0.5">
                     <p className="font-black text-slate-900 text-base">
                       {q.score} / {q.max_score} <span className="text-xs text-slate-400 font-normal">pts</span>
                     </p>
                     <p className="text-xs font-bold text-emerald-600">{q.percentage}% Accuracy</p>
                     <div className="inline-flex items-center space-x-1 bg-amber-50 text-amber-900 px-2 py-0.5 rounded-md border border-amber-200 text-[11px] font-black">
-                      <Trophy className="w-3 h-3 text-amber-500 fill-amber-500" />
+                      <Trophy className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
                       <span>Rank #{q.rank} of {q.total_participants}</span>
                     </div>
                   </div>
 
                   <button
                     onClick={() => navigate(`/quiz-sessions/${q.session_id}`)}
-                    className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-xs transition-colors cursor-pointer"
+                    className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
                   >
                     <BookOpen className="w-3.5 h-3.5 text-amber-400" />
                     <span>Review</span>
@@ -305,45 +305,112 @@ export const StudentResults: React.FC = () => {
         /* TAB 2: FORMAL ASSESSMENT RESULTS                     */
         /* ---------------------------------------------------- */
         assessmentResults.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-12 text-center space-y-3">
+          <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-8 sm:p-12 text-center space-y-3">
             <Award className="w-10 h-10 text-slate-300 mx-auto" />
             <h3 className="font-extrabold text-slate-800 text-sm">No Formal Assessment Results</h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
               You haven't completed any formal exams or assessments yet.
             </p>
+            <button
+              onClick={() => navigate('/assessments')}
+              className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+            >
+              Browse Assessments
+            </button>
           </div>
         ) : (
-          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200">
-                  <th className="p-4">Assessment</th>
-                  <th className="p-4">MCQ Score</th>
-                  <th className="p-4">Writing Score</th>
-                  <th className="p-4">Total Score</th>
-                  <th className="p-4">Percentage</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Submitted Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-                {assessmentResults.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-4 font-bold text-slate-900">{r.assessment_title}</td>
-                    <td className="p-4 font-semibold text-brand-600">{r.mcq_score} pts</td>
-                    <td className="p-4 font-semibold text-purple-600">{r.writing_score} pts</td>
-                    <td className="p-4 font-extrabold text-slate-900">{r.total_score} pts</td>
-                    <td className="p-4 font-bold text-emerald-600">{r.percentage}%</td>
-                    <td className="p-4">
-                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
+          <div className="space-y-4">
+            
+            {/* MOBILE VIEW (Card Layout - Visible on Mobile Only) */}
+            <div className="block sm:hidden space-y-3.5">
+              {assessmentResults.map((r) => (
+                <div 
+                  key={r.id} 
+                  className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                         {r.status}
                       </span>
-                    </td>
-                    <td className="p-4 text-slate-500">{new Date(r.submitted_at || r.started_at).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <h3 className="font-extrabold text-slate-900 text-sm mt-1.5 leading-snug break-words">
+                        {r.assessment_title}
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5 flex items-center space-x-1">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        <span>Submitted on {new Date(r.submitted_at || r.started_at).toLocaleDateString()}</span>
+                      </p>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <p className="text-lg font-black text-emerald-600">{r.percentage}%</p>
+                      <p className="text-[10px] text-slate-400 font-semibold">score rate</p>
+                    </div>
+                  </div>
+
+                  {/* 2x2 Score Grid */}
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
+                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                      <p className="text-[9px] uppercase font-bold text-slate-400">MCQ</p>
+                      <p className="text-xs font-black text-brand-600 mt-0.5">{r.mcq_score} pts</p>
+                    </div>
+                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                      <p className="text-[9px] uppercase font-bold text-slate-400">Writing</p>
+                      <p className="text-xs font-black text-purple-600 mt-0.5">{r.writing_score} pts</p>
+                    </div>
+                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                      <p className="text-[9px] uppercase font-bold text-slate-400">Total</p>
+                      <p className="text-xs font-black text-slate-900 mt-0.5">{r.total_score} pts</p>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full ${r.percentage >= (r.passing_percentage || 60) ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                      style={{ width: `${Math.min(100, r.percentage || 0)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* DESKTOP VIEW (Table Layout with horizontal overflow protection) */}
+            <div className="hidden sm:block bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[640px]">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200">
+                      <th className="p-4">Assessment</th>
+                      <th className="p-4">MCQ Score</th>
+                      <th className="p-4">Writing Score</th>
+                      <th className="p-4">Total Score</th>
+                      <th className="p-4">Percentage</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4">Submitted Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                    {assessmentResults.map((r) => (
+                      <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="p-4 font-bold text-slate-900">{r.assessment_title}</td>
+                        <td className="p-4 font-semibold text-brand-600">{r.mcq_score} pts</td>
+                        <td className="p-4 font-semibold text-purple-600">{r.writing_score} pts</td>
+                        <td className="p-4 font-extrabold text-slate-900">{r.total_score} pts</td>
+                        <td className="p-4 font-bold text-emerald-600">{r.percentage}%</td>
+                        <td className="p-4">
+                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
+                            {r.status}
+                          </span>
+                        </td>
+                        <td className="p-4 text-slate-500">{new Date(r.submitted_at || r.started_at).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
         )
       )}
