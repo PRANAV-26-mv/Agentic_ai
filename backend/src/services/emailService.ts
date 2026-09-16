@@ -9,6 +9,7 @@ export interface SendBroadcastOptions {
   senderName: string;
   senderEmail: string;
   category?: 'GENERAL' | 'ANNOUNCEMENT' | 'ASSESSMENT' | 'URGENT';
+  senderPass?: string;
 }
 
 export interface SendBroadcastResult {
@@ -74,18 +75,35 @@ class EmailService {
     };
   }
 
-  public async testConnection(): Promise<{ success: boolean; message: string }> {
-    if (!this.transporter || !this.isConfigured) {
+  public async testConnection(userEmail?: string, userPass?: string): Promise<{ success: boolean; message: string }> {
+    let testTransporter = this.transporter;
+    const targetUser = userEmail || process.env.SMTP_USER;
+
+    if (userEmail && userPass) {
+      try {
+        const isGmail = userEmail.toLowerCase().includes('@gmail.com');
+        testTransporter = nodemailer.createTransport({
+          host: isGmail ? 'smtp.gmail.com' : (process.env.SMTP_HOST || 'smtp.gmail.com'),
+          port: 465,
+          secure: true,
+          auth: { user: userEmail, pass: userPass }
+        });
+      } catch (err: any) {
+        return { success: false, message: `Failed to create transport: ${err.message}` };
+      }
+    }
+
+    if (!testTransporter) {
       return { 
         success: false, 
-        message: 'SMTP is not configured yet. Please configure your SMTP Host, User email, and App Password.' 
+        message: 'SMTP is not configured yet. Please provide your email app password to enable live delivery.' 
       };
     }
     try {
-      await this.transporter.verify();
+      await testTransporter.verify();
       return { 
         success: true, 
-        message: `SMTP connection to ${process.env.SMTP_HOST} verified successfully! Ready to deliver live emails.` 
+        message: `SMTP connection for ${targetUser} verified successfully! Ready to deliver live emails directly from your email ID.` 
       };
     } catch (err: any) {
       return { 
@@ -305,19 +323,45 @@ class EmailService {
     }
 
     const htmlContent = this.buildHtmlEmail(subject, message, senderName, category);
-    const fromAddress = process.env.EMAIL_FROM || `"${senderName} via College Portal" <portal@college.edu>`;
+    const fromAddress = `"${senderName}" <${senderEmail}>`;
 
-    // If SMTP is properly configured, send through Nodemailer
-    if (this.isConfigured && this.transporter) {
+    // Determine active transporter: Check if admin provided password or if system has SMTP credentials
+    let activeTransporter = this.transporter;
+    const authPass = options.senderPass || (senderEmail.toLowerCase() === (process.env.SMTP_USER || '').toLowerCase() ? process.env.SMTP_PASS : undefined) || (this.isConfigured ? process.env.SMTP_PASS : undefined);
+
+    if (options.senderPass || (authPass && !this.transporter)) {
       try {
-        console.log(`📤 Sending live SMTP broadcast to ${validRecipients.length} recipients...`);
+        const isGmail = senderEmail.toLowerCase().includes('@gmail.com') || (process.env.SMTP_HOST || '').includes('gmail');
+        const host = isGmail ? 'smtp.gmail.com' : (process.env.SMTP_HOST || 'smtp.gmail.com');
+        const port = isGmail ? 465 : (Number(process.env.SMTP_PORT) || 465);
+        const secure = port === 465 || process.env.SMTP_SECURE === 'true';
+
+        activeTransporter = nodemailer.createTransport({
+          host,
+          port,
+          secure,
+          auth: {
+            user: senderEmail,
+            pass: authPass!
+          }
+        });
+      } catch (err: any) {
+        console.error('Failed to create admin-specific transporter:', err.message);
+      }
+    }
+
+    // If SMTP is available, send live email through Nodemailer
+    if (activeTransporter) {
+      try {
+        console.log(`📤 Sending live SMTP broadcast from "${senderName}" <${senderEmail}> to ${validRecipients.length} recipients...`);
 
         // Send in batches of 50 BCC recipients to respect provider limits
         const batchSize = 50;
         for (let i = 0; i < validRecipients.length; i += batchSize) {
           const batch = validRecipients.slice(i, i + batchSize);
-          await this.transporter.sendMail({
+          await activeTransporter.sendMail({
             from: fromAddress,
+            replyTo: senderEmail,
             to: senderEmail, // Primary recipient is sender, actual recipients in BCC
             bcc: batch,
             subject,
@@ -326,13 +370,13 @@ class EmailService {
           });
         }
 
-        console.log(`✅ SMTP email successfully delivered to ${validRecipients.length} recipients.`);
+        console.log(`✅ SMTP email successfully delivered to ${validRecipients.length} recipients from ${senderEmail}.`);
         return {
           success: true,
           status: 'SENT',
           recipientsCount: validRecipients.length,
           validRecipients,
-          message: `Broadcast successfully sent to ${validRecipients.length} recipients via SMTP.`
+          message: `Broadcast successfully sent to ${validRecipients.length} recipients directly from ${senderEmail}.`
         };
       } catch (err: any) {
         console.error('SMTP Delivery error:', err.message);

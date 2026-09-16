@@ -11,6 +11,7 @@ export interface Admin {
   is_super_admin?: boolean;
   department: string;
   created_at: string;
+  email_app_password?: string;
 }
 
 export interface Student {
@@ -52,7 +53,7 @@ export interface EmailLog {
   sent_by_id: string;
   sent_by_name: string;
   sent_by_email: string;
-  status: 'SENT' | 'SIMULATED' | 'FAILED';
+  status: 'SENT' | 'SIMULATED' | 'FAILED' | 'SENT_VIA_GMAIL';
   error_details?: string;
   sent_at: string;
 }
@@ -303,6 +304,19 @@ export const AdminsModel = {
     memoryDb.table('admins').push(newAdmin);
     db.save();
     return newAdmin;
+  },
+  update(id: string, updates: Partial<Admin>): Admin | undefined {
+    const list = memoryDb.table('admins') as Admin[];
+    const index = list.findIndex(a => a.id === id);
+    if (index !== -1) {
+      list[index] = { ...list[index], ...updates };
+      db.save();
+      return {
+        ...list[index],
+        is_super_admin: list[index].email.toLowerCase() === 'pranavannur9659@gmail.com' || Boolean(list[index].is_super_admin)
+      };
+    }
+    return undefined;
   },
   delete(id: string): boolean {
     const list = memoryDb.table('admins');
