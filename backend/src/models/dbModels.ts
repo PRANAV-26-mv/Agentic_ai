@@ -1346,10 +1346,24 @@ export const QuizSessionParticipantsModel = {
   getLeaderboard(sessionId: string) {
     const participants = this.getParticipants(sessionId).filter(p => p.status === 'SUBMITTED');
     participants.sort((a, b) => {
+      // 1. Highest Score (Full marks / highest score wins)
       if ((b.score ?? 0) !== (a.score ?? 0)) {
         return (b.score ?? 0) - (a.score ?? 0);
       }
-      return (a.time_taken_seconds ?? 999999) - (b.time_taken_seconds ?? 999999);
+      // 2. Fastest Completion Time (Lowest time taken in seconds wins)
+      const timeDiff = (a.time_taken_seconds ?? 999999) - (b.time_taken_seconds ?? 999999);
+      if (timeDiff !== 0) {
+        return timeDiff;
+      }
+      // 3. Proctoring Integrity (Fewer tab switches wins)
+      const switchDiff = (a.tab_switches_count ?? 0) - (b.tab_switches_count ?? 0);
+      if (switchDiff !== 0) {
+        return switchDiff;
+      }
+      // 4. Submission Timestamp (Submitted earlier wins)
+      const timeA = a.submitted_at ? new Date(a.submitted_at).getTime() : 0;
+      const timeB = b.submitted_at ? new Date(b.submitted_at).getTime() : 0;
+      return timeA - timeB;
     });
     return participants.map((p, idx) => ({
       rank: idx + 1,
