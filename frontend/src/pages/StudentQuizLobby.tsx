@@ -29,9 +29,10 @@ import {
   Crown,
   ShieldAlert,
   ShieldCheck,
-  Maximize2
+  Maximize2,
+  Volume2
 } from 'lucide-react';
-import { GiftBurstModal } from '../components/GiftBurstModal';
+import { GiftBurstModal, playFirstPrizeFanfare } from '../components/GiftBurstModal';
 
 // Helper to determine if an answer matches the question's correct answer
 const checkIsCorrect = (q: Question, userAns?: string): boolean => {
@@ -419,11 +420,12 @@ export const StudentQuizLobby: React.FC = () => {
   const leaderboard: QuizLeaderboardEntry[] = resultData?.leaderboard || session?.leaderboard || [];
   const myRank: number = resultData?.rank || (pRecord?.student_id ? leaderboard.find(l => l.student_id === pRecord?.student_id)?.rank : undefined) || pRecord?.rank || 1;
 
-  // Automatically trigger celebration burst for 1st rank (Hook called unconditionally at top-level)
+  // Automatically trigger celebration burst and victory sound for 1st rank
   useEffect(() => {
     if (stage === 'RESULTS' && myRank === 1 && !hasBurstTriggeredRef.current) {
       hasBurstTriggeredRef.current = true;
       setShowGiftBurst(true);
+      playFirstPrizeFanfare();
     }
   }, [stage, myRank]);
 
@@ -994,14 +996,27 @@ export const StudentQuizLobby: React.FC = () => {
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Quiz Completed!</h1>
             <p className="text-white/80 text-xs mt-1 break-words max-w-lg mx-auto">{session?.title || "Quiz Completed"}</p>
             {myRank === 1 && (
-              <div className="pt-3">
+              <div className="pt-3 flex flex-wrap items-center justify-center gap-2.5">
                 <button
-                  onClick={() => setShowGiftBurst(true)}
+                  onClick={() => {
+                    setShowGiftBurst(true);
+                    playFirstPrizeFanfare();
+                  }}
                   className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs px-5 py-2.5 rounded-2xl shadow-xl shadow-amber-500/40 border-2 border-yellow-100 cursor-pointer transform hover:scale-105 active:scale-95 transition-all shimmer-badge animate-float"
                 >
                   <span className="text-base">🎁</span>
                   <span>Open 1st Place Gift Burst</span>
                   <Sparkles className="w-4 h-4 text-slate-950" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={playFirstPrizeFanfare}
+                  className="inline-flex items-center space-x-1.5 bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs px-4 py-2.5 rounded-2xl border border-white/30 cursor-pointer transition-all transform hover:scale-105 active:scale-95 shadow-md"
+                  title="Play 1st Prize Winner Fanfare"
+                >
+                  <Volume2 className="w-4 h-4 text-amber-300" />
+                  <span>Victory Sound 🎺</span>
                 </button>
               </div>
             )}

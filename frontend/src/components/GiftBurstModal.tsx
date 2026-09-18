@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { Trophy, Crown, Sparkles, X, RotateCcw, Award, CheckCircle2, Zap } from 'lucide-react';
+import { Trophy, Crown, Sparkles, X, RotateCcw, Award, CheckCircle2, Zap, Volume2 } from 'lucide-react';
 
 export interface GiftBurstModalProps {
   isOpen: boolean;
@@ -12,6 +12,99 @@ export interface GiftBurstModalProps {
   timeTaken?: string;
   totalParticipants?: number;
 }
+
+// Standalone first prize celebratory audio synthesizer
+export const playFirstPrizeFanfare = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+
+    const startSynth = () => {
+      const now = ctx.currentTime;
+
+      // Layer 1: Grand Royal Brass Trumpet Fanfare
+      // Arpeggio: C5 (523Hz) -> E5 (659Hz) -> G5 (784Hz) -> E5 -> G5 -> C6 (1046Hz) Climax & Harmonics
+      const brassNotes = [
+        { f: 523.25, t: 0.00, d: 0.16, v: 0.35, wave: 'sawtooth' as OscillatorType },
+        { f: 659.25, t: 0.14, d: 0.16, v: 0.35, wave: 'sawtooth' as OscillatorType },
+        { f: 783.99, t: 0.28, d: 0.22, v: 0.40, wave: 'sawtooth' as OscillatorType },
+        { f: 659.25, t: 0.48, d: 0.14, v: 0.30, wave: 'triangle' as OscillatorType },
+        { f: 783.99, t: 0.60, d: 0.18, v: 0.38, wave: 'sawtooth' as OscillatorType },
+        { f: 1046.50, t: 0.78, d: 0.95, v: 0.45, wave: 'sawtooth' as OscillatorType }, // High C Climax
+        { f: 1318.51, t: 0.88, d: 0.85, v: 0.30, wave: 'triangle' as OscillatorType }, // High E Harmony
+        { f: 1567.98, t: 0.98, d: 0.75, v: 0.25, wave: 'triangle' as OscillatorType }, // High G Flourish
+      ];
+
+      brassNotes.forEach(({ f, t, d, v, wave }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = wave;
+        osc.frequency.setValueAtTime(f, now + t);
+
+        if (d > 0.4) {
+          osc.frequency.setTargetAtTime(f * 1.008, now + t + 0.15, 0.08); // Brass vibrato
+        }
+
+        gain.gain.setValueAtTime(0.001, now + t);
+        gain.gain.exponentialRampToValueAtTime(v, now + t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + t + d);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + t);
+        osc.stop(now + t + d + 0.05);
+      });
+
+      // Layer 2: Celebratory Magical Bell Chimes
+      const sparkles = [
+        { f: 1760.00, t: 0.85 }, // A6
+        { f: 2093.00, t: 0.98 }, // C7
+        { f: 2637.02, t: 1.10 }, // E7
+        { f: 3135.96, t: 1.22 }, // G7
+        { f: 4186.01, t: 1.35 }  // C8 (Golden twinkle)
+      ];
+
+      sparkles.forEach(({ f, t }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + t);
+
+        gain.gain.setValueAtTime(0.22, now + t);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.45);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + t);
+        osc.stop(now + t + 0.5);
+      });
+
+      // Layer 3: Grand Timpani / Victory Bass Boom
+      const bassOsc = ctx.createOscillator();
+      const bassGain = ctx.createGain();
+      bassOsc.type = 'sine';
+      bassOsc.frequency.setValueAtTime(160, now + 0.78);
+      bassOsc.frequency.exponentialRampToValueAtTime(40, now + 1.5);
+
+      bassGain.gain.setValueAtTime(0.40, now + 0.78);
+      bassGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+
+      bassOsc.connect(bassGain);
+      bassGain.connect(ctx.destination);
+      bassOsc.start(now + 0.78);
+      bassOsc.stop(now + 1.55);
+    };
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(() => startSynth()).catch(() => startSynth());
+    } else {
+      startSynth();
+    }
+  } catch (e) {
+    console.warn('Audio playback error:', e);
+  }
+};
 
 export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
   isOpen,
@@ -26,37 +119,9 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
   const [burstState, setBurstState] = useState<'WOBBLE' | 'BURSTING' | 'REVEALED'>('WOBBLE');
   const timerRef = useRef<any>(null);
 
-  // Play synthesized joyful fanfare without external audio assets
+  // Play majestic multi-layered first prize victory fanfare
   const playVictoryAudio = useCallback(() => {
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      
-      // Fanfare arpeggio chord: C5, E5, G5, C6, E6
-      const notes = [
-        { freq: 523.25, time: 0.0, dur: 0.35 },
-        { freq: 659.25, time: 0.12, dur: 0.35 },
-        { freq: 783.99, time: 0.24, dur: 0.35 },
-        { freq: 1046.50, time: 0.38, dur: 0.75 },
-        { freq: 1318.51, time: 0.52, dur: 0.9 }
-      ];
-
-      notes.forEach(({ freq, time, dur }) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
-        gain.gain.setValueAtTime(0.25, ctx.currentTime + time);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + time + dur);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + time);
-        osc.stop(ctx.currentTime + time + dur);
-      });
-    } catch (e) {
-      // Graceful fallback for audio restrictions
-    }
+    playFirstPrizeFanfare();
   }, []);
 
   // Fire multi-stage celebratory confetti
@@ -273,13 +338,25 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-center space-x-3 pt-2">
+            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
               <button
+                type="button"
+                onClick={() => {
+                  playVictoryAudio();
+                  triggerConfettiCannons();
+                }}
+                className="px-4 py-2.5 bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 font-extrabold text-xs rounded-xl border border-amber-400/40 flex items-center space-x-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-95 shadow-md"
+              >
+                <Volume2 className="w-4 h-4 text-amber-300" />
+                <span>Play Winner Sound 🎺</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => {
                   triggerConfettiCannons();
-                  playVictoryAudio();
                 }}
-                className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-amber-300 font-bold text-xs rounded-xl border border-amber-400/30 flex items-center space-x-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-95"
+                className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs rounded-xl border border-white/20 flex items-center space-x-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-95"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Burst Confetti 🎊</span>
