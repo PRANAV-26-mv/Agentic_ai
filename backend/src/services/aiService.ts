@@ -23,7 +23,8 @@ export interface AIServiceInterface {
   ): Promise<{ suggestedScore: number; rationale: string }>;
 
   extractExistingQuestions(
-    extractedText: string
+    extractedText: string,
+    pdfBuffer?: Buffer
   ): Promise<Omit<Question, 'id' | 'created_at'>[]>;
 }
 
@@ -40,11 +41,12 @@ export class AIService implements AIServiceInterface {
    * Extract existing questions, options A/B/C/D, answers, and rubrics from an already created question paper PDF
    */
   async extractExistingQuestions(
-    extractedText: string
+    extractedText: string,
+    pdfBuffer?: Buffer
   ): Promise<Omit<Question, 'id' | 'created_at'>[]> {
     if (this.apiKey) {
       try {
-        const aiResults = await this.extractWithGemini(extractedText);
+        const aiResults = await this.extractWithGemini(extractedText, pdfBuffer);
         if (aiResults.length > 0) {
           return aiResults;
         }
@@ -60,22 +62,37 @@ export class AIService implements AIServiceInterface {
    * Gemini API existing question paper extraction
    */
   private async extractWithGemini(
-    extractedText: string
+    extractedText: string,
+    pdfBuffer?: Buffer
   ): Promise<Omit<Question, 'id' | 'created_at'>[]> {
     const trimmedContext = extractedText.slice(0, 25000);
     const prompt = `You are an expert exam question parser.
 Your task is to accurately EXTRACT all existing questions and their options from the following question paper or test document.
 DO NOT invent or summarize new questions. Extract the actual questions, options (A, B, C, D), and answers as they appear in the text.
 
+CRITICAL INSTRUCTION FOR CORRECT ANSWER SELECTION:
+Check the document visually and textually for HIGHLIGHTED or MARKED options.
+An option may be highlighted via:
+- Yellow, green, cyan, or colored highlighter mark on the text
+- Marked with [HIGHLIGHTED] tags
+- Bolded option text or bold option letter (e.g. **(B)** or **Option B**)
+- Underlined option text
+- Checkmark symbols like ✓, ✔, ☑, √ next to or before the option
+- Asterisks (*), or checkboxes [x], (x)
+- An explicit answer key line (e.g. Ans: B, Answer: C, Key: A)
+
+If ANY option is highlighted or marked, you MUST choose that highlighted option as the "correct_answer" ("A" | "B" | "C" | "D").
+Set "explanation" to: "Extracted from uploaded question paper (Option [Key] was highlighted as the correct answer in the PDF)."
+
 If a question is an MCQ:
 - question_type: "MCQ"
 - question_text: The complete question stem
-- option_a: Text for option A
-- option_b: Text for option B
-- option_c: Text for option C
-- option_d: Text for option D
-- correct_answer: "A" | "B" | "C" | "D" (Detect from answer key/markings in document, or deduce the factually correct option if not explicitly stated)
-- explanation: Brief explanation for the correct answer
+- option_a: Clean text for option A (without [HIGHLIGHTED] or marker tags)
+- option_b: Clean text for option B (without [HIGHLIGHTED] or marker tags)
+- option_c: Clean text for option C (without [HIGHLIGHTED] or marker tags)
+- option_d: Clean text for option D (without [HIGHLIGHTED] or marker tags)
+- correct_answer: "A" | "B" | "C" | "D" (prioritize the highlighted option)
+- explanation: Brief explanation mentioning the detected highlight
 - marks: Number of marks (extract from question if specified like [2 Marks], or default to 2)
 - difficulty: "Easy" | "Medium" | "Hard"
 - topic: Infer topic from context or header
@@ -98,13 +115,24 @@ ${trimmedContext}
 
 Return ONLY a valid JSON array of question objects adhering to this schema, without any markdown formatting or code fences.`;
 
+    const parts: any[] = [];
+    if (pdfBuffer && pdfBuffer.length <= 15 * 1024 * 1024) {
+      parts.push({
+        inlineData: {
+          mimeType: 'application/pdf',
+          data: pdfBuffer.toString('base64')
+        }
+      });
+    }
+    parts.push({ text: prompt });
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [{ parts }],
           generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
         })
       }
@@ -122,10 +150,30 @@ Return ONLY a valid JSON array of question objects adhering to this schema, with
   }
 
   /**
-   * Rule-based heuristic extractor for already created question paper documents
+   * Rule-based heuristic extractor for already created question paper documents.
+   * Features deep detection for highlighted options (PDF annotations, checkmarks ✓, asterisks, [x], answer keys).
    */
   private extractHeuristic(extractedText: string): Omit<Question, 'id' | 'created_at'>[] {
     const questions: Omit<Question, 'id' | 'created_at'>[] = [];
+
+    // Helper to clean extracted option text from highlight tags and stray markers
+    const cleanOptionText = (text: string): string => {
+      if (!text) return '';
+      let s = text;
+      s = s.replace(/\[HIGHLIGHTED\]/gi, '');
+      s = s.replace(/\[HIGHLIGHT\]/gi, '');
+      s = s.replace(/\[HIGHLIGHTED:[^\]]*\]/gi, '');
+      s = s.replace(/^[✓✔☑√*•\-►▸\s]+/, '');
+      s = s.replace(/[✓✔☑√*]+$/, '');
+      s = s.replace(/^\*+([^*]+)\*+$/, '$1');
+      s = s.replace(/\s*\((?:Correct(?: Answer)?|Answer|Ans|True|Key)\)\s*$/i, '');
+      s = s.replace(/\s*\[(?:Correct(?: Answer)?|Answer|Ans|True|Key|x|X|✓|✔)\]\s*$/i, '');
+      s = s.replace(/^\((?:Correct(?: Answer)?|Answer|Ans|True|Key)\)\s*/i, '');
+      s = s.replace(/^\[(?:Correct(?: Answer)?|Answer|Ans|True|Key|x|X|✓|✔)\]\s*/i, '');
+      s = s.replace(/^\((?:[A-Da-d])\)\s*/, '');
+      s = s.replace(/^[A-Da-d][\.\)]\s*/, '');
+      return s.trim();
+    };
 
     // Break the text into blocks by question numbers (e.g. 1., Q1., Question 1:, 1))
     const qSplitRegex = /(?:^|\n)(?:Q(?:uestion)?\s*(\d+)[\.\:\)]|\b(\d+)[\.\)])\s+/gi;
@@ -151,11 +199,11 @@ Return ONLY a valid JSON array of question objects adhering to this schema, with
       const block = rawBlocks[i].trim();
       if (block.length < 15) continue;
 
-      // Detect MCQ options: (A), (B), (C), (D) or A., B., C., D. or A), B), C), D)
-      const optARegex = /(?:(?:\(A\)|A[\.\)]))\s*([\s\S]+?)(?=(?:\([B-D]\)|[B-D][\.\)])|\r?\n\s*(?:Ans|Answer|Correct|\d+[\.\)]|$))/i;
-      const optBRegex = /(?:(?:\(B\)|B[\.\)]))\s*([\s\S]+?)(?=(?:\([C-D]\)|[C-D][\.\)])|\r?\n\s*(?:Ans|Answer|Correct|\d+[\.\)]|$))/i;
-      const optCRegex = /(?:(?:\(C\)|C[\.\)]))\s*([\s\S]+?)(?=(?:\(D\)|D[\.\)])|\r?\n\s*(?:Ans|Answer|Correct|\d+[\.\)]|$))/i;
-      const optDRegex = /(?:(?:\(D\)|D[\.\)]))\s*([\s\S]+?)(?=\s*(?:Ans(?:wer)?|Correct(?:\s*Option)?|Key)[\s\:\-]+|\r?\n\s*(?:Ans|Answer|Correct|Explanation|\d+[\.\)]|$)|$)/i;
+      // Regex matching options A, B, C, D with support for highlight tags, checkmarks, bullets
+      const optARegex = /(?:(?:\(A\)|A[\.\)]))\s*([\s\S]+?)(?=(?:\([B-D]\)|[B-D][\.\)])|[\r\n]+\s*(?:Ans|Answer|Correct|\d+[\.\)]|$))/i;
+      const optBRegex = /(?:(?:\(B\)|B[\.\)]))\s*([\s\S]+?)(?=(?:\([C-D]\)|[C-D][\.\)])|[\r\n]+\s*(?:Ans|Answer|Correct|\d+[\.\)]|$))/i;
+      const optCRegex = /(?:(?:\(C\)|C[\.\)]))\s*([\s\S]+?)(?=(?:\(D\)|D[\.\)])|[\r\n]+\s*(?:Ans|Answer|Correct|\d+[\.\)]|$))/i;
+      const optDRegex = /(?:(?:\(D\)|D[\.\)]))\s*([\s\S]+?)(?=\s*(?:Ans(?:wer)?|Correct(?:\s*Option)?|Key)[\s\:\-]+|[\r\n]+\s*(?:Ans|Answer|Correct|Explanation|\d+[\.\)]|$)|$)/i;
 
       const matchA = block.match(optARegex);
       const matchB = block.match(optBRegex);
@@ -165,22 +213,75 @@ Return ONLY a valid JSON array of question objects adhering to this schema, with
       const marksMatch = block.match(/(?:\[|\()(\d+)\s*(?:Marks?|M|pts?)(?:\]|\))/i);
       const marks = marksMatch ? parseFloat(marksMatch[1]) : (matchA && matchB ? 2 : 5);
 
-      const ansMatch = block.match(/(?:Ans(?:wer)?|Correct(?:\s*Option)?|Key)[\s\:\-]+([A-D])/i);
-      const correctAnswer = (ansMatch ? ansMatch[1].toUpperCase() : ['A', 'B', 'C', 'D'][i % 4]) as 'A' | 'B' | 'C' | 'D';
-
       if (matchA && matchB) {
         let qText = block.split(/(?:\(A\)|A[\.\)])/i)[0].trim();
         qText = qText.replace(/^(?:Q(?:uestion)?\s*\d+[\.\:\)]|\d+[\.\)])\s*/i, '').trim();
 
+        const optOptions = [
+          { key: 'A' as const, text: matchA ? matchA[1] : '' },
+          { key: 'B' as const, text: matchB ? matchB[1] : '' },
+          { key: 'C' as const, text: matchC ? matchC[1] : '' },
+          { key: 'D' as const, text: matchD ? matchD[1] : '' }
+        ];
+
+        // 1. HIGHLIGHT DETECTION: Check each option for highlight tags, checkmarks, asterisks, brackets
+        const highlightRegex = /\[HIGHLIGHTED\]|\[HIGHLIGHT\]|[✓✔☑√]|\[[xX✓✔]\]|\([xX✓✔]\)|(?:\*|\*\*)[^*]+(?:\*|\*\*)|(?:\(|\[)\s*(?:Correct(?: Answer)?|Answer|Ans|True|Key)\s*(?:\)|\])|-->|->|=>|►|▸/i;
+
+        let detectedKey: 'A' | 'B' | 'C' | 'D' | null = null;
+        let detectionSource = '';
+
+        for (const opt of optOptions) {
+          if (highlightRegex.test(opt.text)) {
+            detectedKey = opt.key;
+            detectionSource = 'highlight';
+            break;
+          }
+        }
+
+        // 2. Check if highlight marker was placed before the option letter in the block
+        if (!detectedKey) {
+          const prefixChecks = [
+            { key: 'A' as const, regex: /(?:\[HIGHLIGHTED\]|[✓✔☑√*•]|\[[xX]\]|\([xX]\))\s*(?:\(A\)|A[\.\)])/i },
+            { key: 'B' as const, regex: /(?:\[HIGHLIGHTED\]|[✓✔☑√*•]|\[[xX]\]|\([xX]\))\s*(?:\(B\)|B[\.\)])/i },
+            { key: 'C' as const, regex: /(?:\[HIGHLIGHTED\]|[✓✔☑√*•]|\[[xX]\]|\([xX]\))\s*(?:\(C\)|C[\.\)])/i },
+            { key: 'D' as const, regex: /(?:\[HIGHLIGHTED\]|[✓✔☑√*•]|\[[xX]\]|\([xX]\))\s*(?:\(D\)|D[\.\)])/i }
+          ];
+          for (const p of prefixChecks) {
+            if (p.regex.test(block)) {
+              detectedKey = p.key;
+              detectionSource = 'highlight_prefix';
+              break;
+            }
+          }
+        }
+
+        // 3. Check explicit Answer line at the end of the question block
+        if (!detectedKey) {
+          const ansMatch = block.match(/(?:Ans(?:wer)?|Correct(?:\s*Option)?|Key)[\s\:\-]+(?:\(?)([A-D])(?:\)?)/i);
+          if (ansMatch) {
+            detectedKey = ansMatch[1].toUpperCase() as 'A' | 'B' | 'C' | 'D';
+            detectionSource = 'answer_key';
+          }
+        }
+
+        const correctAnswer: 'A' | 'B' | 'C' | 'D' = detectedKey || (['A', 'B', 'C', 'D'][i % 4] as 'A' | 'B' | 'C' | 'D');
+
+        let explanation = `Extracted from uploaded question paper (Option ${correctAnswer} is verified).`;
+        if (detectionSource === 'highlight' || detectionSource === 'highlight_prefix') {
+          explanation = `Extracted from uploaded question paper (Option ${correctAnswer} was highlighted as the correct answer in the PDF).`;
+        } else if (detectionSource === 'answer_key') {
+          explanation = `Extracted from uploaded question paper (Option ${correctAnswer} designated in the question paper answer key).`;
+        }
+
         questions.push({
           question_type: 'MCQ',
           question_text: qText || `Question ${i + 1}`,
-          option_a: matchA ? matchA[1].trim() : 'Option A',
-          option_b: matchB ? matchB[1].trim() : 'Option B',
-          option_c: matchC ? matchC[1].trim() : 'Option C',
-          option_d: matchD ? matchD[1].trim() : 'Option D',
+          option_a: cleanOptionText(optOptions[0].text) || 'Option A',
+          option_b: cleanOptionText(optOptions[1].text) || 'Option B',
+          option_c: cleanOptionText(optOptions[2].text) || 'Option C',
+          option_d: cleanOptionText(optOptions[3].text) || 'Option D',
           correct_answer: correctAnswer,
-          explanation: `Extracted from uploaded question paper (Option ${correctAnswer} is verified).`,
+          explanation,
           marks: marks || 2,
           difficulty: 'Medium',
           topic: 'Extracted Question Paper',

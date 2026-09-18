@@ -19,7 +19,8 @@ import {
   FileCheck2,
   FileInput,
   Edit3,
-  Check
+  Check,
+  HelpCircle
 } from 'lucide-react';
 
 interface PdfGeneratorWizardProps {
@@ -381,13 +382,25 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
 
             {/* Session Mode Explanatory Banner */}
             {sessionMode === 'EXTRACT' ? (
-              <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl flex items-start space-x-2.5 text-xs text-indigo-900">
-                <FileInput className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <span className="font-bold">Existing Question Paper Auto-Extraction Mode (Admin Only)</span>
-                  <p className="text-[11px] text-indigo-700 mt-0.5">
-                    Upload an already prepared exam paper, mock test, or quiz sheet containing questions with multiple-choice options (A, B, C, D). The parser will automatically extract each question, its choices, detected answers, and marks for review.
-                  </p>
+              <div className="space-y-2">
+                <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl flex items-start space-x-2.5 text-xs text-indigo-900">
+                  <FileInput className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="font-bold">Existing Question Paper Auto-Extraction Mode (Admin Only)</span>
+                    <p className="text-[11px] text-indigo-700 mt-0.5">
+                      Upload an already prepared exam paper, mock test, or quiz sheet containing questions with multiple-choice options (A, B, C, D). The parser will automatically extract each question, its choices, detected answers, and marks for review.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex items-start space-x-2.5 text-xs text-emerald-950">
+                  <Sparkles className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="font-bold text-emerald-800">Automatic Highlight Detection Active:</span>
+                    <p className="text-[11px] text-emerald-700 mt-0.5">
+                      If your PDF has the correct answer highlighted (using yellow/green highlighter, bold text, or marks like <span className="font-bold bg-emerald-200/60 px-1 rounded text-emerald-900">✓</span>, <span className="font-bold bg-emerald-200/60 px-1 rounded text-emerald-900">[x]</span>, or <span className="font-bold bg-emerald-200/60 px-1 rounded text-emerald-900">*</span>), our parser will automatically detect the highlighted option and designate it as the correct answer key.
+                    </p>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -807,9 +820,17 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
                                   <strong className={isCorrect ? 'text-emerald-700' : 'text-slate-500'}>{letter}:</strong> {optText}
                                 </span>
                                 {isCorrect && (
-                                  <span className="bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md flex items-center space-x-0.5 shrink-0 shadow-2xs">
-                                    <Check className="w-2.5 h-2.5 stroke-[3]" />
-                                    <span>Correct</span>
+                                  <span className="flex items-center space-x-1 shrink-0">
+                                    {q.explanation?.toLowerCase().includes('highlight') && (
+                                      <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md flex items-center space-x-0.5 shadow-2xs">
+                                        <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                                        <span>Highlighted</span>
+                                      </span>
+                                    )}
+                                    <span className="bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md flex items-center space-x-0.5 shadow-2xs">
+                                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                      <span>Correct</span>
+                                    </span>
                                   </span>
                                 )}
                               </button>
@@ -817,8 +838,25 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
                           })}
                         </div>
                         {q.explanation && (
-                          <div className="text-[11px] text-slate-600 italic pt-1 bg-white p-2.5 rounded-xl border border-slate-200/80">
-                            💡 <strong className="font-semibold not-italic">Explanation / Key:</strong> {q.explanation}
+                          <div className={`text-[11px] p-2.5 rounded-xl border ${
+                            q.explanation.toLowerCase().includes('highlight')
+                              ? 'bg-amber-50/60 border-amber-200/80 text-amber-950'
+                              : 'bg-white border-slate-200/80 text-slate-600'
+                          }`}>
+                            <div className="flex items-center space-x-1.5 font-bold mb-0.5">
+                              {q.explanation.toLowerCase().includes('highlight') ? (
+                                <>
+                                  <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                  <span className="text-amber-900">Answer Key: Detected from PDF Highlight</span>
+                                </>
+                              ) : (
+                                <>
+                                  <HelpCircle className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                  <span className="text-slate-700">Explanation / Answer Key</span>
+                                </>
+                              )}
+                            </div>
+                            <div className="italic text-slate-600 pl-5">{q.explanation}</div>
                           </div>
                         )}
                       </div>

@@ -9,6 +9,76 @@ import { generateQuestionPaperPDF, QuestionPaperOptions } from '../services/ques
 const router = Router();
 const upload = multer({ limits: { fileSize: 20 * 1024 * 1024 } }); // 20MB limit
 
+/**
+ * Custom PDF pagerender function that extracts text AND detects visual highlight annotations.
+ * Detects:
+ * 1. Acrobat / Foxit / Chrome / Preview highlight annotations (Subtype: Highlight, Underline, etc.)
+ * 2. Colored markup annotations (Square, Circle, Ink)
+ * When a text item is within a highlighted bounding box, it appends  [HIGHLIGHTED] to mark the text.
+ */
+const renderPageWithHighlights = async (pageData: any): Promise<string> => {
+  try {
+    const annots = await pageData.getAnnotations().catch(() => []);
+    const textContent = await pageData.getTextContent().catch(() => ({ items: [] }));
+    const H = pageData.view && pageData.view.length >= 4 ? pageData.view[3] : 792;
+
+    const highlightedSubtypes = ['Highlight', 'Underline', 'Squiggly', 'StrikeOut', 'Square', 'Circle', 'Ink', 'Polygon', 'PolyLine', 'Line'];
+    const hlAnnots = (annots || []).filter((a: any) =>
+      highlightedSubtypes.includes(a.subtype) ||
+      (a.color && Object.values(a.color).some((v: any) => Number(v) > 0))
+    );
+
+    let lastY: number | null = null;
+    let pageText = '';
+
+    for (const item of (textContent.items || [])) {
+      const itemX = item.transform[4];
+      const itemY = item.transform[5];
+      const itemW = item.width || 50;
+      const itemH = item.height || Math.abs(item.transform[0]) || 12;
+      const itemMidY = itemY + itemH * 0.5;
+
+      let isHighlighted = false;
+      for (const a of hlAnnots) {
+        if (!a.rect || a.rect.length < 4) continue;
+        const rMinX = Math.min(a.rect[0], a.rect[2]);
+        const rMaxX = Math.max(a.rect[0], a.rect[2]);
+        const rMinY = Math.min(a.rect[1], a.rect[3]);
+        const rMaxY = Math.max(a.rect[1], a.rect[3]);
+
+        // Direct user space check (standard bottom-left coordinates)
+        const directMatch =
+          (itemX + itemW >= rMinX - 3 && itemX <= rMaxX + 3) &&
+          (itemMidY >= rMinY - 4 && itemMidY <= rMaxY + 4);
+
+        // Inverted top-down Y coordinate check
+        const flippedMinY = H - rMaxY;
+        const flippedMaxY = H - rMinY;
+        const flippedMatch =
+          (itemX + itemW >= rMinX - 3 && itemX <= rMaxX + 3) &&
+          (itemMidY >= flippedMinY - 4 && itemMidY <= flippedMaxY + 4);
+
+        if (directMatch || flippedMatch) {
+          isHighlighted = true;
+          break;
+        }
+      }
+
+      const itemStr = isHighlighted ? (item.str + " [HIGHLIGHTED]") : item.str;
+
+      if (lastY === itemY || lastY === null) {
+        pageText += itemStr;
+      } else {
+        pageText += "\n" + itemStr;
+      }
+      lastY = itemY;
+    }
+    return pageText;
+  } catch (err) {
+    return '';
+  }
+};
+
 // POST /api/pdf/generate-questions
 router.post('/generate-questions', requireAdmin, upload.single('file'), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -89,8 +159,15 @@ router.post('/extract-questions', requireAdmin, upload.single('file'), async (re
         res.status(400).json({ message: 'Unable to process file. Please upload a valid PDF document.' });
         return;
       }
-      const data = await pdfParse(req.file.buffer);
-      textContent = data.text;
+      try {
+        const u8 = new Uint8Array(req.file.buffer);
+        const data = await pdfParse(u8 as any, { pagerender: renderPageWithHighlights });
+        textContent = data.text;
+      } catch (parseErr) {
+        console.warn('Highlight-aware PDF parsing fallback to default:', parseErr);
+        const data = await pdfParse(req.file.buffer);
+        textContent = data.text;
+      }
     } else if (req.body.text) {
       textContent = req.body.text;
     } else {
@@ -103,8 +180,8 @@ router.post('/extract-questions', requireAdmin, upload.single('file'), async (re
       return;
     }
 
-    // Call extraction layer
-    const extractedRaw = await aiService.extractExistingQuestions(textContent);
+    // Call extraction layer with textContent and optional raw PDF buffer
+    const extractedRaw = await aiService.extractExistingQuestions(textContent, req.file?.buffer);
 
     if (extractedRaw.length === 0) {
       res.status(400).json({ message: 'No questions could be extracted. Please ensure the PDF contains numbered questions or options (A, B, C, D).' });
