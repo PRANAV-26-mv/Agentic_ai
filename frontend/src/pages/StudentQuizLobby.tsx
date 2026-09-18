@@ -114,22 +114,46 @@ export const StudentQuizLobby: React.FC = () => {
   const submittingRef = useRef<boolean>(false);
   const navContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // Helper to check actual browser fullscreen
+  const isDocFullscreen = () => {
+    return Boolean(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement
+    );
+  };
+
   // Fullscreen & proctoring tab-switch state
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(true);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(() => isDocFullscreen());
   const [tabSwitches, setTabSwitches] = useState<number>(0);
   const lastTabSwitchTimeRef = useRef<number>(0);
 
   // Request fullscreen on examination device
   const requestFullscreenMode = () => {
-    const docEl = document.documentElement;
-    try {
-      if (docEl.requestFullscreen) {
-        docEl.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
-      } else if ((docEl as any).webkitRequestFullscreen) {
-        (docEl as any).webkitRequestFullscreen();
-        setIsFullscreen(true);
+    const docEl: any = document.documentElement || document.body;
+    const req = docEl.requestFullscreen || 
+                docEl.webkitRequestFullscreen || 
+                docEl.mozRequestFullScreen || 
+                docEl.msRequestFullscreen;
+    if (req) {
+      try {
+        const p = req.call(docEl);
+        if (p && typeof p.then === 'function') {
+          p.then(() => {
+            setIsFullscreen(true);
+          }).catch((err: any) => {
+            console.warn('Fullscreen request blocked or denied:', err);
+            setIsFullscreen(isDocFullscreen());
+          });
+        } else {
+          setIsFullscreen(true);
+        }
+      } catch (e) {
+        console.warn('Fullscreen request exception:', e);
+        setIsFullscreen(isDocFullscreen());
       }
-    } catch (e) {}
+    }
   };
 
   // Debounced tab switch & blur handler to prevent duplicate event counting
@@ -175,10 +199,12 @@ export const StudentQuizLobby: React.FC = () => {
   useEffect(() => {
     if (stage !== 'QUIZ') return;
 
-    requestFullscreenMode();
+    // Check immediately upon entering QUIZ stage
+    const currentIsFull = isDocFullscreen();
+    setIsFullscreen(currentIsFull);
 
     const handleFullscreenChange = () => {
-      const isFull = Boolean(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      const isFull = isDocFullscreen();
       setIsFullscreen(isFull);
       if (!isFull && stage === 'QUIZ' && !submittingRef.current) {
         handleTabLeave('FULLSCREEN_EXIT');
@@ -187,10 +213,14 @@ export const StudentQuizLobby: React.FC = () => {
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
     };
   }, [stage, session?.id, id]);
 
@@ -398,11 +428,13 @@ export const StudentQuizLobby: React.FC = () => {
   }, [stage, myRank]);
 
   const handleStartQuiz = async () => {
+    // 1. Immediately request fullscreen synchronously within direct user click
+    requestFullscreenMode();
+
     if (!session) return;
     try {
       const res = await api.post(`/quiz-sessions/${session.id}/start-quiz`);
       setStage('QUIZ');
-      requestFullscreenMode();
       const startIso = res.data.participant?.started_at || new Date().toISOString();
       const targetMs = new Date(startIso).getTime() + (session.duration_minutes || 15) * 60 * 1000;
       startTimerWithTarget(targetMs);
@@ -624,7 +656,8 @@ export const StudentQuizLobby: React.FC = () => {
     const progressPercent = questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
 
     return (
-      <div className="max-w-4xl mx-auto space-y-5">
+      <div className="fixed inset-0 z-50 bg-slate-100 overflow-y-auto flex flex-col font-sans">
+        <div className="max-w-4xl w-full mx-auto p-3 sm:p-6 space-y-5 flex-1 flex flex-col">
         
         {/* Top Control Bar with Progress */}
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
@@ -839,6 +872,8 @@ export const StudentQuizLobby: React.FC = () => {
           </div>
         )}
 
+        </div>
+
         {/* Fullscreen Submitting & Grading Indicator */}
         {submitting && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex flex-col items-center justify-center z-50 p-4 animate-in fade-in">
@@ -875,10 +910,10 @@ export const StudentQuizLobby: React.FC = () => {
               <button
                 type="button"
                 onClick={requestFullscreenMode}
-                className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-amber-500/30 transition-all cursor-pointer flex items-center justify-center space-x-2"
+                className="w-full py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-amber-500/40 transition-all cursor-pointer flex items-center justify-center space-x-2 transform hover:scale-[1.02] active:scale-98"
               >
-                <Maximize2 className="w-4 h-4" />
-                <span>Re-enter Full Screen Mode</span>
+                <Maximize2 className="w-5 h-5" />
+                <span>Enter Full Screen Mode to Take Quiz</span>
               </button>
             </div>
           </div>
