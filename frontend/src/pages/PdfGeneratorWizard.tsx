@@ -17,7 +17,9 @@ import {
   ShieldCheck, 
   X,
   FileCheck2,
-  FileInput
+  FileInput,
+  Edit3,
+  Check
 } from 'lucide-react';
 
 interface PdfGeneratorWizardProps {
@@ -65,6 +67,32 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterType, setFilterType] = useState<'ALL' | 'MCQ' | 'WRITING'>('ALL');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'APPROVED' | 'REVIEW' | 'REJECTED'>('ALL');
+  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [saveEditLoading, setSaveEditLoading] = useState<boolean>(false);
+
+  // Directly switch and save correct answer for an MCQ
+  const handleUpdateCorrectAnswer = (qId: string, correctLetter: string) => {
+    setGeneratedQuestions(prev => prev.map(q => q.id === qId ? { ...q, correct_answer: correctLetter } : q));
+    api.put(`/questions/${qId}`, { correct_answer: correctLetter }).catch(err => {
+      console.error('Failed to update correct answer:', err);
+    });
+  };
+
+  // Save changes from Edit Question modal
+  const handleSaveEditedQuestion = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingQuestion) return;
+    setSaveEditLoading(true);
+    api.put(`/questions/${editingQuestion.id}`, editingQuestion)
+      .then(res => {
+        setGeneratedQuestions(prev => prev.map(q => q.id === editingQuestion.id ? res.data : q));
+        setEditingQuestion(null);
+      })
+      .catch(err => {
+        alert(err.response?.data?.message || 'Failed to update question.');
+      })
+      .finally(() => setSaveEditLoading(false));
+  };
 
   // PDF Export Session Modal state
   const [showExportModal, setShowExportModal] = useState<boolean>(false);
@@ -753,22 +781,44 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
                     <p className="font-semibold text-slate-900 leading-relaxed">{q.question_text}</p>
 
                     {q.question_type === 'MCQ' && (
-                      <div className="grid grid-cols-2 gap-2 text-slate-600 text-[11px] pt-1">
-                        <div className={`p-2 rounded-lg border ${q.correct_answer === 'A' ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold' : 'bg-white border-slate-200'}`}>
-                          A: {q.option_a}
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between text-[10px] text-slate-500">
+                          <span className="font-bold">Options (Click any option to switch correct answer):</span>
+                          <span className="text-emerald-700 font-bold">Answer Key: Option {q.correct_answer}</span>
                         </div>
-                        <div className={`p-2 rounded-lg border ${q.correct_answer === 'B' ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold' : 'bg-white border-slate-200'}`}>
-                          B: {q.option_b}
-                        </div>
-                        <div className={`p-2 rounded-lg border ${q.correct_answer === 'C' ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold' : 'bg-white border-slate-200'}`}>
-                          C: {q.option_c}
-                        </div>
-                        <div className={`p-2 rounded-lg border ${q.correct_answer === 'D' ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold' : 'bg-white border-slate-200'}`}>
-                          D: {q.option_d}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700 text-[11px]">
+                          {(['A', 'B', 'C', 'D'] as const).map(letter => {
+                            const optText = letter === 'A' ? q.option_a : letter === 'B' ? q.option_b : letter === 'C' ? q.option_c : q.option_d;
+                            if (!optText) return null;
+                            const isCorrect = q.correct_answer === letter || q.correct_answer === `OPTION_${letter}`;
+                            return (
+                              <button
+                                key={letter}
+                                type="button"
+                                onClick={() => handleUpdateCorrectAnswer(q.id, letter)}
+                                className={`p-2.5 rounded-xl border text-left flex items-start justify-between transition-all cursor-pointer ${
+                                  isCorrect 
+                                    ? 'bg-emerald-50 border-emerald-400 text-emerald-950 font-bold shadow-xs ring-1 ring-emerald-400' 
+                                    : 'bg-white border-slate-200 hover:border-amber-300 hover:bg-amber-50/40 text-slate-700'
+                                }`}
+                                title={isCorrect ? 'Designated Correct Answer' : `Click to set Option ${letter} as the correct answer`}
+                              >
+                                <span className="flex-1 pr-2">
+                                  <strong className={isCorrect ? 'text-emerald-700' : 'text-slate-500'}>{letter}:</strong> {optText}
+                                </span>
+                                {isCorrect && (
+                                  <span className="bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md flex items-center space-x-0.5 shrink-0 shadow-2xs">
+                                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                    <span>Correct</span>
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
                         </div>
                         {q.explanation && (
-                          <div className="col-span-2 text-[11px] text-slate-500 italic pt-0.5">
-                            💡 Explanation: {q.explanation}
+                          <div className="text-[11px] text-slate-600 italic pt-1 bg-white p-2.5 rounded-xl border border-slate-200/80">
+                            💡 <strong className="font-semibold not-italic">Explanation / Key:</strong> {q.explanation}
                           </div>
                         )}
                       </div>
@@ -790,7 +840,17 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
                     )}
 
                     {/* Actions */}
-                    <div className="pt-2 flex justify-end space-x-2 border-t border-slate-200/60">
+                    <div className="pt-2 flex justify-end items-center space-x-2 border-t border-slate-200/60">
+                      <button
+                        type="button"
+                        onClick={() => setEditingQuestion(q)}
+                        className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold rounded-lg text-xs flex items-center space-x-1 border border-purple-200 transition-colors cursor-pointer"
+                        title="Edit question text, options, or answer key"
+                      >
+                        <Edit3 className="w-3 h-3 text-purple-600" />
+                        <span>Edit</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handleRegenerateQuestion(q.id)}
@@ -871,6 +931,131 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
         )}
 
       </div>
+
+      {/* Edit Question Modal */}
+      {editingQuestion && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto border border-slate-200">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="font-extrabold text-slate-900 text-base flex items-center space-x-2">
+                <Edit3 className="w-4 h-4 text-purple-600" />
+                <span>Edit Extracted Question</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingQuestion(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditedQuestion} className="space-y-3.5 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Question Text</label>
+                <textarea
+                  rows={3}
+                  value={editingQuestion.question_text}
+                  onChange={e => setEditingQuestion({ ...editingQuestion, question_text: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 outline-none"
+                  required
+                />
+              </div>
+
+              {editingQuestion.question_type === 'MCQ' && (
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-0.5">Option A</label>
+                      <input
+                        type="text"
+                        value={editingQuestion.option_a || ''}
+                        onChange={e => setEditingQuestion({ ...editingQuestion, option_a: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-0.5">Option B</label>
+                      <input
+                        type="text"
+                        value={editingQuestion.option_b || ''}
+                        onChange={e => setEditingQuestion({ ...editingQuestion, option_b: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-0.5">Option C</label>
+                      <input
+                        type="text"
+                        value={editingQuestion.option_c || ''}
+                        onChange={e => setEditingQuestion({ ...editingQuestion, option_c: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-0.5">Option D</label>
+                      <input
+                        type="text"
+                        value={editingQuestion.option_d || ''}
+                        onChange={e => setEditingQuestion({ ...editingQuestion, option_d: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1 text-emerald-800">
+                      Designated Correct Answer Key
+                    </label>
+                    <select
+                      value={editingQuestion.correct_answer || 'A'}
+                      onChange={e => setEditingQuestion({ ...editingQuestion, correct_answer: e.target.value })}
+                      className="w-full p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-950 font-bold rounded-xl outline-none"
+                    >
+                      <option value="A">Option A: {editingQuestion.option_a || ''}</option>
+                      <option value="B">Option B: {editingQuestion.option_b || ''}</option>
+                      <option value="C">Option C: {editingQuestion.option_c || ''}</option>
+                      <option value="D">Option D: {editingQuestion.option_d || ''}</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Explanation / Solution Note</label>
+                <textarea
+                  rows={2}
+                  value={editingQuestion.explanation || ''}
+                  onChange={e => setEditingQuestion({ ...editingQuestion, explanation: e.target.value })}
+                  placeholder="Explanation of why this answer is correct..."
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl outline-none font-medium"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-2 border-t">
+                <button
+                  type="button"
+                  onClick={() => setEditingQuestion(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saveEditLoading}
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  {saveEditLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* PDF Export Session Modal (Admin Only) */}
       {showExportModal && (
