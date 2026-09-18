@@ -30,7 +30,9 @@ import {
   ArrowRight,
   RefreshCw,
   Hash,
-  Award
+  Award,
+  FileDown,
+  FileSpreadsheet
 } from 'lucide-react';
 
 const DEPARTMENTS = ['CS', 'AD', 'IT', 'ECE', 'EEE', 'MECH'];
@@ -53,6 +55,7 @@ export const AdminQuizSessions: React.FC = () => {
   const [selectedSessionForRoster, setSelectedSessionForRoster] = useState<QuizSession | null>(null);
   const [rosterLoading, setRosterLoading] = useState<boolean>(false);
   const [sessionDetails, setSessionDetails] = useState<QuizSession | null>(null);
+  const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
 
   // Delete modal state
   const [sessionToDelete, setSessionToDelete] = useState<QuizSession | null>(null);
@@ -259,7 +262,55 @@ export const AdminQuizSessions: React.FC = () => {
     }
   };
 
-  const openRoster = (sessionId: string) => {
+  const handleDownloadPdfReport = async (sessionId: string, title?: string) => {
+    try {
+      setDownloadingReportId(`${sessionId}-pdf`);
+      const res = await api.get(`/quiz-sessions/${sessionId}/report-pdf`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const safeTitle = (title || 'quiz-session').replace(/[^a-zA-Z0-9-_]/g, '_');
+      link.setAttribute('download', `Quiz_Report_${safeTitle}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Failed to download PDF report:', err);
+      alert('Failed to download quiz PDF report. Please ensure quiz session data is available.');
+    } finally {
+      setDownloadingReportId(null);
+    }
+  };
+
+  const handleDownloadCsvReport = async (sessionId: string, title?: string) => {
+    try {
+      setDownloadingReportId(`${sessionId}-csv`);
+      const res = await api.get(`/quiz-sessions/${sessionId}/report-csv`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([res.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const safeTitle = (title || 'quiz-session').replace(/[^a-zA-Z0-9-_]/g, '_');
+      link.setAttribute('download', `Quiz_Roster_${safeTitle}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Failed to download CSV report:', err);
+      alert('Failed to download quiz CSV export.');
+    } finally {
+      setDownloadingReportId(null);
+    }
+  };
+
+    const openRoster = (sessionId: string) => {
     setRosterLoading(true);
     const session = sessions.find(s => s.id === sessionId) || null;
     setSelectedSessionForRoster(session);
@@ -573,42 +624,75 @@ export const AdminQuizSessions: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card Action Row with Clear Delete Option */}
-                <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => openRoster(session.id)}
-                    className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl flex items-center justify-center space-x-1.5 shadow-xs transition-all cursor-pointer"
-                  >
-                    <BarChart2 className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Live Roster ({session.participant_count || 0})</span>
-                  </button>
-
-                  {isActive ? (
+                {/* Card Action Row with Live Roster and Controls */}
+                <div className="pt-3.5 border-t border-slate-100 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
                     <button
-                      onClick={() => handleStatusChange(session.id, 'COMPLETED')}
-                      className="p-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl font-bold text-xs transition-colors cursor-pointer"
-                      title="End Active Quiz Session"
+                      onClick={() => openRoster(session.id)}
+                      className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl flex items-center justify-center space-x-1.5 shadow-xs transition-all cursor-pointer"
                     >
-                      <Square className="w-4 h-4" />
+                      <BarChart2 className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Live Roster ({session.participant_count || 0})</span>
                     </button>
-                  ) : isScheduled ? (
-                    <button
-                      onClick={() => handleStatusChange(session.id, 'ACTIVE')}
-                      className="p-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl font-bold text-xs transition-colors cursor-pointer"
-                      title="Activate / Start Session Now"
-                    >
-                      <Play className="w-4 h-4" />
-                    </button>
-                  ) : null}
 
-                  {/* PROMINENT DELETE BUTTON */}
-                  <button
-                    onClick={(e) => handlePromptDelete(session, e)}
-                    className="p-2.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 rounded-xl transition-all cursor-pointer flex items-center justify-center"
-                    title={`Delete Quiz: "${session.title}"`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    {isActive ? (
+                      <button
+                        onClick={() => handleStatusChange(session.id, 'COMPLETED')}
+                        className="p-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                        title="End Active Quiz Session"
+                      >
+                        <Square className="w-4 h-4" />
+                      </button>
+                    ) : isScheduled ? (
+                      <button
+                        onClick={() => handleStatusChange(session.id, 'ACTIVE')}
+                        className="p-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                        title="Activate / Start Session Now"
+                      >
+                        <Play className="w-4 h-4" />
+                      </button>
+                    ) : null}
+
+                    {/* PROMINENT DELETE BUTTON */}
+                    <button
+                      onClick={(e) => handlePromptDelete(session, e)}
+                      className="p-2.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                      title={`Delete Quiz: "${session.title}"`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Report Download Shortcuts */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDownloadPdfReport(session.id, session.title)}
+                      disabled={downloadingReportId === `${session.id}-pdf`}
+                      className="flex-1 py-1.5 px-2 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-lg text-[11px] font-bold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                      title="Download full analytics PDF report"
+                    >
+                      {downloadingReportId === `${session.id}-pdf` ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-sky-600" />
+                      ) : (
+                        <FileDown className="w-3 h-3 text-sky-600" />
+                      )}
+                      <span>PDF Report</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleDownloadCsvReport(session.id, session.title)}
+                      disabled={downloadingReportId === `${session.id}-csv`}
+                      className="py-1.5 px-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-bold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                      title="Export roster and results as CSV spreadsheet"
+                    >
+                      {downloadingReportId === `${session.id}-csv` ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-emerald-600" />
+                      ) : (
+                        <FileSpreadsheet className="w-3 h-3 text-emerald-600" />
+                      )}
+                      <span>CSV Export</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -1008,8 +1092,38 @@ export const AdminQuizSessions: React.FC = () => {
                 </div>
               </div>
 
-              {/* Header Actions: Refresh, Delete, Close */}
+              {/* Header Actions: Download PDF, Export CSV, Refresh, Delete, Close */}
               <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => handleDownloadPdfReport(selectedSessionForRoster.id, selectedSessionForRoster.title)}
+                  disabled={downloadingReportId === `${selectedSessionForRoster.id}-pdf`}
+                  className="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-bold rounded-xl text-xs flex items-center space-x-1.5 cursor-pointer disabled:opacity-50 transition-colors"
+                  title="Download Complete PDF Session Report"
+                >
+                  {downloadingReportId === `${selectedSessionForRoster.id}-pdf` ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-600" />
+                  ) : (
+                    <FileDown className="w-3.5 h-3.5 text-sky-600" />
+                  )}
+                  <span className="hidden sm:inline">PDF Report</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDownloadCsvReport(selectedSessionForRoster.id, selectedSessionForRoster.title)}
+                  disabled={downloadingReportId === `${selectedSessionForRoster.id}-csv`}
+                  className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold rounded-xl text-xs flex items-center space-x-1.5 cursor-pointer disabled:opacity-50 transition-colors"
+                  title="Export Roster CSV"
+                >
+                  {downloadingReportId === `${selectedSessionForRoster.id}-csv` ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                  ) : (
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                  )}
+                  <span className="hidden sm:inline">CSV</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => openRoster(selectedSessionForRoster.id)}
@@ -1152,16 +1266,46 @@ export const AdminQuizSessions: React.FC = () => {
               </div>
             )}
 
-            {/* Modal Footer with Close and Delete */}
-            <div className="flex justify-between items-center pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => handlePromptDelete(selectedSessionForRoster)}
-                className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                <span>Delete This Quiz</span>
-              </button>
+            {/* Modal Footer with Close, Delete, and Download actions */}
+            <div className="flex flex-wrap justify-between items-center gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => handlePromptDelete(selectedSessionForRoster)}
+                  className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Delete Quiz</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDownloadPdfReport(selectedSessionForRoster.id, selectedSessionForRoster.title)}
+                  disabled={downloadingReportId === `${selectedSessionForRoster.id}-pdf`}
+                  className="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {downloadingReportId === `${selectedSessionForRoster.id}-pdf` ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <FileDown className="w-3.5 h-3.5" />
+                  )}
+                  <span>Download PDF Report</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDownloadCsvReport(selectedSessionForRoster.id, selectedSessionForRoster.title)}
+                  disabled={downloadingReportId === `${selectedSessionForRoster.id}-csv`}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {downloadingReportId === `${selectedSessionForRoster.id}-csv` ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                  )}
+                  <span>Export CSV</span>
+                </button>
+              </div>
 
               <button
                 type="button"

@@ -465,10 +465,15 @@ export function isQuestionAnswerCorrect(q: Question, selected?: string): boolean
   const sel = selected.trim().toUpperCase();
   const corr = q.correct_answer.trim().toUpperCase();
 
-  // Direct match (e.g. 'A' === 'A' or 'B' === 'B')
+  // 1. Direct equality match (e.g. 'A' === 'A', 'B' === 'B')
   if (sel === corr) return true;
 
-  // Normalized option letters to option text map
+  // 2. Clean single-letter comparison (handles 'A.', '(A)', 'OPTION_A', 'A - ...')
+  const cleanSel = sel.replace(/[^A-D]/g, '');
+  const cleanCorr = corr.replace(/[^A-D]/g, '');
+  if (cleanSel && cleanCorr && cleanSel === cleanCorr) return true;
+
+  // 3. Option letter to text mapping
   const letterMap: Record<string, string | undefined> = {
     'A': q.option_a ? q.option_a.trim().toUpperCase() : undefined,
     'B': q.option_b ? q.option_b.trim().toUpperCase() : undefined,
@@ -477,22 +482,28 @@ export function isQuestionAnswerCorrect(q: Question, selected?: string): boolean
   };
 
   // Check if correct_answer was saved as 'OPTION_A', 'OPTION_B', etc.
-  if (corr === 'OPTION_A' && sel === 'A') return true;
-  if (corr === 'OPTION_B' && sel === 'B') return true;
-  if (corr === 'OPTION_C' && sel === 'C') return true;
-  if (corr === 'OPTION_D' && sel === 'D') return true;
+  if (corr === 'OPTION_A' && (sel === 'A' || cleanSel === 'A')) return true;
+  if (corr === 'OPTION_B' && (sel === 'B' || cleanSel === 'B')) return true;
+  if (corr === 'OPTION_C' && (sel === 'C' || cleanSel === 'C')) return true;
+  if (corr === 'OPTION_D' && (sel === 'D' || cleanSel === 'D')) return true;
 
-  if (sel === 'OPTION_A' && corr === 'A') return true;
-  if (sel === 'OPTION_B' && corr === 'B') return true;
-  if (sel === 'OPTION_C' && corr === 'C') return true;
-  if (sel === 'OPTION_D' && corr === 'D') return true;
+  if (sel === 'OPTION_A' && (corr === 'A' || cleanCorr === 'A')) return true;
+  if (sel === 'OPTION_B' && (corr === 'B' || cleanCorr === 'B')) return true;
+  if (sel === 'OPTION_C' && (corr === 'C' || cleanCorr === 'C')) return true;
+  if (sel === 'OPTION_D' && (corr === 'D' || cleanCorr === 'D')) return true;
 
-  // If correct_answer was stored as the option text
+  // 4. If student selected full option text and matches question option text
+  if (cleanCorr && letterMap[cleanCorr] && (letterMap[cleanCorr] === sel || sel.includes(letterMap[cleanCorr]!) || letterMap[cleanCorr]!.includes(sel))) {
+    return true;
+  }
+
+  // 5. If correct_answer was stored as the option text and student selected letter
+  if (cleanSel && letterMap[cleanSel] && (letterMap[cleanSel] === corr || corr.includes(letterMap[cleanSel]!) || letterMap[cleanSel]!.includes(corr))) {
+    return true;
+  }
+
+  // 6. Direct comparison of option text
   if (letterMap[sel] && letterMap[sel] === corr) return true;
-
-  // If selected was stored as the option text and correct_answer is letter
-  const corrLetter = ['A', 'B', 'C', 'D'].find(l => letterMap[l] && letterMap[l] === sel);
-  if (corrLetter && corrLetter === corr) return true;
 
   return false;
 }
@@ -875,10 +886,11 @@ export const AssessmentAttemptsModel = {
     for (const q of questions) {
       const ans = answers.find(a => a.question_id === q.id);
       if (q.question_type === 'MCQ') {
-        if (ans && ans.selected_option === q.correct_answer) {
+        const qMarks = typeof q.marks === 'number' && !isNaN(q.marks) && q.marks > 0 ? q.marks : 1;
+        if (ans && isQuestionAnswerCorrect(q, ans.selected_option)) {
           ans.is_correct = true;
-          ans.awarded_marks = q.marks;
-          mcqScore += q.marks;
+          ans.awarded_marks = qMarks;
+          mcqScore += qMarks;
         } else if (ans) {
           ans.is_correct = false;
           ans.awarded_marks = 0;
@@ -1294,7 +1306,7 @@ export const QuizSessionParticipantsModel = {
     let maxScore = 0;
 
     questions.forEach(q => {
-      const marks = q.marks || 1;
+      const marks = typeof q.marks === 'number' && !isNaN(q.marks) && q.marks > 0 ? q.marks : 1;
       maxScore += marks;
       const selected = answers[q.id];
       if (selected && isQuestionAnswerCorrect(q, selected)) {

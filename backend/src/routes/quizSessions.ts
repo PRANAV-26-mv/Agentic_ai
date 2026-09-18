@@ -1,3 +1,4 @@
+import { generateQuizSessionReportPDF, generateQuizSessionReportCSV } from '../services/quizReportService.js';
 import { Router, Request, Response } from 'express';
 import { 
   QuizSessionsModel, 
@@ -399,4 +400,62 @@ router.delete('/:id', requireAdmin, (req: AuthRequest, res: Response): void => {
   }
 });
 
+
+// GET /api/quiz-sessions/:id/report-pdf - Admin downloads official executive PDF report
+router.get('/:id/report-pdf', requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const session = QuizSessionsModel.findById(id);
+    if (!session) {
+      res.status(404).json({ message: 'Quiz session not found.' });
+      return;
+    }
+
+    const pdfBuffer = await generateQuizSessionReportPDF(id);
+    const safeTitle = (session.title || 'Quiz_Session').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `Quiz_Report_${safeTitle}_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+    AuditLogsModel.log(req.user!.id, 'ADMIN', 'DOWNLOAD_QUIZ_REPORT_PDF', 'QUIZ_SESSION', id, {
+      title: session.title,
+      filename
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(pdfBuffer);
+  } catch (err: any) {
+    console.error('Error generating quiz report PDF:', err);
+    res.status(500).json({ message: err.message || 'Error generating quiz session report PDF.' });
+  }
+});
+
+// GET /api/quiz-sessions/:id/report-csv - Admin exports CSV spreadsheet of participants and scores
+router.get('/:id/report-csv', requireAdmin, (req: AuthRequest, res: Response): void => {
+  try {
+    const id = req.params.id as string;
+    const session = QuizSessionsModel.findById(id);
+    if (!session) {
+      res.status(404).json({ message: 'Quiz session not found.' });
+      return;
+    }
+
+    const csvContent = generateQuizSessionReportCSV(id);
+    const safeTitle = (session.title || 'Quiz_Session').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `Quiz_Roster_${safeTitle}_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    AuditLogsModel.log(req.user!.id, 'ADMIN', 'EXPORT_QUIZ_REPORT_CSV', 'QUIZ_SESSION', id, {
+      title: session.title,
+      filename
+    });
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csvContent);
+  } catch (err: any) {
+    console.error('Error generating quiz roster CSV:', err);
+    res.status(500).json({ message: err.message || 'Error exporting quiz roster CSV.' });
+  }
+});
+
 export default router;
+
