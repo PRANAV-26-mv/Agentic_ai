@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Question, QuestionPool } from '../types';
-import { HelpCircle, Sparkles, Plus, CheckCircle2, XCircle, RefreshCw, Layers, Trash2, AlertCircle, FileDown, ShieldCheck, X } from 'lucide-react';
+import { HelpCircle, Sparkles, Plus, CheckCircle2, XCircle, RefreshCw, Layers, Trash2, AlertCircle, FileDown, ShieldCheck, X, FileCheck2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { PdfGeneratorWizard } from './PdfGeneratorWizard';
 
@@ -13,6 +13,7 @@ export const QuestionBank: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [showPdfWizard, setShowPdfWizard] = useState<boolean>(false);
+  const [wizardInitialMode, setWizardInitialMode] = useState<'GENERATE' | 'EXTRACT'>('GENERATE');
   const [showPoolModal, setShowPoolModal] = useState<boolean>(false);
   const [poolName, setPoolName] = useState<string>('');
 
@@ -256,7 +257,22 @@ export const QuestionBank: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setShowPdfWizard(true)}
+            onClick={() => {
+              setWizardInitialMode('EXTRACT');
+              setShowPdfWizard(true);
+            }}
+            className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-all cursor-pointer"
+            title="Upload and extract questions & options from an existing question paper PDF (Admin Only)"
+          >
+            <FileCheck2 className="w-4 h-4" />
+            <span>Extract Question Paper PDF</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setWizardInitialMode('GENERATE');
+              setShowPdfWizard(true);
+            }}
             className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-colors cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />
@@ -672,6 +688,7 @@ export const QuestionBank: React.FC = () => {
           isOpen={showPdfWizard}
           onClose={() => setShowPdfWizard(false)}
           onSuccess={fetchQuestions}
+          initialMode={wizardInitialMode}
         />
       )}
 

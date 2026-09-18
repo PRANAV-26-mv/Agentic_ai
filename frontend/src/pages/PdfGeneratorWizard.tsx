@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { api } from '../services/api';
 import { Question } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -15,18 +15,35 @@ import {
   Type, 
   FileDown, 
   ShieldCheck, 
-  X
+  X,
+  FileCheck2,
+  FileInput
 } from 'lucide-react';
 
 interface PdfGeneratorWizardProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialMode?: 'GENERATE' | 'EXTRACT';
 }
 
-export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, onClose, onSuccess }) => {
+export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSuccess,
+  initialMode = 'GENERATE'
+}) => {
   const { role } = useAuth();
   const isAdmin = role === 'ADMIN';
+
+  // Wizard session mode: 'GENERATE' (synthesize from notes) or 'EXTRACT' (parse existing question paper PDF with options)
+  const [sessionMode, setSessionMode] = useState<'GENERATE' | 'EXTRACT'>(initialMode);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSessionMode(initialMode);
+    }
+  }, [isOpen, initialMode]);
 
   const [file, setFile] = useState<File | null>(null);
   const [directText, setDirectText] = useState<string>('');
@@ -67,18 +84,24 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
     setWritingCount(writings);
   };
 
-  const handleGenerate = (e: React.FormEvent) => {
+  // Submit Handler: branches based on sessionMode
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputMode === 'file' && !file) {
       setErrorMsg('Please select a PDF file first.');
       return;
     }
     if (inputMode === 'text' && (!directText || directText.trim().length < 20)) {
-      setErrorMsg('Please provide at least 20 characters of study notes or text content.');
+      setErrorMsg('Please provide at least 20 characters of study notes or question paper text.');
       return;
     }
 
-    if (totalRequested < 1) {
+    if (sessionMode === 'EXTRACT' && !isAdmin) {
+      setErrorMsg('Access Denied: Only Administrators can extract and import existing question papers.');
+      return;
+    }
+
+    if (sessionMode === 'GENERATE' && totalRequested < 1) {
       setErrorMsg('Please select at least 1 question to generate.');
       return;
     }
@@ -92,22 +115,39 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
     } else if (inputMode === 'text' && directText) {
       formData.append('text', directText.trim());
     }
-    formData.append('mcq_count', mcqCount.toString());
-    formData.append('writing_count', writingCount.toString());
-    formData.append('difficulty', difficulty);
 
-    api.post('/pdf/generate-questions', formData)
-      .then(res => {
-        const qs = res.data.questions || [];
-        setGeneratedQuestions(qs);
-        setStep('review');
-        const detectedTopic = qs[0]?.topic || (file ? file.name.replace(/\.pdf$/i, '') : 'Curriculum Assessment');
-        setPaperTitle(`${detectedTopic} - Question Paper`);
-      })
-      .catch(err => {
-        setErrorMsg(err.response?.data?.message || 'Unable to process PDF. Please upload a valid PDF.');
-      })
-      .finally(() => setLoading(false));
+    if (sessionMode === 'GENERATE') {
+      formData.append('mcq_count', mcqCount.toString());
+      formData.append('writing_count', writingCount.toString());
+      formData.append('difficulty', difficulty);
+
+      api.post('/pdf/generate-questions', formData)
+        .then(res => {
+          const qs = res.data.questions || [];
+          setGeneratedQuestions(qs);
+          setStep('review');
+          const detectedTopic = qs[0]?.topic || (file ? file.name.replace(/\.pdf$/i, '') : 'Curriculum Assessment');
+          setPaperTitle(`${detectedTopic} - Question Paper`);
+        })
+        .catch(err => {
+          setErrorMsg(err.response?.data?.message || 'Unable to process PDF. Please upload a valid PDF.');
+        })
+        .finally(() => setLoading(false));
+    } else {
+      // EXTRACT session mode: parses already created question paper PDF with options
+      api.post('/pdf/extract-questions', formData)
+        .then(res => {
+          const qs = res.data.questions || [];
+          setGeneratedQuestions(qs);
+          setStep('review');
+          const detectedTopic = qs[0]?.topic || (file ? file.name.replace(/\.pdf$/i, '') : 'Imported Question Paper');
+          setPaperTitle(`${detectedTopic} - Master Paper`);
+        })
+        .catch(err => {
+          setErrorMsg(err.response?.data?.message || 'Unable to extract questions from the provided PDF.');
+        })
+        .finally(() => setLoading(false));
+    }
   };
 
   const handleApproveQuestion = (qId: string) => {
@@ -254,14 +294,23 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
         <div className="flex justify-between items-center border-b pb-3 flex-shrink-0">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 bg-purple-100 rounded-xl">
-              <Sparkles className="w-5 h-5 text-purple-600" />
+              {sessionMode === 'EXTRACT' ? (
+                <FileCheck2 className="w-5 h-5 text-indigo-600" />
+              ) : (
+                <Sparkles className="w-5 h-5 text-purple-600" />
+              )}
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base leading-tight">
-                AI PDF Assessment & Question Generator
+              <h3 className="font-bold text-slate-900 text-base leading-tight flex items-center space-x-2">
+                <span>{sessionMode === 'EXTRACT' ? 'Extract Questions from Existing PDF Paper' : 'AI PDF Assessment & Question Generator'}</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  Admin Authorized
+                </span>
               </h3>
               <p className="text-[11px] text-slate-500">
-                Extract curriculum, concepts, and generate questions automatically with Admin PDF export
+                {sessionMode === 'EXTRACT'
+                  ? 'Upload an already created question paper PDF (with options A, B, C, D) to automatically extract questions'
+                  : 'Extract curriculum, concepts, and generate new questions automatically with Admin PDF export'}
               </p>
             </div>
           </div>
@@ -270,241 +319,320 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
           </button>
         </div>
 
-        {/* Step 1: Upload & Parameters */}
+        {/* Step 1: Upload / Session Switcher */}
         {step === 'upload' && (
-          <form onSubmit={handleGenerate} className="space-y-4 flex-1 overflow-y-auto pr-1">
-            {/* Input Mode Selector */}
-            <div className="flex items-center space-x-2 border-b border-slate-100 pb-2">
+          <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+            
+            {/* Top Session Mode Switcher Tabs */}
+            <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
               <button
                 type="button"
-                onClick={() => setInputMode('file')}
-                className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all cursor-pointer ${
-                  inputMode === 'file'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 bg-slate-100'
+                onClick={() => { setSessionMode('GENERATE'); setErrorMsg(null); }}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                  sessionMode === 'GENERATE'
+                    ? 'bg-white text-purple-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <UploadCloud className="w-3.5 h-3.5" />
-                <span>Upload PDF Document</span>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Session 1: AI Question Generator</span>
               </button>
               <button
                 type="button"
-                onClick={() => setInputMode('text')}
-                className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all cursor-pointer ${
-                  inputMode === 'text'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 bg-slate-100'
+                onClick={() => { setSessionMode('EXTRACT'); setErrorMsg(null); }}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                  sessionMode === 'EXTRACT'
+                    ? 'bg-white text-indigo-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Type className="w-3.5 h-3.5" />
-                <span>Paste Notes / Curriculum Text</span>
+                <FileCheck2 className="w-3.5 h-3.5" />
+                <span>Session 2: Extract Existing Question Paper PDF</span>
               </button>
             </div>
 
-            {/* File Upload Zone */}
-            {inputMode === 'file' ? (
-              <div
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setIsDragging(false);
-                  const dropped = e.dataTransfer.files?.[0];
-                  if (dropped && dropped.type === 'application/pdf') {
-                    setFile(dropped);
-                  } else {
-                    setErrorMsg('Please upload a valid PDF document.');
-                  }
-                }}
-                onClick={() => !file && fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer ${
-                  isDragging
-                    ? 'border-purple-500 bg-purple-50/50'
-                    : file
-                    ? 'border-emerald-400 bg-emerald-50/30'
-                    : 'border-slate-300 hover:border-purple-400 bg-slate-50/50'
-                }`}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/pdf"
-                  onChange={e => {
-                    if (e.target.files?.[0]) setFile(e.target.files[0]);
-                  }}
-                  className="hidden"
-                />
-
-                {file ? (
-                  <div className="space-y-2">
-                    <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-                    <div>
-                      <div className="text-sm font-bold text-slate-800">{file.name}</div>
-                      <div className="text-xs text-slate-500">
-                        {(file.size / (1024 * 1024)).toFixed(2)} MB • PDF Ready for AI Assessment
-                      </div>
-                    </div>
-                    <div className="pt-2 flex justify-center space-x-2">
-                      <button
-                        type="button"
-                        onClick={e => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                        className="px-3 py-1 bg-white hover:bg-slate-100 text-purple-700 border border-purple-200 font-bold text-xs rounded-lg shadow-xs cursor-pointer"
-                      >
-                        Change File
-                      </button>
-                      <button
-                        type="button"
-                        onClick={e => { e.stopPropagation(); setFile(null); }}
-                        className="px-3 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-bold text-xs rounded-lg shadow-xs cursor-pointer"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <FileText className="w-10 h-10 text-purple-600 mx-auto" />
-                    <div className="text-sm font-bold text-slate-800">
-                      Click anywhere or Drag & Drop Course PDF here
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      Supports textbooks, lecture notes, and curriculum syllabus (.pdf up to 20MB)
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">Course Notes or Lecture Text</label>
-                <textarea
-                  rows={5}
-                  placeholder="Paste curriculum topics, textbook excerpts, lecture transcripts, or notes here (min 20 characters)..."
-                  value={directText}
-                  onChange={e => setDirectText(e.target.value)}
-                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                />
-                <div className="text-[11px] text-slate-400 text-right">
-                  {directText.length} characters
+            {/* Session Mode Explanatory Banner */}
+            {sessionMode === 'EXTRACT' ? (
+              <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl flex items-start space-x-2.5 text-xs text-indigo-900">
+                <FileInput className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="font-bold">Existing Question Paper Auto-Extraction Mode (Admin Only)</span>
+                  <p className="text-[11px] text-indigo-700 mt-0.5">
+                    Upload an already prepared exam paper, mock test, or quiz sheet containing questions with multiple-choice options (A, B, C, D). The parser will automatically extract each question, its choices, detected answers, and marks for review.
+                  </p>
                 </div>
               </div>
-            )}
-
-            {/* Quick Presets */}
-            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">Quick Volume Presets:</span>
-                <span className="text-[11px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
-                  Target: {totalRequested} Questions
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { label: '10 Questions', mcq: 8, writing: 2 },
-                  { label: '25 Questions', mcq: 20, writing: 5 },
-                  { label: '50 Questions ⭐', mcq: 40, writing: 10 },
-                  { label: '75 Questions', mcq: 60, writing: 15 },
-                  { label: '100 Questions 🚀', mcq: 80, writing: 20 }
-                ].map((preset) => {
-                  const isSelected = mcqCount === preset.mcq && writingCount === preset.writing;
-                  return (
-                    <button
-                      key={preset.label}
-                      type="button"
-                      onClick={() => handleApplyPreset(preset.mcq, preset.writing)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-300'
-                          : 'bg-white text-slate-700 border border-slate-300 hover:border-purple-400 hover:text-purple-700'
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Custom Input Counts */}
-            <div className="grid grid-cols-3 gap-4 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Number of MCQs <span className="text-slate-400 font-normal">(0 - 150)</span>
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  max={150}
-                  value={mcqCount}
-                  onChange={e => setMcqCount(Math.max(0, Math.min(150, parseInt(e.target.value, 10) || 0)))}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Number of Writing Questions <span className="text-slate-400 font-normal">(0 - 50)</span>
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  max={50}
-                  value={writingCount}
-                  onChange={e => setWritingCount(Math.max(0, Math.min(50, parseInt(e.target.value, 10) || 0)))}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Target Difficulty</label>
-                <select
-                  value={difficulty}
-                  onChange={e => setDifficulty(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                >
-                  <option value="Easy">Easy</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Hard">Hard</option>
-                </select>
-              </div>
-            </div>
-
-            {totalRequested >= 50 && (
-              <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-start space-x-2.5 text-xs text-purple-900">
-                <Info className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
+            ) : (
+              <div className="p-3 bg-purple-50/70 border border-purple-200 rounded-xl flex items-start space-x-2.5 text-xs text-purple-900">
+                <Sparkles className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <span className="font-bold">High-Capacity Question Generation Enabled ({totalRequested} Total Questions).</span>
+                  <span className="font-bold">AI Synthesis Mode</span>
                   <p className="text-[11px] text-purple-700 mt-0.5">
-                    The engine will synthesize diverse topics, definitions, architectural mechanisms, and distributed options (A/B/C/D) across the entire document.
+                    Upload syllabus notes, textbook chapters, or reference material to synthesize brand new questions according to your selected volume and difficulty.
                   </p>
                 </div>
               </div>
             )}
 
-            {errorMsg && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-bold flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                <span>{errorMsg}</span>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Input Mode Selector */}
+              <div className="flex items-center space-x-2 border-b border-slate-100 pb-2">
+                <button
+                  type="button"
+                  onClick={() => setInputMode('file')}
+                  className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all cursor-pointer ${
+                    inputMode === 'file'
+                      ? (sessionMode === 'EXTRACT' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-purple-600 text-white shadow-xs')
+                      : 'text-slate-600 hover:text-slate-900 bg-slate-100'
+                  }`}
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span>{sessionMode === 'EXTRACT' ? 'Upload Question Paper PDF' : 'Upload PDF Document'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInputMode('text')}
+                  className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all cursor-pointer ${
+                    inputMode === 'text'
+                      ? (sessionMode === 'EXTRACT' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-purple-600 text-white shadow-xs')
+                      : 'text-slate-600 hover:text-slate-900 bg-slate-100'
+                  }`}
+                >
+                  <Type className="w-3.5 h-3.5" />
+                  <span>{sessionMode === 'EXTRACT' ? 'Paste Question Paper Text' : 'Paste Notes / Curriculum Text'}</span>
+                </button>
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={(!file && inputMode === 'file') || loading || totalRequested < 1}
-              className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
-            >
-              {loading ? (
+              {/* File Upload Zone */}
+              {inputMode === 'file' ? (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const dropped = e.dataTransfer.files?.[0];
+                    if (dropped && dropped.type === 'application/pdf') {
+                      setFile(dropped);
+                    } else {
+                      setErrorMsg('Please upload a valid PDF document.');
+                    }
+                  }}
+                  onClick={() => !file && fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer ${
+                    isDragging
+                      ? 'border-indigo-500 bg-indigo-50/50'
+                      : file
+                      ? 'border-emerald-400 bg-emerald-50/30'
+                      : 'border-slate-300 hover:border-indigo-400 bg-slate-50/50'
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/pdf"
+                    onChange={e => {
+                      if (e.target.files?.[0]) setFile(e.target.files[0]);
+                    }}
+                    className="hidden"
+                  />
+
+                  {file ? (
+                    <div className="space-y-2">
+                      <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+                      <div>
+                        <div className="text-sm font-bold text-slate-800">{file.name}</div>
+                        <div className="text-xs text-slate-500">
+                          {(file.size / (1024 * 1024)).toFixed(2)} MB • {sessionMode === 'EXTRACT' ? 'Question Paper PDF Ready for Extraction' : 'PDF Ready for AI Assessment'}
+                        </div>
+                      </div>
+                      <div className="pt-2 flex justify-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={e => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                          className="px-3 py-1 bg-white hover:bg-slate-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-lg shadow-xs cursor-pointer"
+                        >
+                          Change File
+                        </button>
+                        <button
+                          type="button"
+                          onClick={e => { e.stopPropagation(); setFile(null); }}
+                          className="px-3 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-bold text-xs rounded-lg shadow-xs cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <FileText className={`w-10 h-10 mx-auto ${sessionMode === 'EXTRACT' ? 'text-indigo-600' : 'text-purple-600'}`} />
+                      <div className="text-sm font-bold text-slate-800">
+                        {sessionMode === 'EXTRACT'
+                          ? 'Click anywhere or Drag & Drop Question Paper PDF here'
+                          : 'Click anywhere or Drag & Drop Course PDF here'}
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        {sessionMode === 'EXTRACT'
+                          ? 'Supports examination papers, mock tests, and question sheets with options A/B/C/D (.pdf up to 20MB)'
+                          : 'Supports textbooks, lecture notes, and curriculum syllabus (.pdf up to 20MB)'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700">
+                    {sessionMode === 'EXTRACT' ? 'Question Paper Text Content (with options A, B, C, D)' : 'Course Notes or Lecture Text'}
+                  </label>
+                  <textarea
+                    rows={6}
+                    placeholder={sessionMode === 'EXTRACT'
+                      ? 'Paste question paper text here (e.g. 1. What is AI? (A) ... (B) ... (C) ... (D) ... Answer: A)...'
+                      : 'Paste curriculum topics, textbook excerpts, lecture transcripts, or notes here (min 20 characters)...'}
+                    value={directText}
+                    onChange={e => setDirectText(e.target.value)}
+                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                  <div className="text-[11px] text-slate-400 text-right">
+                    {directText.length} characters
+                  </div>
+                </div>
+              )}
+
+              {/* Session-Specific Parameters */}
+              {sessionMode === 'GENERATE' ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Generating {totalRequested} questions via AI engine...</span>
+                  {/* Quick Presets */}
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700">Quick Volume Presets:</span>
+                      <span className="text-[11px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                        Target: {totalRequested} Questions
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: '10 Questions', mcq: 8, writing: 2 },
+                        { label: '25 Questions', mcq: 20, writing: 5 },
+                        { label: '50 Questions ⭐', mcq: 40, writing: 10 },
+                        { label: '75 Questions', mcq: 60, writing: 15 },
+                        { label: '100 Questions 🚀', mcq: 80, writing: 20 }
+                      ].map((preset) => {
+                        const isSelected = mcqCount === preset.mcq && writingCount === preset.writing;
+                        return (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => handleApplyPreset(preset.mcq, preset.writing)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-300'
+                                : 'bg-white text-slate-700 border border-slate-300 hover:border-purple-400 hover:text-purple-700'
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Custom Input Counts */}
+                  <div className="grid grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Number of MCQs <span className="text-slate-400 font-normal">(0 - 150)</span>
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={150}
+                        value={mcqCount}
+                        onChange={e => setMcqCount(Math.max(0, Math.min(150, parseInt(e.target.value, 10) || 0)))}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Number of Writing Questions <span className="text-slate-400 font-normal">(0 - 50)</span>
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={50}
+                        value={writingCount}
+                        onChange={e => setWritingCount(Math.max(0, Math.min(50, parseInt(e.target.value, 10) || 0)))}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Target Difficulty</label>
+                      <select
+                        value={difficulty}
+                        onChange={e => setDifficulty(e.target.value)}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                      >
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
+                      </select>
+                    </div>
+                  </div>
                 </>
               ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Extract & Generate {totalRequested} Questions</span>
-                </>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
+                  <span className="font-bold text-slate-800">Automatic Question & Option Parser:</span>
+                  <p className="text-[11px] text-slate-600">
+                    The engine automatically discovers all numbered questions, isolates option A, B, C, D text, captures marks indicated in brackets (e.g. [2 Marks]), and assigns detected or indicated correct answers into the system.
+                  </p>
+                </div>
               )}
-            </button>
-          </form>
+
+              {errorMsg && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-bold flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={(!file && inputMode === 'file') || loading || (sessionMode === 'GENERATE' && totalRequested < 1)}
+                className={`w-full py-3.5 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+                  sessionMode === 'EXTRACT'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700'
+                    : 'bg-purple-600 hover:bg-purple-700'
+                }`}
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>
+                      {sessionMode === 'EXTRACT'
+                        ? 'Parsing question paper & extracting questions with options...'
+                        : `Generating ${totalRequested} questions via AI engine...`}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {sessionMode === 'EXTRACT' ? (
+                      <>
+                        <FileCheck2 className="w-4 h-4" />
+                        <span>Extract Questions & Options from Paper (Admin Only)</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Extract & Generate {totalRequested} Questions</span>
+                      </>
+                    )}
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
         )}
 
         {/* Step 2: Review Screen */}
@@ -515,7 +643,7 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
             <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl flex-shrink-0">
               <div className="flex items-center space-x-3 text-xs">
                 <span className="font-bold text-slate-800">
-                  Total: {generatedQuestions.length}
+                  Total: {generatedQuestions.length} Questions
                 </span>
                 <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold">
                   {approvedCount} Approved
@@ -758,7 +886,7 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
                     Admin PDF Question Paper Session
                   </h4>
                   <p className="text-[11px] text-slate-500">
-                    Convert generated AI questions into an official formatted printable PDF
+                    Convert questions into an official formatted printable PDF
                   </p>
                 </div>
               </div>

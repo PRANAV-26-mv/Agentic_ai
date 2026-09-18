@@ -79,6 +79,64 @@ router.post('/generate-questions', requireAdmin, upload.single('file'), async (r
   }
 });
 
+// POST /api/pdf/extract-questions
+// Strict Admin Only! Parses an already created question paper PDF and automatically extracts questions and options
+router.post('/extract-questions', requireAdmin, upload.single('file'), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    let textContent = '';
+    if (req.file) {
+      if (req.file.mimetype !== 'application/pdf') {
+        res.status(400).json({ message: 'Unable to process file. Please upload a valid PDF document.' });
+        return;
+      }
+      const data = await pdfParse(req.file.buffer);
+      textContent = data.text;
+    } else if (req.body.text) {
+      textContent = req.body.text;
+    } else {
+      res.status(400).json({ message: 'Please upload a question paper PDF or provide question text.' });
+      return;
+    }
+
+    if (!textContent || textContent.trim().length < 20) {
+      res.status(400).json({ message: 'Unable to extract text from PDF. Ensure the question paper contains readable text.' });
+      return;
+    }
+
+    // Call extraction layer
+    const extractedRaw = await aiService.extractExistingQuestions(textContent);
+
+    if (extractedRaw.length === 0) {
+      res.status(400).json({ message: 'No questions could be extracted. Please ensure the PDF contains numbered questions or options (A, B, C, D).' });
+      return;
+    }
+
+    // Save extracted questions to REVIEW status for Admin Review screen
+    const savedQuestions = extractedRaw.map(q => QuestionsModel.create({
+      ...q,
+      status: 'REVIEW'
+    }));
+
+    AuditLogsModel.log(
+      req.user!.id,
+      'ADMIN',
+      'AI_EXTRACT_QUESTION_PAPER_PDF',
+      'PDF',
+      req.file ? req.file.originalname : 'text-input',
+      { extractedCount: savedQuestions.length }
+    );
+
+    res.status(201).json({
+      message: `${savedQuestions.length} questions successfully extracted from question paper for Admin Review.`,
+      questions: savedQuestions,
+      count: savedQuestions.length
+    });
+  } catch (err: any) {
+    console.error('Error extracting question paper:', err);
+    res.status(500).json({ message: err.message || 'Error extracting questions from PDF.' });
+  }
+});
+
 // POST /api/pdf/export-questions-pdf
 // Strict Admin Only! Converts generated or selected questions into an official downloadable PDF
 router.post('/export-questions-pdf', requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
