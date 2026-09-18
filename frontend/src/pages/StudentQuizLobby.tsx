@@ -253,6 +253,19 @@ export const StudentQuizLobby: React.FC = () => {
     };
   }, []);
 
+  // Resolve participant & leaderboard records safely at component scope
+  const pRecord: QuizSessionParticipant | undefined = resultData?.participant || session?.my_participant;
+  const leaderboard: QuizLeaderboardEntry[] = resultData?.leaderboard || session?.leaderboard || [];
+  const myRank: number = resultData?.rank || (pRecord?.student_id ? leaderboard.find(l => l.student_id === pRecord?.student_id)?.rank : undefined) || pRecord?.rank || 1;
+
+  // Automatically trigger celebration burst for 1st rank (Hook called unconditionally at top-level)
+  useEffect(() => {
+    if (stage === 'RESULTS' && myRank === 1 && !hasBurstTriggeredRef.current) {
+      hasBurstTriggeredRef.current = true;
+      setShowGiftBurst(true);
+    }
+  }, [stage, myRank]);
+
   const handleStartQuiz = async () => {
     if (!session) return;
     try {
@@ -641,10 +654,19 @@ export const StudentQuizLobby: React.FC = () => {
                   type="button"
                   onClick={() => handleSubmitQuiz(false)}
                   disabled={submitting}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl flex items-center space-x-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer shrink-0"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-black text-xs rounded-xl flex items-center space-x-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer shrink-0"
                 >
-                  <span>Finish</span>
-                  <Check className="w-4 h-4 stroke-[3]" />
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Finish</span>
+                      <Check className="w-4 h-4 stroke-[3]" />
+                    </>
+                  )}
                 </button>
               ) : (
                 <button
@@ -660,6 +682,19 @@ export const StudentQuizLobby: React.FC = () => {
           </div>
         )}
 
+        {/* Fullscreen Submitting & Grading Indicator */}
+        {submitting && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex flex-col items-center justify-center z-50 p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center space-y-4 shadow-2xl">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto text-emerald-600">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
+              <h3 className="font-extrabold text-slate-900 text-base">Grading Your Quiz...</h3>
+              <p className="text-xs text-slate-500">Calculating your score and updating live leaderboard rankings...</p>
+            </div>
+          </div>
+        )}
+
       </div>
     );
   }
@@ -667,17 +702,7 @@ export const StudentQuizLobby: React.FC = () => {
   // =========================================================================
   // STAGE 3: RESULTS & DETAILED SOLUTIONS REVIEW
   // =========================================================================
-  const pRecord: QuizSessionParticipant = resultData?.participant || session.my_participant;
-  const leaderboard: QuizLeaderboardEntry[] = resultData?.leaderboard || session.leaderboard || [];
-  const myRank = resultData?.rank || leaderboard.find(l => l.student_id === pRecord?.student_id)?.rank || pRecord?.rank || 1;
-
-  // Automatically trigger celebration burst for 1st rank
-  useEffect(() => {
-    if (stage === 'RESULTS' && myRank === 1 && !hasBurstTriggeredRef.current) {
-      hasBurstTriggeredRef.current = true;
-      setShowGiftBurst(true);
-    }
-  }, [stage, myRank]);
+  // (pRecord, leaderboard, and myRank are resolved at component top-level)
 
   // Calculate detailed performance breakdown with verified logic
   let correctCount = 0;
@@ -743,7 +768,7 @@ export const StudentQuizLobby: React.FC = () => {
               <span>Official Session Result</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Quiz Completed!</h1>
-            <p className="text-white/80 text-xs mt-1 break-words max-w-lg mx-auto">{session.title}</p>
+            <p className="text-white/80 text-xs mt-1 break-words max-w-lg mx-auto">{session?.title || "Quiz Completed"}</p>
             {myRank === 1 && (
               <div className="pt-3">
                 <button
@@ -1151,7 +1176,7 @@ export const StudentQuizLobby: React.FC = () => {
       <GiftBurstModal
         isOpen={showGiftBurst}
         onClose={() => setShowGiftBurst(false)}
-        quizTitle={session.title}
+        quizTitle={session?.title || "Quiz Session"}
         score={earnedScore}
         maxScore={maxScore}
         accuracy={accuracyPercentage}

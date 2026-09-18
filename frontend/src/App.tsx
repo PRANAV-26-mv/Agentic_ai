@@ -33,6 +33,7 @@ import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AuditLogPage } from './pages/AuditLogPage';
 import { AdminManagement } from './pages/AdminManagement';
 import { UserRestrictionsPage } from './pages/UserRestrictionsPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { EmailBroadcastPage } from './pages/EmailBroadcastPage';
 
 const ProtectedStudentRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -69,7 +70,8 @@ export function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
+        <ErrorBoundary>
+          <Routes>
           <Route path="/login" element={<LoginPage />} />
           
           {/* Root Redirect */}
@@ -154,6 +156,7 @@ export function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
     </AuthProvider>
   );
