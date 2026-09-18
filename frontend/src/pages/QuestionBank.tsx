@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Question, QuestionPool } from '../types';
-import { HelpCircle, Sparkles, Plus, CheckCircle2, XCircle, RefreshCw, Layers, Trash2, AlertCircle } from 'lucide-react';
+import { HelpCircle, Sparkles, Plus, CheckCircle2, XCircle, RefreshCw, Layers, Trash2, AlertCircle, FileDown, ShieldCheck, X } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { PdfGeneratorWizard } from './PdfGeneratorWizard';
 
 export const QuestionBank: React.FC = () => {
@@ -14,6 +15,80 @@ export const QuestionBank: React.FC = () => {
   const [showPdfWizard, setShowPdfWizard] = useState<boolean>(false);
   const [showPoolModal, setShowPoolModal] = useState<boolean>(false);
   const [poolName, setPoolName] = useState<string>('');
+
+  const { role } = useAuth();
+  const isAdmin = role === 'ADMIN';
+
+  // PDF Export Modal State (Admin Only)
+  const [showExportModal, setShowExportModal] = useState<boolean>(false);
+  const [exportingPdf, setExportingPdf] = useState<boolean>(false);
+  const [exportScope, setExportScope] = useState<'APPROVED' | 'ALL'>('APPROVED');
+  const [paperTitle, setPaperTitle] = useState<string>('Question Bank Examination Paper');
+  const [institutionName, setInstitutionName] = useState<string>('STUDENT ASSESSMENT & LEARNING PORTAL');
+  const [durationMinutes, setDurationMinutes] = useState<number>(60);
+  const [includeAnswers, setIncludeAnswers] = useState<boolean>(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportSuccess, setExportSuccess] = useState<string | null>(null);
+
+  const handleDownloadPdf = async () => {
+    if (!isAdmin) {
+      setExportError('Access Denied: Only Administrators can export and download question paper PDFs.');
+      return;
+    }
+
+    const targetQuestions = exportScope === 'APPROVED'
+      ? questions.filter(q => q.status === 'APPROVED')
+      : questions;
+
+    if (targetQuestions.length === 0) {
+      setExportError(
+        exportScope === 'APPROVED'
+          ? 'No approved questions found in the Question Bank.'
+          : 'No questions available to export.'
+      );
+      return;
+    }
+
+    setExportingPdf(true);
+    setExportError(null);
+    setExportSuccess(null);
+
+    try {
+      const res = await api.post(
+        '/pdf/export-questions-pdf',
+        {
+          questions: targetQuestions,
+          title: paperTitle.trim() || 'Question Bank Examination Paper',
+          institution: institutionName.trim() || 'STUDENT ASSESSMENT & LEARNING PORTAL',
+          duration_minutes: durationMinutes,
+          include_answers: includeAnswers
+        },
+        { responseType: 'blob' }
+      );
+
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const safeTitle = (paperTitle.trim() || 'Question_Paper').replace(/[^a-zA-Z0-9_-]/g, '_');
+      link.setAttribute('download', `${safeTitle}_${includeAnswers ? 'Master_With_Answers' : 'Student_Question_Paper'}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setExportSuccess('Official Question Paper PDF downloaded successfully!');
+      setTimeout(() => {
+        setShowExportModal(false);
+        setExportSuccess(null);
+      }, 2000);
+    } catch (err: any) {
+      console.error('Failed to export PDF:', err);
+      setExportError(err.response?.data?.message || 'Failed to export PDF. Admin privileges required.');
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   // Add Question Modal state
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -165,6 +240,19 @@ export const QuestionBank: React.FC = () => {
           >
             <Plus className="w-4 h-4" />
             <span>Add Question</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setExportError(null);
+              setExportSuccess(null);
+              setShowExportModal(true);
+            }}
+            className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-all cursor-pointer"
+            title="Export question bank to official PDF paper (Admin Only)"
+          >
+            <FileDown className="w-4 h-4" />
+            <span>Export to PDF</span>
           </button>
 
           <button
@@ -585,6 +673,183 @@ export const QuestionBank: React.FC = () => {
           onClose={() => setShowPdfWizard(false)}
           onSuccess={fetchQuestions}
         />
+      )}
+
+      {/* PDF Export Session Modal (Admin Only) */}
+      {showExportModal && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95 border border-slate-200">
+            <div className="flex justify-between items-start border-b pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 bg-indigo-100 rounded-xl text-indigo-600">
+                  <FileDown className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">
+                    Export Question Bank to PDF
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Official printable exam paper generator (Admin Restricted)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Admin verification indicator */}
+            {isAdmin ? (
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-900">
+                <div className="flex items-center space-x-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="font-bold">Admin Privileges Verified</span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-100 rounded text-emerald-800 font-bold">
+                  ROLE: ADMIN
+                </span>
+              </div>
+            ) : (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center space-x-2 text-xs text-rose-800">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span className="font-bold">
+                  Access Denied: Only administrators can export and download question paper PDFs.
+                </span>
+              </div>
+            )}
+
+            {/* Export Options Form */}
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Examination Paper Title</label>
+                <input
+                  type="text"
+                  value={paperTitle}
+                  onChange={e => setPaperTitle(e.target.value)}
+                  placeholder="e.g. Question Bank Examination Paper"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Institution Header / Subtitle</label>
+                <input
+                  type="text"
+                  value={institutionName}
+                  onChange={e => setInstitutionName(e.target.value)}
+                  placeholder="e.g. STUDENT ASSESSMENT & LEARNING PORTAL"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Time Allowed (Minutes)</label>
+                  <input
+                    type="number"
+                    min={15}
+                    max={360}
+                    value={durationMinutes}
+                    onChange={e => setDurationMinutes(Math.max(15, parseInt(e.target.value, 10) || 60))}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Question Selection</label>
+                  <div className="flex rounded-xl bg-slate-100 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setExportScope('APPROVED')}
+                      className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                        exportScope === 'APPROVED' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Approved ({questions.filter(q => q.status === 'APPROVED').length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExportScope('ALL')}
+                      className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                        exportScope === 'ALL' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      All ({questions.length})
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Master / Student Format Mode */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                <label className="flex items-start space-x-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={includeAnswers}
+                    onChange={e => setIncludeAnswers(e.target.checked)}
+                    className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                  />
+                  <div>
+                    <span className="font-bold text-slate-800">
+                      Include Evaluator Answer Key & Rubrics
+                    </span>
+                    <p className="text-[11px] text-slate-500">
+                      {includeAnswers
+                        ? "Master Document: Generates student question paper followed by the confidential answers matrix, explanations, and model answers."
+                        : "Student Paper: Generates clean question paper with roll number block and candidate instructions (No answers shown)."}
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Status Alerts */}
+              {exportError && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-[11px] font-bold flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{exportError}</span>
+                </div>
+              )}
+
+              {exportSuccess && (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-[11px] font-bold flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{exportSuccess}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="pt-3 border-t flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setShowExportModal(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={!isAdmin || exportingPdf}
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer"
+              >
+                {exportingPdf ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Generating PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="w-3.5 h-3.5" />
+                    <span>{includeAnswers ? 'Download Master Paper with Key' : 'Download Student Paper PDF'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

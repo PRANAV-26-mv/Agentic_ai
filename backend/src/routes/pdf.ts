@@ -1,9 +1,10 @@
-import { Router, Request, Response } from 'express';
+﻿import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import pdfParse from 'pdf-parse';
 import { requireAdmin, AuthRequest } from '../middleware/authMiddleware.js';
 import { aiService } from '../services/aiService.js';
 import { QuestionsModel, AuditLogsModel } from '../models/dbModels.js';
+import { generateQuestionPaperPDF, QuestionPaperOptions } from '../services/questionPaperPdfService.js';
 
 const router = Router();
 const upload = multer({ limits: { fileSize: 20 * 1024 * 1024 } }); // 20MB limit
@@ -75,6 +76,75 @@ router.post('/generate-questions', requireAdmin, upload.single('file'), async (r
     });
   } catch (err: any) {
     res.status(500).json({ message: err.message || 'Unable to process PDF. Please upload a valid PDF.' });
+  }
+});
+
+// POST /api/pdf/export-questions-pdf
+// Strict Admin Only! Converts generated or selected questions into an official downloadable PDF
+router.post('/export-questions-pdf', requireAdmin, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { 
+      questions, 
+      question_ids,
+      title, 
+      subtitle, 
+      institution, 
+      duration_minutes, 
+      total_marks, 
+      instructions, 
+      include_answers 
+    } = req.body;
+
+    let targetQuestions = [];
+
+    if (Array.isArray(questions) && questions.length > 0) {
+      targetQuestions = questions;
+    } else if (Array.isArray(question_ids) && question_ids.length > 0) {
+      targetQuestions = question_ids
+        .map((id: string) => QuestionsModel.findById(id))
+        .filter((q: any) => Boolean(q));
+    }
+
+    if (targetQuestions.length === 0) {
+      res.status(400).json({ message: 'No questions provided to generate PDF.' });
+      return;
+    }
+
+    const pdfOptions: QuestionPaperOptions = {
+      title: title || 'AI GENERATED EXAMINATION QUESTION PAPER',
+      subtitle: subtitle || (targetQuestions[0]?.topic ? `Subject / Topic: ${targetQuestions[0].topic}` : 'Official Assessment Paper'),
+      institution: institution || 'STUDENT ASSESSMENT & LEARNING PORTAL',
+      duration_minutes: duration_minutes ? parseInt(String(duration_minutes), 10) : 60,
+      total_marks: total_marks ? parseFloat(String(total_marks)) : undefined,
+      instructions: Array.isArray(instructions) ? instructions : undefined,
+      include_answers: Boolean(include_answers)
+    };
+
+    const pdfBuffer = await generateQuestionPaperPDF(targetQuestions, pdfOptions);
+
+    const safeTitle = (title || 'Question_Paper').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const filename = `${safeTitle}_${timestamp}.pdf`;
+
+    AuditLogsModel.log(
+      req.user!.id,
+      'ADMIN',
+      'AI_EXPORT_QUESTIONS_PDF',
+      'PDF',
+      filename,
+      {
+        questionCount: targetQuestions.length,
+        includeAnswers: Boolean(include_answers),
+        title: pdfOptions.title
+      }
+    );
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(pdfBuffer);
+  } catch (err: any) {
+    console.error('Error generating question paper PDF:', err);
+    res.status(500).json({ message: err.message || 'Error generating question paper PDF.' });
   }
 });
 

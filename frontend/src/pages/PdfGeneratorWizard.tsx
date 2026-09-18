@@ -1,7 +1,22 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { api } from '../services/api';
 import { Question } from '../types';
-import { Sparkles, RefreshCw, AlertCircle, FileText, CheckCheck, Search, Info, CheckCircle2, UploadCloud, Type } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { 
+  Sparkles, 
+  RefreshCw, 
+  AlertCircle, 
+  FileText, 
+  CheckCheck, 
+  Search, 
+  Info, 
+  CheckCircle2, 
+  UploadCloud, 
+  Type, 
+  FileDown, 
+  ShieldCheck, 
+  X
+} from 'lucide-react';
 
 interface PdfGeneratorWizardProps {
   isOpen: boolean;
@@ -10,6 +25,9 @@ interface PdfGeneratorWizardProps {
 }
 
 export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, onClose, onSuccess }) => {
+  const { role } = useAuth();
+  const isAdmin = role === 'ADMIN';
+
   const [file, setFile] = useState<File | null>(null);
   const [directText, setDirectText] = useState<string>('');
   const [inputMode, setInputMode] = useState<'file' | 'text'>('file');
@@ -30,6 +48,17 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterType, setFilterType] = useState<'ALL' | 'MCQ' | 'WRITING'>('ALL');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'APPROVED' | 'REVIEW' | 'REJECTED'>('ALL');
+
+  // PDF Export Session Modal state
+  const [showExportModal, setShowExportModal] = useState<boolean>(false);
+  const [exportingPdf, setExportingPdf] = useState<boolean>(false);
+  const [exportScope, setExportScope] = useState<'ALL' | 'APPROVED'>('APPROVED');
+  const [paperTitle, setPaperTitle] = useState<string>('AI Generated Examination Question Paper');
+  const [institutionName, setInstitutionName] = useState<string>('STUDENT ASSESSMENT & LEARNING PORTAL');
+  const [durationMinutes, setDurationMinutes] = useState<number>(60);
+  const [includeAnswers, setIncludeAnswers] = useState<boolean>(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportSuccess, setExportSuccess] = useState<string | null>(null);
 
   const totalRequested = mcqCount + writingCount;
 
@@ -69,8 +98,11 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
 
     api.post('/pdf/generate-questions', formData)
       .then(res => {
-        setGeneratedQuestions(res.data.questions || []);
+        const qs = res.data.questions || [];
+        setGeneratedQuestions(qs);
         setStep('review');
+        const detectedTopic = qs[0]?.topic || (file ? file.name.replace(/\.pdf$/i, '') : 'Curriculum Assessment');
+        setPaperTitle(`${detectedTopic} - Question Paper`);
       })
       .catch(err => {
         setErrorMsg(err.response?.data?.message || 'Unable to process PDF. Please upload a valid PDF.');
@@ -149,6 +181,69 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
   const reviewCount = generatedQuestions.filter(q => q.status === 'REVIEW' || q.status === 'DRAFT').length;
   const rejectedCount = generatedQuestions.filter(q => q.status === 'REJECTED').length;
 
+  // PDF Export & Download Handler (Admin Only)
+  const handleDownloadPdf = async () => {
+    if (!isAdmin) {
+      setExportError('Access Denied: Only Administrators are authorized to export and download question paper PDFs.');
+      return;
+    }
+
+    const targetQuestions = exportScope === 'APPROVED'
+      ? generatedQuestions.filter(q => q.status === 'APPROVED')
+      : generatedQuestions;
+
+    if (targetQuestions.length === 0) {
+      setExportError(
+        exportScope === 'APPROVED'
+          ? 'No approved questions found. Please approve questions or switch the scope to "All Questions".'
+          : 'No questions available to export.'
+      );
+      return;
+    }
+
+    setExportingPdf(true);
+    setExportError(null);
+    setExportSuccess(null);
+
+    try {
+      const res = await api.post(
+        '/pdf/export-questions-pdf',
+        {
+          questions: targetQuestions,
+          title: paperTitle.trim() || 'AI Generated Question Paper',
+          institution: institutionName.trim() || 'STUDENT ASSESSMENT & LEARNING PORTAL',
+          duration_minutes: durationMinutes,
+          include_answers: includeAnswers
+        },
+        { responseType: 'blob' }
+      );
+
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const safeTitle = (paperTitle.trim() || 'Question_Paper').replace(/[^a-zA-Z0-9_-]/g, '_');
+      link.setAttribute('download', `${safeTitle}_${includeAnswers ? 'Master_With_Answers' : 'Student_Question_Paper'}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setExportSuccess('Official PDF question paper generated and downloaded successfully!');
+      setTimeout(() => {
+        setShowExportModal(false);
+        setExportSuccess(null);
+      }, 2000);
+    } catch (err: any) {
+      console.error('Failed to export PDF:', err);
+      setExportError(
+        err.response?.data?.message || 'Failed to export PDF. Please ensure you are logged in with Admin privileges.'
+      );
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -166,11 +261,13 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
                 AI PDF Assessment & Question Generator
               </h3>
               <p className="text-[11px] text-slate-500">
-                Extract curriculum, concepts, and generate 50+ questions automatically
+                Extract curriculum, concepts, and generate questions automatically with Admin PDF export
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg">✕</button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg cursor-pointer">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Step 1: Upload & Parameters */}
@@ -200,47 +297,50 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
                 }`}
               >
                 <Type className="w-3.5 h-3.5" />
-                <span>Paste Notes / Syllabus Text</span>
+                <span>Paste Notes / Curriculum Text</span>
               </button>
             </div>
 
-            {/* Upload Box or Direct Text Area */}
+            {/* File Upload Zone */}
             {inputMode === 'file' ? (
               <div
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
-                onDrop={e => {
+                onDrop={(e) => {
                   e.preventDefault();
                   setIsDragging(false);
-                  if (e.dataTransfer.files?.[0]) {
-                    setFile(e.dataTransfer.files[0]);
+                  const dropped = e.dataTransfer.files?.[0];
+                  if (dropped && dropped.type === 'application/pdf') {
+                    setFile(dropped);
+                  } else {
+                    setErrorMsg('Please upload a valid PDF document.');
                   }
                 }}
+                onClick={() => !file && fileInputRef.current?.click()}
                 className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer ${
-                  isDragging ? 'border-purple-600 bg-purple-100/70 scale-[1.01]' :
-                  file ? 'border-emerald-300 bg-emerald-50/40 hover:bg-emerald-50/70' :
-                  'border-purple-200 hover:border-purple-500 bg-purple-50/50 hover:bg-purple-50'
+                  isDragging
+                    ? 'border-purple-500 bg-purple-50/50'
+                    : file
+                    ? 'border-emerald-400 bg-emerald-50/30'
+                    : 'border-slate-300 hover:border-purple-400 bg-slate-50/50'
                 }`}
               >
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".pdf,application/pdf"
-                  onClick={e => { (e.target as HTMLInputElement).value = ''; }}
-                  onChange={e => setFile(e.target.files ? e.target.files[0] : null)}
+                  accept="application/pdf"
+                  onChange={e => {
+                    if (e.target.files?.[0]) setFile(e.target.files[0]);
+                  }}
                   className="hidden"
-                  id="pdf-upload-input"
                 />
 
                 {file ? (
                   <div className="space-y-2">
-                    <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-xs">
-                      <CheckCircle2 className="w-6 h-6" />
-                    </div>
+                    <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
                     <div>
-                      <div className="text-sm font-extrabold text-slate-900">{file.name}</div>
-                      <div className="text-xs text-emerald-700 mt-0.5 font-bold">
+                      <div className="text-sm font-bold text-slate-800">{file.name}</div>
+                      <div className="text-xs text-slate-500">
                         {(file.size / (1024 * 1024)).toFixed(2)} MB • PDF Ready for AI Assessment
                       </div>
                     </div>
@@ -311,7 +411,7 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
                       key={preset.label}
                       type="button"
                       onClick={() => handleApplyPreset(preset.mcq, preset.writing)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                         isSelected
                           ? 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-300'
                           : 'bg-white text-slate-700 border border-slate-300 hover:border-purple-400 hover:text-purple-700'
@@ -368,7 +468,6 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
               </div>
             </div>
 
-            {/* Notice for 50+ questions */}
             {totalRequested >= 50 && (
               <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-start space-x-2.5 text-xs text-purple-900">
                 <Info className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
@@ -390,8 +489,8 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
 
             <button
               type="submit"
-              disabled={!file || loading || totalRequested < 1}
-              className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2"
+              disabled={(!file && inputMode === 'file') || loading || totalRequested < 1}
+              className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -401,70 +500,66 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>Generate {totalRequested} Questions from PDF</span>
+                  <span>Extract & Generate {totalRequested} Questions</span>
                 </>
               )}
             </button>
           </form>
         )}
 
-        {/* Step 2: Admin Review Screen for High-Capacity Batches */}
+        {/* Step 2: Review Screen */}
         {step === 'review' && (
-          <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 flex flex-col">
-            {/* Top Summary Banner */}
-            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-3.5 rounded-xl border border-purple-200 flex flex-wrap items-center justify-between gap-2 text-xs flex-shrink-0">
-              <div>
-                <span className="font-bold text-purple-950 text-sm">
-                  {generatedQuestions.length} Questions Generated
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+            
+            {/* Top Stats & Batch Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl flex-shrink-0">
+              <div className="flex items-center space-x-3 text-xs">
+                <span className="font-bold text-slate-800">
+                  Total: {generatedQuestions.length}
                 </span>
-                <div className="text-[11px] text-purple-700 flex items-center space-x-2 mt-0.5 font-medium">
-                  <span>{generatedQuestions.filter(q => q.question_type === 'MCQ').length} MCQs</span>
-                  <span>•</span>
-                  <span>{generatedQuestions.filter(q => q.question_type === 'WRITING').length} Writing</span>
-                  <span>•</span>
-                  <span className="text-emerald-700 font-bold">{approvedCount} Approved</span>
-                  <span>•</span>
-                  <span className="text-amber-700 font-bold">{reviewCount} In Review</span>
-                  {rejectedCount > 0 && (
-                    <>
-                      <span>•</span>
-                      <span className="text-rose-700 font-bold">{rejectedCount} Rejected</span>
-                    </>
-                  )}
-                </div>
+                <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold">
+                  {approvedCount} Approved
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold">
+                  {reviewCount} In Review
+                </span>
+                {rejectedCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 font-bold">
+                    {rejectedCount} Rejected
+                  </span>
+                )}
               </div>
 
-              {/* Bulk Actions */}
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
-                  disabled={batchActionLoading}
                   onClick={handleApproveAll}
-                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm flex items-center space-x-1.5 transition-colors disabled:opacity-50"
+                  disabled={batchActionLoading}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg flex items-center space-x-1 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <CheckCheck className="w-3.5 h-3.5" />
-                  <span>Approve All ({generatedQuestions.length})</span>
+                  <span>Approve All</span>
                 </button>
                 <button
                   type="button"
-                  disabled={batchActionLoading}
                   onClick={handleRejectAll}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-slate-600 text-xs font-bold rounded-lg border border-slate-300 transition-colors disabled:opacity-50"
+                  disabled={batchActionLoading}
+                  className="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-xs rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  <span>Reject All</span>
+                  Reject All
                 </button>
               </div>
             </div>
 
-            {/* Filter & Search Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs flex-shrink-0">
-              <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl">
+            {/* Filter and Search Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 flex-shrink-0">
+              <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl">
                 {(['ALL', 'MCQ', 'WRITING'] as const).map(type => (
                   <button
                     key={type}
                     type="button"
                     onClick={() => setFilterType(type)}
-                    className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all ${
+                    className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
                       filterType === type ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -477,7 +572,7 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
                     key={st}
                     type="button"
                     onClick={() => setFilterStatus(st)}
-                    className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all ${
+                    className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
                       filterStatus === st ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -571,7 +666,7 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
                       <button
                         type="button"
                         onClick={() => handleRegenerateQuestion(q.id)}
-                        className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 font-bold rounded-lg text-slate-700 flex items-center space-x-1 transition-colors"
+                        className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 font-bold rounded-lg text-slate-700 flex items-center space-x-1 transition-colors cursor-pointer"
                       >
                         <RefreshCw className="w-3 h-3" />
                         <span>Regenerate</span>
@@ -581,7 +676,7 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
                         <button
                           type="button"
                           onClick={() => handleApproveQuestion(q.id)}
-                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors"
+                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors cursor-pointer"
                         >
                           Approve
                         </button>
@@ -589,7 +684,7 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
                         <button
                           type="button"
                           onClick={() => handleRejectQuestion(q.id)}
-                          className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition-colors"
+                          className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition-colors cursor-pointer"
                         >
                           Reject
                         </button>
@@ -600,23 +695,232 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({ isOpen, 
               )}
             </div>
 
-            {/* Bottom Finalize Button */}
-            <div className="pt-3 border-t flex justify-between items-center flex-shrink-0">
-              <span className="text-xs text-slate-500">
-                Showing {filteredQuestions.length} of {generatedQuestions.length} questions
-              </span>
-              <button
-                type="button"
-                onClick={() => { onSuccess(); onClose(); }}
-                className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md transition-all"
-              >
-                Save & Add to Question Bank
-              </button>
+            {/* Bottom Finalize & PDF Export Session Toolbar */}
+            <div className="pt-3 border-t flex flex-wrap justify-between items-center gap-3 flex-shrink-0">
+              <div className="flex items-center space-x-2.5">
+                <span className="text-xs text-slate-500 font-medium">
+                  Showing {filteredQuestions.length} of {generatedQuestions.length} questions ({approvedCount} Approved)
+                </span>
+                {isAdmin ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    <ShieldCheck className="w-3 h-3 mr-1 text-indigo-600" />
+                    Admin Session Active
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                    <AlertCircle className="w-3 h-3 mr-1 text-amber-600" />
+                    Admin Access Required
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                {/* Export to PDF Button (Admin Only) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExportError(null);
+                    setExportSuccess(null);
+                    setShowExportModal(true);
+                  }}
+                  className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center space-x-1.5 cursor-pointer"
+                  title={isAdmin ? "Export and download as official PDF question paper" : "Admin privileges required"}
+                >
+                  <FileDown className="w-4 h-4" />
+                  <span>Export to PDF (Admin Only)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { onSuccess(); onClose(); }}
+                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                >
+                  Save & Add to Question Bank
+                </button>
+              </div>
             </div>
           </div>
         )}
 
       </div>
+
+      {/* PDF Export Session Modal (Admin Only) */}
+      {showExportModal && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95 border border-slate-200">
+            <div className="flex justify-between items-start border-b pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 bg-indigo-100 rounded-xl text-indigo-600">
+                  <FileDown className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">
+                    Admin PDF Question Paper Session
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Convert generated AI questions into an official formatted printable PDF
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Admin verification indicator */}
+            {isAdmin ? (
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-900">
+                <div className="flex items-center space-x-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="font-bold">Admin Privileges Verified</span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-100 rounded text-emerald-800 font-bold">
+                  ROLE: ADMIN
+                </span>
+              </div>
+            ) : (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center space-x-2 text-xs text-rose-800">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span className="font-bold">
+                  Access Denied: Only administrators can export and download question paper PDFs.
+                </span>
+              </div>
+            )}
+
+            {/* Export Options Form */}
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Examination Paper Title</label>
+                <input
+                  type="text"
+                  value={paperTitle}
+                  onChange={e => setPaperTitle(e.target.value)}
+                  placeholder="e.g. Mid-Term Examination Paper"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Institution Header / Subtitle</label>
+                <input
+                  type="text"
+                  value={institutionName}
+                  onChange={e => setInstitutionName(e.target.value)}
+                  placeholder="e.g. STUDENT ASSESSMENT & LEARNING PORTAL"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Time Allowed (Minutes)</label>
+                  <input
+                    type="number"
+                    min={15}
+                    max={360}
+                    value={durationMinutes}
+                    onChange={e => setDurationMinutes(Math.max(15, parseInt(e.target.value, 10) || 60))}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Question Selection</label>
+                  <div className="flex rounded-xl bg-slate-100 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setExportScope('APPROVED')}
+                      className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                        exportScope === 'APPROVED' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Approved ({approvedCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExportScope('ALL')}
+                      className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                        exportScope === 'ALL' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      All ({generatedQuestions.length})
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Master / Student Format Mode */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                <label className="flex items-start space-x-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={includeAnswers}
+                    onChange={e => setIncludeAnswers(e.target.checked)}
+                    className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                  />
+                  <div>
+                    <span className="font-bold text-slate-800">
+                      Include Evaluator Answer Key & Rubrics
+                    </span>
+                    <p className="text-[11px] text-slate-500">
+                      {includeAnswers
+                        ? "Master Document: Generates student question paper followed by the confidential answers matrix, explanations, and model answers."
+                        : "Student Paper: Generates clean question paper with roll number block and candidate instructions (No answers shown)."}
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Status Alerts */}
+              {exportError && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-[11px] font-bold flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{exportError}</span>
+                </div>
+              )}
+
+              {exportSuccess && (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-[11px] font-bold flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{exportSuccess}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="pt-3 border-t flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setShowExportModal(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={!isAdmin || exportingPdf}
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer"
+              >
+                {exportingPdf ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Generating PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="w-3.5 h-3.5" />
+                    <span>{includeAnswers ? 'Download Master Paper with Key' : 'Download Student Paper PDF'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
