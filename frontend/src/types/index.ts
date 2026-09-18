@@ -283,6 +283,7 @@ export interface QuizSessionParticipant {
   time_taken_seconds?: number;
   rank?: number;
   answers_json?: string;
+  tab_switches_count?: number;
 }
 
 export interface QuizLeaderboardEntry {
@@ -297,4 +298,5 @@ export interface QuizLeaderboardEntry {
   percentage: number;
   time_taken_seconds: number;
   submitted_at?: string;
+  tab_switches_count?: number;
 }

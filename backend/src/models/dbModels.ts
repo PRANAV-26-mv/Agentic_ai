@@ -263,6 +263,7 @@ export interface QuizSessionParticipant {
   time_taken_seconds?: number;
   rank?: number;
   answers_json?: string;
+  tab_switches_count?: number;
 }
 
 // Data Model Helpers
@@ -1254,12 +1255,22 @@ export const QuizSessionParticipantsModel = {
         student_department: student.department,
         student_community: student.community,
         joined_at: new Date().toISOString(),
-        status: 'LOBBY'
+        status: 'LOBBY',
+        tab_switches_count: 0
       };
       memoryDb.table('quiz_session_participants').push(participant);
       db.save();
     }
     return participant;
+  },
+  recordTabSwitch(sessionId: string, studentId: string, eventType?: string): number {
+    const participant = this.findBySessionAndStudent(sessionId, studentId);
+    if (participant) {
+      participant.tab_switches_count = (participant.tab_switches_count || 0) + 1;
+      db.save();
+      return participant.tab_switches_count;
+    }
+    return 0;
   },
   startQuiz(sessionId: string, studentId: string): QuizSessionParticipant | undefined {
     const participant = this.findBySessionAndStudent(sessionId, studentId);
@@ -1339,7 +1350,8 @@ export const QuizSessionParticipantsModel = {
       max_score: p.max_score ?? 0,
       percentage: p.percentage ?? 0,
       time_taken_seconds: p.time_taken_seconds ?? 0,
-      submitted_at: p.submitted_at
+      submitted_at: p.submitted_at,
+      tab_switches_count: p.tab_switches_count ?? 0
     }));
   }
 };

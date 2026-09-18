@@ -310,6 +310,22 @@ router.post('/:id/submit', requireAuth, (req: AuthRequest, res: Response): void 
   }
 });
 
+// POST /api/quiz-sessions/:id/tab-switch - Record proctoring tab switch / fullscreen exit
+router.post('/:id/tab-switch', requireAuth, (req: AuthRequest, res: Response): void => {
+  try {
+    const sessionId = req.params.id as string;
+    const { event_type } = req.body;
+    if (!req.user) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+    const count = QuizSessionParticipantsModel.recordTabSwitch(sessionId, req.user.id, event_type);
+    res.json({ success: true, tab_switches_count: count });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Failed to record tab switch.' });
+  }
+});
+
 // PUT /api/quiz-sessions/:id/status - Admin updates session status
 router.put('/:id/status', requireAdmin, (req: AuthRequest, res: Response): void => {
   try {

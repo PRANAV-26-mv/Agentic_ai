@@ -26,7 +26,10 @@ import {
   Filter,
   Flame,
   Medal,
-  Crown
+  Crown,
+  ShieldAlert,
+  ShieldCheck,
+  Maximize2
 } from 'lucide-react';
 import { GiftBurstModal } from '../components/GiftBurstModal';
 
@@ -111,6 +114,44 @@ export const StudentQuizLobby: React.FC = () => {
   const submittingRef = useRef<boolean>(false);
   const navContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // Fullscreen & proctoring tab-switch state
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(true);
+  const [tabSwitches, setTabSwitches] = useState<number>(0);
+  const lastTabSwitchTimeRef = useRef<number>(0);
+
+  // Request fullscreen on examination device
+  const requestFullscreenMode = () => {
+    const docEl = document.documentElement;
+    try {
+      if (docEl.requestFullscreen) {
+        docEl.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+      } else if ((docEl as any).webkitRequestFullscreen) {
+        (docEl as any).webkitRequestFullscreen();
+        setIsFullscreen(true);
+      }
+    } catch (e) {}
+  };
+
+  // Debounced tab switch & blur handler to prevent duplicate event counting
+  const handleTabLeave = (eventType: string) => {
+    if (stage !== 'QUIZ' || submittingRef.current) return;
+    const now = Date.now();
+    if (now - lastTabSwitchTimeRef.current < 600) return;
+    lastTabSwitchTimeRef.current = now;
+
+    setTabSwitches(prev => prev + 1);
+    const sId = session?.id || id;
+    if (sId) {
+      api.post(`/quiz-sessions/${sId}/tab-switch`, { event_type: eventType })
+        .then(res => {
+          if (typeof res.data?.tab_switches_count === 'number') {
+            setTabSwitches(res.data.tab_switches_count);
+          }
+        })
+        .catch(() => {});
+    }
+  };
+
   // Keep answersRef synced to prevent stale state in timer callbacks
   useEffect(() => {
     answersRef.current = answers;
@@ -129,6 +170,91 @@ export const StudentQuizLobby: React.FC = () => {
       }
     }
   }, [currentQIndex]);
+
+  // Strict fullscreen enforcement during QUIZ stage
+  useEffect(() => {
+    if (stage !== 'QUIZ') return;
+
+    requestFullscreenMode();
+
+    const handleFullscreenChange = () => {
+      const isFull = Boolean(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      setIsFullscreen(isFull);
+      if (!isFull && stage === 'QUIZ' && !submittingRef.current) {
+        handleTabLeave('FULLSCREEN_EXIT');
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, [stage, session?.id, id]);
+
+  // Tab-switch and window focus proctoring monitoring
+  useEffect(() => {
+    if (stage !== 'QUIZ') return;
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        handleTabLeave('VISIBILITY_HIDDEN');
+      }
+    };
+
+    const onWindowBlur = () => {
+      handleTabLeave('WINDOW_BLUR');
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('blur', onWindowBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('blur', onWindowBlur);
+    };
+  }, [stage, session?.id, id]);
+
+  // Lock navigation: User cannot navigate away or press back until quiz is finished
+  useEffect(() => {
+    if (stage !== 'QUIZ') return;
+
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = () => {
+      if (stage === 'QUIZ' && !submittingRef.current) {
+        window.history.pushState(null, '', window.location.href);
+        alert('Navigation is locked during the active quiz session. You must finish your quiz before exiting.');
+      }
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (stage === 'QUIZ' && !submittingRef.current) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [stage]);
+
+  // Automatically release fullscreen on reaching results
+  useEffect(() => {
+    if (stage === 'RESULTS') {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  }, [stage]);
 
   // Keyboard navigation during QUIZ stage
   useEffect(() => {
@@ -192,6 +318,11 @@ export const StudentQuizLobby: React.FC = () => {
       .then(res => {
         const data: QuizSession = res.data;
         setSession(data);
+
+        // Sync tab switches from participant record
+        if (typeof data.my_participant?.tab_switches_count === 'number') {
+          setTabSwitches(data.my_participant.tab_switches_count);
+        }
 
         // If user already submitted this quiz, show results and restore choices
         if (data.my_participant?.status === 'SUBMITTED') {
@@ -271,6 +402,7 @@ export const StudentQuizLobby: React.FC = () => {
     try {
       const res = await api.post(`/quiz-sessions/${session.id}/start-quiz`);
       setStage('QUIZ');
+      requestFullscreenMode();
       const startIso = res.data.participant?.started_at || new Date().toISOString();
       const targetMs = new Date(startIso).getTime() + (session.duration_minutes || 15) * 60 * 1000;
       startTimerWithTarget(targetMs);
@@ -309,7 +441,10 @@ export const StudentQuizLobby: React.FC = () => {
     submittingRef.current = true;
 
     try {
-      const res = await api.post(`/quiz-sessions/${session.id}/submit`, { answers: currentAnswers });
+      const res = await api.post(`/quiz-sessions/${session.id}/submit`, { 
+        answers: currentAnswers,
+        tab_switches_count: tabSwitches 
+      });
       setResultData(res.data);
       if (res.data.questions && res.data.questions.length > 0) {
         setSession(prev => prev ? { ...prev, questions: res.data.questions, my_participant: res.data.participant } : prev);
@@ -501,6 +636,28 @@ export const StudentQuizLobby: React.FC = () => {
               <span className="text-[10px] bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full font-extrabold">
                 {answeredCount} / {questions.length} Answered
               </span>
+            </div>
+
+            {/* Proctoring & Tab Switch Status Badge */}
+            <div className="flex items-center space-x-2 shrink-0">
+              {tabSwitches > 0 ? (
+                <div 
+                  className="flex items-center space-x-1.5 bg-rose-50 text-rose-700 border border-rose-200 text-xs px-3 py-2 rounded-xl font-black shrink-0 animate-pulse shadow-2xs"
+                  title="Recorded tab switch / window blur occurrences"
+                >
+                  <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>Switches: {tabSwitches}</span>
+                </div>
+              ) : (
+                <div 
+                  className="flex items-center space-x-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs px-3 py-2 rounded-xl font-bold shrink-0"
+                  title="Mandatory full-screen proctoring active"
+                >
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="hidden sm:inline">Proctored Fullscreen</span>
+                  <span className="sm:hidden">Full</span>
+                </div>
+              )}
             </div>
 
             {/* Synchronized Live Timer */}
@@ -695,6 +852,38 @@ export const StudentQuizLobby: React.FC = () => {
           </div>
         )}
 
+        {/* Mandatory Fullscreen Enforcer Modal (Locks view when user exits fullscreen) */}
+        {!isFullscreen && !submitting && (
+          <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-5 text-center border-2 border-rose-200 animate-in zoom-in-95">
+              <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+                <ShieldAlert className="w-9 h-9" />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-slate-900">Mandatory Fullscreen Mode</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  This live quiz session requires active full-screen mode to ensure exam proctoring integrity. Navigation away or exiting full-screen has been recorded for the administrator.
+                </p>
+              </div>
+
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-bold text-amber-900 flex items-center justify-center space-x-2">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>Logged Tab Switch / Exit Count: <strong>{tabSwitches}</strong></span>
+              </div>
+
+              <button
+                type="button"
+                onClick={requestFullscreenMode}
+                className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-amber-500/30 transition-all cursor-pointer flex items-center justify-center space-x-2"
+              >
+                <Maximize2 className="w-4 h-4" />
+                <span>Re-enter Full Screen Mode</span>
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     );
   }
@@ -827,6 +1016,14 @@ export const StudentQuizLobby: React.FC = () => {
             <span className="bg-white/15 text-slate-200 border border-white/20 px-3 py-1 rounded-full flex items-center space-x-1.5">
               <AlertCircle className="w-3.5 h-3.5 text-slate-300" />
               <span>{skippedCount} Skipped</span>
+            </span>
+            <span className={`px-3 py-1 rounded-full flex items-center space-x-1.5 border ${
+              tabSwitches > 0 
+                ? 'bg-rose-500/30 text-rose-200 border-rose-400/30' 
+                : 'bg-emerald-500/20 text-emerald-200 border-emerald-400/20'
+            }`}>
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>{tabSwitches} Tab Switch{tabSwitches !== 1 ? 'es' : ''}</span>
             </span>
           </div>
         </div>

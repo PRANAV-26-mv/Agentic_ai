@@ -1077,6 +1077,7 @@ export const AdminQuizSessions: React.FC = () => {
                             <th className="p-3">Score</th>
                             <th className="p-3">Accuracy</th>
                             <th className="p-3">Time</th>
+                            <th className="p-3 text-center">Tab Switches</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -1090,6 +1091,19 @@ export const AdminQuizSessions: React.FC = () => {
                               <td className="p-3 font-black text-emerald-700">{lb.score} / {lb.max_score}</td>
                               <td className="p-3 font-bold text-purple-700">{lb.percentage}%</td>
                               <td className="p-3 text-slate-500 font-mono">{lb.time_taken_seconds}s</td>
+                              <td className="p-3 text-center">
+                                {(lb.tab_switches_count || 0) > 0 ? (
+                                  <span className="inline-flex items-center space-x-1 bg-rose-100 text-rose-800 border border-rose-200 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full shadow-2xs">
+                                    <AlertTriangle className="w-3 h-3 text-rose-600 shrink-0" />
+                                    <span>{lb.tab_switches_count} switch{(lb.tab_switches_count || 0) > 1 ? 'es' : ''}</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center space-x-1 bg-emerald-100 text-emerald-800 font-bold text-[10px] px-2 py-0.5 rounded-full">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                                    <span>0 (Clean)</span>
+                                  </span>
+                                )}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -1115,13 +1129,21 @@ export const AdminQuizSessions: React.FC = () => {
                           <p className="font-extrabold text-slate-800 truncate">{p.student_name}</p>
                           <p className="text-[10px] text-slate-400 font-mono truncate">{p.student_reg} • {p.student_department}</p>
                         </div>
-                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase ${
-                          p.status === 'SUBMITTED' ? 'bg-emerald-100 text-emerald-800' :
-                          p.status === 'IN_PROGRESS' ? 'bg-amber-100 text-amber-800' :
-                          'bg-sky-100 text-sky-800'
-                        }`}>
-                          {p.status}
-                        </span>
+                        <div className="flex items-center space-x-1.5 shrink-0">
+                          {(p.tab_switches_count || 0) > 0 && (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 flex items-center space-x-1">
+                              <AlertTriangle className="w-3 h-3 text-rose-600" />
+                              <span>{p.tab_switches_count} exit{(p.tab_switches_count || 0) > 1 ? 's' : ''}</span>
+                            </span>
+                          )}
+                          <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase ${
+                            p.status === 'SUBMITTED' ? 'bg-emerald-100 text-emerald-800' :
+                            p.status === 'IN_PROGRESS' ? 'bg-amber-100 text-amber-800' :
+                            'bg-sky-100 text-sky-800'
+                          }`}>
+                            {p.status}
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
