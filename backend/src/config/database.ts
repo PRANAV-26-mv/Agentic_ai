@@ -81,6 +81,7 @@ export interface DbData {
   quiz_session_participants: any[];
   restricted_emails: any[];
   email_logs: any[];
+  certificate_settings?: any[];
 }
 
 const initialData: DbData = {
@@ -108,7 +109,8 @@ const initialData: DbData = {
   quiz_sessions: [],
   quiz_session_participants: [],
   restricted_emails: [],
-  email_logs: []
+  email_logs: [],
+  certificate_settings: []
 };
 
 export type StorageMode = 'postgres' | 'cloud_sync' | 'persistent_disk' | 'ephemeral_local';

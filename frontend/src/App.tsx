@@ -33,6 +33,7 @@ import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AuditLogPage } from './pages/AuditLogPage';
 import { AdminManagement } from './pages/AdminManagement';
 import { UserRestrictionsPage } from './pages/UserRestrictionsPage';
+import { CertificateSettingsPage } from './pages/CertificateSettingsPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { EmailBroadcastPage } from './pages/EmailBroadcastPage';
 
@@ -120,6 +121,7 @@ export function App() {
             <Route path="/admin/students" element={<StudentManagement />} />
             <Route path="/admin/assessments" element={<AssessmentManagement />} />
             <Route path="/admin/quiz-sessions" element={<AdminQuizSessions />} />
+            <Route path="/admin/certificate-settings" element={<CertificateSettingsPage />} />
             <Route path="/admin/question-bank" element={<QuestionBank />} />
             <Route path="/admin/study-materials" element={<StudyMaterialManagement />} />
             <Route path="/admin/attendance" element={<AttendanceManagement />} />

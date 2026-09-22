@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { QuizSession, QuizSessionParticipant, Question, Assessment } from '../types';
 import { 
@@ -46,6 +47,7 @@ const COMMUNITIES = [
 ];
 
 export const AdminQuizSessions: React.FC = () => {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<QuizSession[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [filterTab, setFilterTab] = useState<'ALL' | 'ACTIVE' | 'SCHEDULED' | 'COMPLETED'>('ALL');
@@ -393,7 +395,16 @@ export const AdminQuizSessions: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => navigate('/admin/certificate-settings')}
+              className="px-4 py-3 bg-slate-800/90 hover:bg-slate-700 text-amber-300 font-extrabold text-xs rounded-2xl border border-amber-500/40 flex items-center space-x-2 transition-all cursor-pointer shadow-md"
+              title="Customize Quiz Certificates"
+            >
+              <Award className="w-4 h-4 text-amber-400" />
+              <span>Certificate Settings</span>
+            </button>
+
             <button
               onClick={openCreateModal}
               className="px-5 py-3 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-600 hover:to-amber-700 text-white font-black text-xs rounded-2xl shadow-lg shadow-amber-500/20 flex items-center space-x-2 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"

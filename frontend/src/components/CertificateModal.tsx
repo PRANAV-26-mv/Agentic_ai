@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { api } from '../services/api';
 import { 
   Award, 
   Download, 
@@ -33,6 +34,64 @@ export interface CertificateModalProps {
   certificateId?: string;
 }
 
+interface CertificateSettingsData {
+  header_brand_name: string;
+  header_subtitle: string;
+  document_title: string;
+  presentation_line: string;
+  rank_1_title: string;
+  rank_2_title: string;
+  rank_3_title: string;
+  rank_participant_title: string;
+  signatory_1_name: string;
+  signatory_1_title: string;
+  signatory_1_subtitle: string;
+  signatory_2_name: string;
+  signatory_2_title: string;
+  signatory_2_subtitle: string;
+  seal_text: string;
+  seal_subtext: string;
+  footer_verification_text: string;
+  show_score: boolean;
+  show_accuracy: boolean;
+  show_time_taken: boolean;
+  show_rank: boolean;
+  show_signatures: boolean;
+  show_seal: boolean;
+  show_registration_id: boolean;
+  show_department: boolean;
+  custom_remarks?: string;
+}
+
+const DEFAULT_MODAL_SETTINGS: CertificateSettingsData = {
+  header_brand_name: 'AGENTIC_AI_A7',
+  header_subtitle: 'EXCELLENCE IN ARTIFICIAL INTELLIGENCE & EVALUATION',
+  document_title: 'OFFICIAL CERTIFICATE OF ACHIEVEMENT',
+  presentation_line: 'This prestigious credential is proudly presented to',
+  rank_1_title: '1ST PLACE CHAMPION • GOLD HONORS 🥇',
+  rank_2_title: '2ND PLACE RUNNER-UP • SILVER DISTINCTION 🥈',
+  rank_3_title: '3RD PLACE PODIUM STANDOUT • BRONZE DISTINCTION 🥉',
+  rank_participant_title: 'RANK #{rank} OF {total} PEERS • MERIT EXCELLENCE',
+  signatory_1_name: 'Dr. Julian Vance, Ph.D.',
+  signatory_1_title: 'Director of AI Evaluation',
+  signatory_1_subtitle: 'Academic Certification Board',
+  signatory_2_name: 'AGENTIC_AI_A7 Neural Engine',
+  signatory_2_title: 'AGENTIC_AI_A7 Proctoring System',
+  signatory_2_subtitle: 'Autonomous Evaluation System',
+  seal_text: 'AGENTIC_AI_A7',
+  seal_subtext: 'AUTHENTICATED',
+  footer_verification_text: 'Validated by AGENTIC_AI_A7 Examination Framework',
+  show_score: true,
+  show_accuracy: true,
+  show_time_taken: true,
+  show_rank: true,
+  show_signatures: true,
+  show_seal: true,
+  show_registration_id: true,
+  show_department: true,
+  custom_remarks: 'Awarded for demonstrating verified technical mastery and proctored assessment excellence.'
+};
+
 export const CertificateModal: React.FC<CertificateModalProps> = ({
   isOpen,
   onClose,
@@ -51,7 +110,30 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
 }) => {
   const [copied, setCopied] = useState<boolean>(false);
   const [isGeneratingPng, setIsGeneratingPng] = useState<boolean>(false);
+  const [certSettings, setCertSettings] = useState<CertificateSettingsData>(() => {
+    try {
+      const cached = localStorage.getItem('portal_cert_config');
+      if (cached) return JSON.parse(cached);
+    } catch (_) {}
+    return DEFAULT_MODAL_SETTINGS;
+  });
+
   const certificateRef = useRef<HTMLDivElement | null>(null);
+
+  // Fetch active settings on mount or modal open
+  useEffect(() => {
+    if (!isOpen) return;
+    api.get('/certificate-settings')
+      .then(res => {
+        if (res.data) {
+          setCertSettings(res.data);
+          localStorage.setItem('portal_cert_config', JSON.stringify(res.data));
+        }
+      })
+      .catch(err => {
+        console.warn('Could not fetch live certificate settings, using local configuration:', err);
+      });
+  }, [isOpen]);
 
   // Formatted date
   const displayDate = completionDate 
@@ -66,14 +148,16 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
   const isBronze = rank === 3;
   const isPodium = rank <= 3;
 
-  // Rank title text
+  // Custom Rank title text based on admin settings
   const rankTitle = isGold 
-    ? '1ST PLACE CHAMPION • GOLD HONORS 🥇' 
+    ? certSettings.rank_1_title 
     : isSilver 
-    ? '2ND PLACE RUNNER-UP • SILVER DISTINCTION 🥈' 
+    ? certSettings.rank_2_title 
     : isBronze 
-    ? '3RD PLACE PODIUM STANDOUT • BRONZE DISTINCTION 🥉' 
-    : `RANK #${rank} OF ${totalParticipants || 1} PEERS • MERIT EXCELLENCE`;
+    ? certSettings.rank_3_title 
+    : certSettings.rank_participant_title
+        .replace('{rank}', String(rank))
+        .replace('{total}', String(totalParticipants || 1));
 
   // Copy Certificate Verification ID
   const handleCopyId = () => {
@@ -87,7 +171,7 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
     window.print();
   };
 
-  // Generate ultra high-resolution 2400x1350 canvas for PNG download
+  // Generate ultra high-resolution 2400x1350 canvas for PNG download reflecting admin customizations
   const handleDownloadPng = async () => {
     setIsGeneratingPng(true);
     try {
@@ -131,7 +215,7 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
         ctx.stroke();
       }
 
-      // 3. Ornate Double Borders (Gold / Silver / Bronze)
+      // 3. Ornate Double Borders (Gold / Silver / Bronze / Sapphire)
       const borderPrimary = isGold ? '#f59e0b' : isSilver ? '#cbd5e1' : isBronze ? '#d97706' : '#38bdf8';
       const borderSecondary = isGold ? '#fbbf24' : isSilver ? '#e2e8f0' : isBronze ? '#f59e0b' : '#0284c7';
 
@@ -171,7 +255,7 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
       drawCorner(2330, 1280, Math.PI);
       drawCorner(70, 1280, -Math.PI / 2);
 
-      // 4. TOP BRANDING: "AGENTIC_AI_A7"
+      // 4. TOP BRANDING: header_brand_name
       ctx.textAlign = 'center';
 
       // Star Wing Accent Left & Right
@@ -179,8 +263,8 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
       ctx.fillStyle = borderSecondary;
       ctx.fillText('✦  ✦  ✦', 1200, 145);
 
-      // Main Top Brand Title: AGENTIC_AI_A7
-      ctx.font = '900 68px system-ui, -apple-system, sans-serif';
+      // Main Top Brand Title
+      ctx.font = '900 66px system-ui, -apple-system, sans-serif';
       const brandGrad = ctx.createLinearGradient(900, 0, 1500, 0);
       if (isGold) {
         brandGrad.addColorStop(0, '#fef08a');
@@ -196,183 +280,205 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
         brandGrad.addColorStop(1, '#fed7aa');
       }
       ctx.fillStyle = brandGrad;
-      ctx.fillText('AGENTIC_AI_A7', 1200, 225);
+      ctx.fillText((certSettings.header_brand_name || 'AGENTIC_AI_A7').toUpperCase(), 1200, 225);
 
       // Sub-brand authority subtitle
       ctx.font = '700 22px system-ui, sans-serif';
       ctx.fillStyle = '#94a3b8';
-      ctx.letterSpacing = '6px';
-      ctx.fillText('EXCELLENCE IN ARTIFICIAL INTELLIGENCE & EVALUATION', 1200, 270);
+      ctx.letterSpacing = '5px';
+      ctx.fillText(certSettings.header_subtitle || 'EXCELLENCE IN ARTIFICIAL INTELLIGENCE & EVALUATION', 1200, 270);
 
       // 5. Certificate Document Title
       ctx.font = '600 36px Georgia, serif';
       ctx.fillStyle = '#e2e8f0';
-      ctx.fillText('OFFICIAL CERTIFICATE OF ACHIEVEMENT', 1200, 360);
+      ctx.fillText(certSettings.document_title || 'OFFICIAL CERTIFICATE OF ACHIEVEMENT', 1200, 355);
 
-      // Small Rule line
+      // Rule line
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(950, 395);
-      ctx.lineTo(1450, 395);
+      ctx.moveTo(950, 390);
+      ctx.lineTo(1450, 390);
       ctx.stroke();
 
-      // "This is proudly presented to"
+      // Presentation Line
       ctx.font = 'italic 26px Georgia, serif';
       ctx.fillStyle = '#94a3b8';
-      ctx.fillText('This is proudly conferred upon', 1200, 445);
+      ctx.fillText(certSettings.presentation_line || 'This prestigious credential is proudly presented to', 1200, 440);
 
       // 6. STUDENT NAME (Large, Prominent, Elegant)
       ctx.font = '900 78px Georgia, serif';
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = isGold ? 'rgba(245, 158, 11, 0.4)' : isSilver ? 'rgba(148, 163, 184, 0.4)' : 'rgba(234, 88, 12, 0.4)';
       ctx.shadowBlur = 15;
-      ctx.fillText(studentName.toUpperCase(), 1200, 545);
+      ctx.fillText(studentName.toUpperCase(), 1200, 535);
       ctx.shadowBlur = 0; // reset
 
       // Student Meta (Registration Number & Department)
-      const studentSub = `${studentReg ? `Reg: ${studentReg} • ` : ''}${studentDepartment ? `Department of ${studentDepartment} • ` : ''}Verified Candidate`;
+      const studentParts: string[] = [];
+      if (certSettings.show_registration_id && studentReg) studentParts.push(`Reg: ${studentReg}`);
+      if (certSettings.show_department && studentDepartment) studentParts.push(`Department of ${studentDepartment}`);
+      studentParts.push('Verified Candidate');
+
       ctx.font = '600 22px system-ui, sans-serif';
       ctx.fillStyle = '#94a3b8';
-      ctx.fillText(studentSub, 1200, 595);
+      ctx.fillText(studentParts.join(' • '), 1200, 585);
 
-      // 7. POSITION & RANK BANNER
-      const pillWidth = 840;
-      const pillHeight = 56;
-      const pillX = 1200 - (pillWidth / 2);
-      const pillY = 645;
+      // 7. POSITION & RANK BANNER (If enabled)
+      if (certSettings.show_rank) {
+        const pillWidth = 840;
+        const pillHeight = 56;
+        const pillX = 1200 - (pillWidth / 2);
+        const pillY = 630;
 
-      // Pill Background
-      ctx.fillStyle = isGold ? 'rgba(245, 158, 11, 0.18)' : isSilver ? 'rgba(148, 163, 184, 0.18)' : isBronze ? 'rgba(217, 119, 6, 0.18)' : 'rgba(56, 189, 248, 0.15)';
-      ctx.beginPath();
-      ctx.roundRect(pillX, pillY, pillWidth, pillHeight, 28);
-      ctx.fill();
-      ctx.strokeStyle = borderPrimary;
-      ctx.lineWidth = 2;
-      ctx.stroke();
+        ctx.fillStyle = isGold ? 'rgba(245, 158, 11, 0.18)' : isSilver ? 'rgba(148, 163, 184, 0.18)' : isBronze ? 'rgba(217, 119, 6, 0.18)' : 'rgba(56, 189, 248, 0.15)';
+        ctx.beginPath();
+        ctx.roundRect(pillX, pillY, pillWidth, pillHeight, 28);
+        ctx.fill();
+        ctx.strokeStyle = borderPrimary;
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
-      // Position Text inside Pill
-      ctx.font = '900 25px system-ui, sans-serif';
-      ctx.fillStyle = isGold ? '#fef08a' : isSilver ? '#f1f5f9' : isBronze ? '#fed7aa' : '#bae6fd';
-      ctx.fillText(rankTitle, 1200, 682);
+        ctx.font = '900 25px system-ui, sans-serif';
+        ctx.fillStyle = isGold ? '#fef08a' : isSilver ? '#f1f5f9' : isBronze ? '#fed7aa' : '#bae6fd';
+        ctx.fillText(rankTitle, 1200, 667);
+      }
 
       // 8. QUIZ TITLE & PERFORMANCE CONTEXT
       ctx.font = '500 26px Georgia, serif';
       ctx.fillStyle = '#cbd5e1';
-      ctx.fillText(`for exemplary demonstration of mastery and problem-solving competency in`, 1200, 755);
+      ctx.fillText(`in the official proctored examination:`, 1200, certSettings.show_rank ? 735 : 670);
 
       ctx.font = 'bold 36px system-ui, sans-serif';
       ctx.fillStyle = '#f8fafc';
-      ctx.fillText(`“ ${quizTitle} ”`, 1200, 810);
+      ctx.fillText(`“ ${quizTitle} ”`, 1200, certSettings.show_rank ? 785 : 720);
 
-      // 9. METRICS SUMMARY BOX (Score, Accuracy, Time)
-      const statsY = 880;
-      const drawStatBox = (x: number, title: string, value: string, sub: string) => {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      // Optional Custom Remarks
+      if (certSettings.custom_remarks) {
+        ctx.font = 'italic 20px Georgia, serif';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(`"${certSettings.custom_remarks}"`, 1200, certSettings.show_rank ? 830 : 765);
+      }
+
+      // 9. METRICS SUMMARY BOX (Only render enabled metrics)
+      const enabledMetrics: { title: string; val: string; sub: string }[] = [];
+      if (certSettings.show_score) enabledMetrics.push({ title: 'Final Score', val: `${score} / ${maxScore} pts`, sub: 'Score Achieved' });
+      if (certSettings.show_accuracy) enabledMetrics.push({ title: 'Accuracy Rate', val: `${percentage}%`, sub: 'Verified Correctness' });
+      if (certSettings.show_time_taken) enabledMetrics.push({ title: 'Time Completed', val: timeTaken || 'Fast Speed', sub: 'Elapsed Time' });
+
+      if (enabledMetrics.length > 0) {
+        const statsY = 890;
+        const totalBoxWidth = enabledMetrics.length * 300;
+        const startX = 1200 - (totalBoxWidth / 2) + 150;
+
+        enabledMetrics.forEach((m, idx) => {
+          const boxCenterX = startX + idx * 300;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+          ctx.beginPath();
+          ctx.roundRect(boxCenterX - 130, statsY - 25, 260, 80, 16);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.font = 'bold 16px system-ui, sans-serif';
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillText(m.title.toUpperCase(), boxCenterX, statsY);
+
+          ctx.font = '900 26px system-ui, sans-serif';
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillText(m.val, boxCenterX, statsY + 30);
+
+          ctx.font = '500 13px system-ui, sans-serif';
+          ctx.fillStyle = '#64748b';
+          ctx.fillText(m.sub, boxCenterX, statsY + 46);
+        });
+      }
+
+      // 10. OFFICIAL SEAL (Center-Bottom)
+      if (certSettings.show_seal) {
+        const sealX = 1200;
+        const sealY = 1090;
         ctx.beginPath();
-        ctx.roundRect(x - 140, statsY - 25, 280, 80, 16);
+        ctx.arc(sealX, sealY, 68, 0, Math.PI * 2);
+        ctx.fillStyle = isGold ? '#f59e0b' : isSilver ? '#94a3b8' : isBronze ? '#d97706' : '#0284c7';
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(sealX, sealY, 58, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        ctx.font = 'bold 16px system-ui, sans-serif';
-        ctx.fillStyle = '#94a3b8';
-        ctx.fillText(title.toUpperCase(), x, statsY);
+        ctx.font = '900 13px system-ui, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(certSettings.seal_text || 'AGENTIC_AI_A7', sealX, sealY - 14);
+        ctx.font = 'bold 22px system-ui, sans-serif';
+        ctx.fillText('★ 7 ★', sealX, sealY + 8);
+        ctx.font = '800 10px system-ui, sans-serif';
+        ctx.fillText(certSettings.seal_subtext || 'AUTHENTICATED', sealX, sealY + 24);
 
-        ctx.font = '900 26px system-ui, sans-serif';
-        ctx.fillStyle = '#f8fafc';
-        ctx.fillText(value, x, statsY + 30);
+        // Ribbon tails
+        ctx.fillStyle = isGold ? '#d97706' : isSilver ? '#64748b' : isBronze ? '#b45309' : '#0369a1';
+        ctx.beginPath();
+        ctx.moveTo(sealX - 25, sealY + 60);
+        ctx.lineTo(sealX - 45, sealY + 115);
+        ctx.lineTo(sealX - 20, sealY + 105);
+        ctx.lineTo(sealX - 5, sealY + 115);
+        ctx.lineTo(sealX - 10, sealY + 65);
+        ctx.fill();
 
-        ctx.font = '500 13px system-ui, sans-serif';
-        ctx.fillStyle = '#64748b';
-        ctx.fillText(sub, x, statsY + 46);
-      };
-
-      drawStatBox(840, 'Final Score', `${score} / ${maxScore} pts`, 'Score Achieved');
-      drawStatBox(1200, 'Accuracy Rate', `${percentage}%`, 'Verified Correctness');
-      drawStatBox(1560, 'Time Completed', timeTaken || 'Fast Completion', 'Elapsed Time');
-
-      // 10. OFFICIAL SEAL (Center-Bottom)
-      const sealX = 1200;
-      const sealY = 1090;
-      ctx.beginPath();
-      ctx.arc(sealX, sealY, 68, 0, Math.PI * 2);
-      ctx.fillStyle = isGold ? '#f59e0b' : isSilver ? '#94a3b8' : isBronze ? '#d97706' : '#0284c7';
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(sealX, sealY, 58, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      ctx.font = '900 13px system-ui, sans-serif';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText('AGENTIC_AI_A7', sealX, sealY - 14);
-      ctx.font = 'bold 22px system-ui, sans-serif';
-      ctx.fillText('★ 7 ★', sealX, sealY + 8);
-      ctx.font = '800 10px system-ui, sans-serif';
-      ctx.fillText('AUTHENTICATED', sealX, sealY + 24);
-
-      // Ribbon tails
-      ctx.fillStyle = isGold ? '#d97706' : isSilver ? '#64748b' : isBronze ? '#b45309' : '#0369a1';
-      ctx.beginPath();
-      ctx.moveTo(sealX - 25, sealY + 60);
-      ctx.lineTo(sealX - 45, sealY + 115);
-      ctx.lineTo(sealX - 20, sealY + 105);
-      ctx.lineTo(sealX - 5, sealY + 115);
-      ctx.lineTo(sealX - 10, sealY + 65);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.moveTo(sealX + 25, sealY + 60);
-      ctx.lineTo(sealX + 45, sealY + 115);
-      ctx.lineTo(sealX + 20, sealY + 105);
-      ctx.lineTo(sealX + 5, sealY + 115);
-      ctx.lineTo(sealX + 10, sealY + 65);
-      ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(sealX + 25, sealY + 60);
+        ctx.lineTo(sealX + 45, sealY + 115);
+        ctx.lineTo(sealX + 20, sealY + 105);
+        ctx.lineTo(sealX + 5, sealY + 115);
+        ctx.lineTo(sealX + 10, sealY + 65);
+        ctx.fill();
+      }
 
       // 11. SIGNATURES (Left & Right)
-      // Left Signature: Director of AI Evaluation
-      const sigLeftX = 540;
-      const sigY = 1080;
-      ctx.font = 'italic 34px "Brush Script MT", cursive, Georgia, serif';
-      ctx.fillStyle = borderSecondary;
-      ctx.fillText('Dr. Julian Vance, Ph.D.', sigLeftX, sigY);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(sigLeftX - 160, sigY + 14);
-      ctx.lineTo(sigLeftX + 160, sigY + 14);
-      ctx.stroke();
-      ctx.font = 'bold 15px system-ui, sans-serif';
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillText('Director of AI Evaluation', sigLeftX, sigY + 36);
-      ctx.font = '500 13px system-ui, sans-serif';
-      ctx.fillStyle = '#64748b';
-      ctx.fillText('Academic Certification Board', sigLeftX, sigY + 54);
+      if (certSettings.show_signatures) {
+        // Left Signature
+        const sigLeftX = 540;
+        const sigY = 1080;
+        ctx.font = 'italic 34px "Brush Script MT", cursive, Georgia, serif';
+        ctx.fillStyle = borderSecondary;
+        ctx.fillText(certSettings.signatory_1_name, sigLeftX, sigY);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(sigLeftX - 160, sigY + 14);
+        ctx.lineTo(sigLeftX + 160, sigY + 14);
+        ctx.stroke();
+        ctx.font = 'bold 15px system-ui, sans-serif';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(certSettings.signatory_1_title, sigLeftX, sigY + 36);
+        ctx.font = '500 13px system-ui, sans-serif';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(certSettings.signatory_1_subtitle, sigLeftX, sigY + 54);
 
-      // Right Signature: AGENTIC_AI_A7 Autonomous Evaluator
-      const sigRightX = 1860;
-      ctx.font = 'italic 34px "Brush Script MT", cursive, Georgia, serif';
-      ctx.fillStyle = borderSecondary;
-      ctx.fillText('AGENTIC_AI_A7 Neural Engine', sigRightX, sigY);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(sigRightX - 160, sigY + 14);
-      ctx.lineTo(sigRightX + 160, sigY + 14);
-      ctx.stroke();
-      ctx.font = 'bold 15px system-ui, sans-serif';
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillText('AGENTIC_AI_A7 Proctoring System', sigRightX, sigY + 36);
-      ctx.font = '500 13px system-ui, sans-serif';
-      ctx.fillStyle = '#64748b';
-      ctx.fillText('Autonomous Verification Hash: ' + certCode.substring(0, 10), sigRightX, sigY + 54);
+        // Right Signature
+        const sigRightX = 1860;
+        ctx.font = 'italic 34px "Brush Script MT", cursive, Georgia, serif';
+        ctx.fillStyle = borderSecondary;
+        ctx.fillText(certSettings.signatory_2_name, sigRightX, sigY);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(sigRightX - 160, sigY + 14);
+        ctx.lineTo(sigRightX + 160, sigY + 14);
+        ctx.stroke();
+        ctx.font = 'bold 15px system-ui, sans-serif';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(certSettings.signatory_2_title, sigRightX, sigY + 36);
+        ctx.font = '500 13px system-ui, sans-serif';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(certSettings.signatory_2_subtitle, sigRightX, sigY + 54);
+      }
 
       // 12. BOTTOM FOOTER (Verification Details & Issue Date)
       ctx.font = '600 15px system-ui, sans-serif';
@@ -382,13 +488,13 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
       ctx.fillText(`Credential ID: ${certCode}`, 120, 1248);
 
       ctx.textAlign = 'right';
-      ctx.fillText(`Validated by AGENTIC_AI_A7 Examination Framework`, 2280, 1225);
+      ctx.fillText(certSettings.footer_verification_text || 'Validated by AGENTIC_AI_A7 Examination Framework', 2280, 1225);
       ctx.fillText(`Official Secure Digital Certificate • Verification Grade A+`, 2280, 1248);
 
       // Trigger automatic high-res PNG download
       const dataUrl = canvas.toDataURL('image/png', 1.0);
       const link = document.createElement('a');
-      link.download = `AGENTIC_AI_A7_Certificate_${studentName.replace(/\s+/g, '_')}_Rank${rank}.png`;
+      link.download = `${(certSettings.header_brand_name || 'AGENTIC_AI_A7').replace(/\s+/g, '_')}_Certificate_${studentName.replace(/\s+/g, '_')}_Rank${rank}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -427,7 +533,7 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
             </div>
             <div>
               <h3 className="text-white font-extrabold text-sm flex items-center gap-1.5">
-                <span>AGENTIC_AI_A7 Certificate Generator</span>
+                <span>{certSettings.header_brand_name || 'AGENTIC_AI_A7'} Certificate Generator</span>
                 <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   Verified Grade
                 </span>
@@ -506,7 +612,7 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
             {/* Subtle Guilloché / Radial Background Glow */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-            {/* HEADER AT TOP: AGENTIC_AI_A7 */}
+            {/* HEADER AT TOP: BRAND NAME */}
             <div className="relative z-10 space-y-1.5">
               <div className="flex items-center justify-center space-x-2 text-amber-300 text-xs tracking-widest font-black uppercase">
                 <span>✦</span>
@@ -514,17 +620,17 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
                 <span>✦</span>
               </div>
 
-              <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-amber-300 drop-shadow-sm font-sans">
-                AGENTIC_AI_A7
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-amber-300 drop-shadow-sm font-sans uppercase">
+                {certSettings.header_brand_name || 'AGENTIC_AI_A7'}
               </h1>
 
               <p className="text-[10px] sm:text-xs tracking-[0.2em] font-extrabold uppercase text-slate-400">
-                EXCELLENCE IN ARTIFICIAL INTELLIGENCE & EVALUATION
+                {certSettings.header_subtitle || 'EXCELLENCE IN ARTIFICIAL INTELLIGENCE & EVALUATION'}
               </p>
 
               <div className="pt-2">
                 <p className="text-xs sm:text-sm font-serif italic text-amber-200/90 tracking-wide">
-                  Official Certificate of Achievement & Examination Standing
+                  {certSettings.document_title || 'Official Certificate of Achievement & Examination Standing'}
                 </p>
                 <div className="w-32 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mt-1" />
               </div>
@@ -533,7 +639,7 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
             {/* BODY: CANDIDATE NAME & STANDING */}
             <div className="relative z-10 py-2 sm:py-4 space-y-2 sm:space-y-3">
               <p className="text-[11px] sm:text-xs text-slate-400 font-serif italic">
-                This prestigious credential is proudly presented to
+                {certSettings.presentation_line || 'This prestigious credential is proudly presented to'}
               </p>
 
               {/* Student Name */}
@@ -541,30 +647,34 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
                 <h2 className="text-xl sm:text-3xl lg:text-4xl font-black text-white font-serif tracking-wide filter drop-shadow-md">
                   {studentName}
                 </h2>
-                <p className="text-[10px] sm:text-xs font-mono text-slate-400">
-                  {studentReg && `Reg ID: ${studentReg} • `}
-                  {studentDepartment && `Department of ${studentDepartment} • `}
-                  <span>Verified Identity</span>
-                </p>
+                {(certSettings.show_registration_id || certSettings.show_department) && (
+                  <p className="text-[10px] sm:text-xs font-mono text-slate-400">
+                    {certSettings.show_registration_id && studentReg && `Reg ID: ${studentReg} • `}
+                    {certSettings.show_department && studentDepartment && `Department of ${studentDepartment} • `}
+                    <span>Verified Identity</span>
+                  </p>
+                )}
               </div>
 
               {/* Position Pill */}
-              <div className="inline-flex items-center space-x-2 px-4 sm:px-6 py-1.5 rounded-full border shadow-md my-1 bg-slate-950/70">
-                {isGold ? (
-                  <Crown className="w-4 h-4 text-amber-300 fill-amber-300 animate-bounce" />
-                ) : isSilver ? (
-                  <Medal className="w-4 h-4 text-sky-300 animate-silver-float" />
-                ) : isBronze ? (
-                  <Award className="w-4 h-4 text-amber-400 animate-bronze-float" />
-                ) : (
-                  <Trophy className="w-4 h-4 text-sky-400" />
-                )}
-                <span className={`text-xs sm:text-sm font-black tracking-wide ${
-                  isGold ? 'text-amber-300' : isSilver ? 'text-sky-200' : isBronze ? 'text-amber-400' : 'text-sky-300'
-                }`}>
-                  {rankTitle}
-                </span>
-              </div>
+              {certSettings.show_rank && (
+                <div className="inline-flex items-center space-x-2 px-4 sm:px-6 py-1.5 rounded-full border shadow-md my-1 bg-slate-950/70">
+                  {isGold ? (
+                    <Crown className="w-4 h-4 text-amber-300 fill-amber-300 animate-bounce" />
+                  ) : isSilver ? (
+                    <Medal className="w-4 h-4 text-sky-300 animate-silver-float" />
+                  ) : isBronze ? (
+                    <Award className="w-4 h-4 text-amber-400 animate-bronze-float" />
+                  ) : (
+                    <Trophy className="w-4 h-4 text-sky-400" />
+                  )}
+                  <span className={`text-xs sm:text-sm font-black tracking-wide ${
+                    isGold ? 'text-amber-300' : isSilver ? 'text-sky-200' : isBronze ? 'text-amber-400' : 'text-sky-300'
+                  }`}>
+                    {rankTitle}
+                  </span>
+                </div>
+              )}
 
               {/* Quiz Context & Performance */}
               <p className="text-[11px] sm:text-xs text-slate-300 max-w-xl mx-auto leading-relaxed">
@@ -575,57 +685,77 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
                 "{quizTitle}"
               </p>
 
+              {/* Optional Custom Remarks */}
+              {certSettings.custom_remarks && (
+                <p className="text-xs text-amber-200/80 italic max-w-md mx-auto">
+                  "{certSettings.custom_remarks}"
+                </p>
+              )}
+
               {/* Metrics Grid */}
-              <div className="grid grid-cols-3 gap-2 sm:gap-4 max-w-lg mx-auto pt-1">
-                <div className="bg-white/5 border border-white/10 rounded-xl p-2 sm:p-2.5">
-                  <p className="text-[9px] uppercase font-bold text-slate-400">Score</p>
-                  <p className="text-xs sm:text-sm font-black text-white">{score} / {maxScore} pts</p>
+              {(certSettings.show_score || certSettings.show_accuracy || certSettings.show_time_taken) && (
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 max-w-lg mx-auto pt-1">
+                  {certSettings.show_score && (
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-2 sm:p-2.5">
+                      <p className="text-[9px] uppercase font-bold text-slate-400">Score</p>
+                      <p className="text-xs sm:text-sm font-black text-white">{score} / {maxScore} pts</p>
+                    </div>
+                  )}
+                  {certSettings.show_accuracy && (
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-2 sm:p-2.5">
+                      <p className="text-[9px] uppercase font-bold text-slate-400">Accuracy</p>
+                      <p className="text-xs sm:text-sm font-black text-emerald-400">{percentage}%</p>
+                    </div>
+                  )}
+                  {certSettings.show_time_taken && (
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-2 sm:p-2.5">
+                      <p className="text-[9px] uppercase font-bold text-slate-400">Time Taken</p>
+                      <p className="text-xs sm:text-sm font-black text-sky-400">{timeTaken || 'Fast'}</p>
+                    </div>
+                  )}
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-2 sm:p-2.5">
-                  <p className="text-[9px] uppercase font-bold text-slate-400">Accuracy</p>
-                  <p className="text-xs sm:text-sm font-black text-emerald-400">{percentage}%</p>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-2 sm:p-2.5">
-                  <p className="text-[9px] uppercase font-bold text-slate-400">Time Taken</p>
-                  <p className="text-xs sm:text-sm font-black text-sky-400">{timeTaken || 'Fast'}</p>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* FOOTER: SEAL, SIGNATURES & VERIFICATION */}
             <div className="relative z-10 pt-3 border-t border-white/10 flex items-end justify-between text-left">
               
               {/* Left Signature */}
-              <div className="space-y-0.5 min-w-[120px]">
-                <p className="font-serif italic text-amber-200 text-sm sm:text-base select-none">
-                  Dr. Julian Vance, Ph.D.
-                </p>
-                <div className="w-28 sm:w-36 h-0.5 bg-slate-600" />
-                <p className="text-[9px] sm:text-[10px] font-bold text-slate-300 uppercase">Director of AI Evaluation</p>
-                <p className="text-[8px] text-slate-500">Academic Board</p>
-              </div>
+              {certSettings.show_signatures ? (
+                <div className="space-y-0.5 min-w-[120px]">
+                  <p className="font-serif italic text-amber-200 text-sm sm:text-base select-none">
+                    {certSettings.signatory_1_name}
+                  </p>
+                  <div className="w-28 sm:w-36 h-0.5 bg-slate-600" />
+                  <p className="text-[9px] sm:text-[10px] font-bold text-slate-300 uppercase">{certSettings.signatory_1_title}</p>
+                  <p className="text-[8px] text-slate-500">{certSettings.signatory_1_subtitle}</p>
+                </div>
+              ) : <div />}
 
               {/* Central Holographic Foil Seal */}
-              <div className="flex flex-col items-center justify-center shrink-0 mx-2">
-                <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-white flex flex-col items-center justify-center text-center shadow-lg transform -translate-y-2 ${
-                  isGold ? 'bg-amber-500 text-slate-950' : isSilver ? 'bg-slate-300 text-slate-950' : isBronze ? 'bg-amber-700 text-white' : 'bg-sky-600 text-white'
-                }`}>
-                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-tighter">AGENTIC</span>
-                  <span className="text-xs sm:text-sm font-black leading-none">AI A7</span>
-                  <span className="text-[7px] font-bold tracking-tighter uppercase mt-0.5">VERIFIED</span>
+              {certSettings.show_seal ? (
+                <div className="flex flex-col items-center justify-center shrink-0 mx-2">
+                  <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-white flex flex-col items-center justify-center text-center shadow-lg transform -translate-y-2 ${
+                    isGold ? 'bg-amber-500 text-slate-950' : isSilver ? 'bg-slate-300 text-slate-950' : isBronze ? 'bg-amber-700 text-white' : 'bg-sky-600 text-white'
+                  }`}>
+                    <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-tighter truncate max-w-[50px]">{certSettings.seal_text}</span>
+                    <span className="text-[7px] font-bold tracking-tighter uppercase mt-0.5">{certSettings.seal_subtext}</span>
+                  </div>
+                  <p className="text-[8px] font-mono text-slate-400 mt-1">{certCode}</p>
                 </div>
-                <p className="text-[8px] font-mono text-slate-400 mt-1">{certCode}</p>
-              </div>
+              ) : <div />}
 
               {/* Right Signature */}
-              <div className="space-y-0.5 text-right min-w-[120px]">
-                <p className="font-serif italic text-sky-200 text-sm sm:text-base select-none">
-                  AGENTIC_AI_A7
-                </p>
-                <div className="w-28 sm:w-36 h-0.5 bg-slate-600 ml-auto" />
-                <p className="text-[9px] sm:text-[10px] font-bold text-slate-300 uppercase">Automated Proctor</p>
-                <p className="text-[8px] text-slate-500">Issued: {displayDate}</p>
-              </div>
+              {certSettings.show_signatures ? (
+                <div className="space-y-0.5 text-right min-w-[120px]">
+                  <p className="font-serif italic text-sky-200 text-sm sm:text-base select-none">
+                    {certSettings.signatory_2_name}
+                  </p>
+                  <div className="w-28 sm:w-36 h-0.5 bg-slate-600 ml-auto" />
+                  <p className="text-[9px] sm:text-[10px] font-bold text-slate-300 uppercase">{certSettings.signatory_2_title}</p>
+                  <p className="text-[8px] text-slate-500">{certSettings.signatory_2_subtitle}</p>
+                </div>
+              ) : <div />}
 
             </div>
 
@@ -636,7 +766,7 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
         <div className="px-6 py-3 bg-slate-950 border-t border-slate-800 text-xs text-slate-400 flex flex-col sm:flex-row justify-between items-center gap-2 print:hidden">
           <div className="flex items-center space-x-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>This credential is cryptographically tied to session submission integrity records.</span>
+            <span>{certSettings.footer_verification_text}</span>
           </div>
           <div className="flex items-center space-x-3">
             <span>Issue Date: <strong>{displayDate}</strong></span>

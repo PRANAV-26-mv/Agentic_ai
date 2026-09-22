@@ -24,6 +24,7 @@ import adminsRouter from './routes/admins.js';
 import quizSessionsRouter from './routes/quizSessions.js';
 import restrictionsRouter from './routes/restrictions.js';
 import emailBroadcastRouter from './routes/emailBroadcast.js';
+import certificateSettingsRouter from './routes/certificateSettings.js';
 
 dotenv.config();
 
@@ -60,6 +61,7 @@ app.use('/api/doubts', doubtsRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/audit-logs', auditLogsRouter);
 app.use('/api/quiz-sessions', quizSessionsRouter);
+app.use('/api/certificate-settings', certificateSettingsRouter);
 
 // Healthcheck
 app.get('/api/health', (_req, res) => {

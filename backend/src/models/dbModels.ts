@@ -58,6 +58,70 @@ export interface EmailLog {
   sent_at: string;
 }
 
+export interface CertificateSettings {
+  id: string;
+  header_brand_name: string;
+  header_subtitle: string;
+  document_title: string;
+  presentation_line: string;
+  rank_1_title: string;
+  rank_2_title: string;
+  rank_3_title: string;
+  rank_participant_title: string;
+  signatory_1_name: string;
+  signatory_1_title: string;
+  signatory_1_subtitle: string;
+  signatory_2_name: string;
+  signatory_2_title: string;
+  signatory_2_subtitle: string;
+  seal_text: string;
+  seal_subtext: string;
+  footer_verification_text: string;
+  show_score: boolean;
+  show_accuracy: boolean;
+  show_time_taken: boolean;
+  show_rank: boolean;
+  show_signatures: boolean;
+  show_seal: boolean;
+  show_registration_id: boolean;
+  show_department: boolean;
+  custom_remarks?: string;
+  updated_at: string;
+  updated_by?: string;
+}
+
+export const DEFAULT_CERTIFICATE_SETTINGS: CertificateSettings = {
+  id: 'global-cert-settings',
+  header_brand_name: 'AGENTIC_AI_A7',
+  header_subtitle: 'EXCELLENCE IN ARTIFICIAL INTELLIGENCE & EVALUATION',
+  document_title: 'OFFICIAL CERTIFICATE OF ACHIEVEMENT',
+  presentation_line: 'This prestigious credential is proudly presented to',
+  rank_1_title: '1ST PLACE CHAMPION • GOLD HONORS 🥇',
+  rank_2_title: '2ND PLACE RUNNER-UP • SILVER DISTINCTION 🥈',
+  rank_3_title: '3RD PLACE PODIUM STANDOUT • BRONZE DISTINCTION 🥉',
+  rank_participant_title: 'RANK #{rank} OF {total} PEERS • MERIT EXCELLENCE',
+  signatory_1_name: 'Dr. Julian Vance, Ph.D.',
+  signatory_1_title: 'Director of AI Evaluation',
+  signatory_1_subtitle: 'Academic Certification Board',
+  signatory_2_name: 'AGENTIC_AI_A7 Neural Engine',
+  signatory_2_title: 'AGENTIC_AI_A7 Proctoring System',
+  signatory_2_subtitle: 'Autonomous Evaluation System',
+  seal_text: 'AGENTIC_AI_A7',
+  seal_subtext: 'AUTHENTICATED',
+  footer_verification_text: 'Validated by AGENTIC_AI_A7 Examination Framework',
+  show_score: true,
+  show_accuracy: true,
+  show_time_taken: true,
+  show_rank: true,
+  show_signatures: true,
+  show_seal: true,
+  show_registration_id: true,
+  show_department: true,
+  custom_remarks: 'Awarded for demonstrating verified technical mastery and proctored assessment excellence.',
+  updated_at: new Date().toISOString(),
+  updated_by: 'SYSTEM'
+};
+
 export interface StudyMaterial {
   id: string;
   title: string;
@@ -1464,6 +1528,62 @@ export const EmailLogsModel = {
     memoryDb.table('email_logs').push(newLog);
     db.save();
     return newLog;
+  }
+};
+
+export const CertificateSettingsModel = {
+  getList(): CertificateSettings[] {
+    let list = memoryDb.table('certificate_settings') as CertificateSettings[] | undefined;
+    if (!list) {
+      list = [];
+      (memoryDb as any).data.certificate_settings = list;
+    }
+    return list;
+  },
+  getSettings(): CertificateSettings {
+    const list = this.getList();
+    if (list.length === 0) {
+      const initial: CertificateSettings = { 
+        ...DEFAULT_CERTIFICATE_SETTINGS,
+        updated_at: new Date().toISOString()
+      };
+      list.push(initial);
+      db.save();
+      return initial;
+    }
+    return { ...DEFAULT_CERTIFICATE_SETTINGS, ...list[0] };
+  },
+  updateSettings(updates: Partial<CertificateSettings>, updatedBy?: string): CertificateSettings {
+    const current = this.getSettings();
+    const updated: CertificateSettings = {
+      ...current,
+      ...updates,
+      updated_at: new Date().toISOString(),
+      updated_by: updatedBy || current.updated_by
+    };
+    const list = this.getList();
+    if (list.length === 0) {
+      list.push(updated);
+    } else {
+      list[0] = updated;
+    }
+    db.save();
+    return updated;
+  },
+  resetSettings(updatedBy?: string): CertificateSettings {
+    const reset: CertificateSettings = {
+      ...DEFAULT_CERTIFICATE_SETTINGS,
+      updated_at: new Date().toISOString(),
+      updated_by: updatedBy || 'ADMIN_RESET'
+    };
+    const list = this.getList();
+    if (list.length === 0) {
+      list.push(reset);
+    } else {
+      list[0] = reset;
+    }
+    db.save();
+    return reset;
   }
 };
 
