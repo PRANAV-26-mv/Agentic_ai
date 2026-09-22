@@ -28,15 +28,22 @@ router.get('/', requireAuth, (req: AuthRequest, res: Response): void => {
       if (student) {
         studentParticipant = participants.find(p => p.student_id === student.id);
       }
+      const isCompleted = s.status === 'COMPLETED';
       const leaderboard = QuizSessionParticipantsModel.getLeaderboard(s.id);
-      const myRank = studentParticipant && studentParticipant.status === 'SUBMITTED'
+      // Rank is officially revealed only when admin has finalized the quiz session (status: COMPLETED)
+      const myRank = studentParticipant && studentParticipant.status === 'SUBMITTED' && isCompleted
         ? leaderboard.find(l => l.student_id === studentParticipant.student_id)?.rank || studentParticipant.rank || null
         : null;
 
+      const submittedCount = participants.filter(p => p.status === 'SUBMITTED').length;
+      const participantCount = participants.length;
+
       return {
         ...s,
-        participant_count: participants.length,
-        submitted_count: participants.filter(p => p.status === 'SUBMITTED').length,
+        participant_count: participantCount,
+        submitted_count: submittedCount,
+        is_results_published: isCompleted,
+        all_students_finished: participantCount > 0 && submittedCount >= participantCount,
         my_status: studentParticipant?.status || null,
         my_score: studentParticipant?.score ?? null,
         my_max_score: studentParticipant?.max_score ?? null,
@@ -198,6 +205,7 @@ router.get('/:id', requireAuth, (req: AuthRequest, res: Response): void => {
 
     const participants = QuizSessionParticipantsModel.getParticipants(session.id);
     const leaderboard = QuizSessionParticipantsModel.getLeaderboard(session.id);
+    const isCompleted = session.status === 'COMPLETED';
 
     let myParticipant = undefined;
     if (req.user?.role === 'STUDENT' && req.user.student) {
@@ -209,24 +217,39 @@ router.get('/:id', requireAuth, (req: AuthRequest, res: Response): void => {
       .map(qId => QuestionsModel.findById(qId))
       .filter(Boolean);
 
-    // If student has NOT submitted yet, omit correct answers & explanations to prevent cheating
     const isSubmitted = myParticipant?.status === 'SUBMITTED';
     const isAdmin = req.user?.role === 'ADMIN';
 
+    // Show correct answers and explanations only to admins or after results are officially published
     const sanitizedQuestions = allQuestions.map(q => {
       if (!q) return null;
-      if (isAdmin || isSubmitted) {
+      if (isAdmin || (isSubmitted && isCompleted)) {
         return q;
       }
       const { correct_answer, explanation, rubric, expected_answer, ...studentSafe } = q;
       return studentSafe;
     });
 
+    const submittedCount = participants.filter(p => p.status === 'SUBMITTED').length;
+    const participantCount = participants.length;
+
+    // Rank is only revealed when admin marks session as COMPLETED
+    const myRank = myParticipant && myParticipant.status === 'SUBMITTED' && isCompleted
+      ? leaderboard.find(l => l.student_id === myParticipant.student_id)?.rank || myParticipant.rank || null
+      : null;
+
     res.json({
       ...session,
       participants,
-      leaderboard,
-      my_participant: myParticipant,
+      leaderboard: isCompleted || isAdmin ? leaderboard : [],
+      is_results_published: isCompleted,
+      submitted_count: submittedCount,
+      participant_count: participantCount,
+      all_students_finished: participantCount > 0 && submittedCount >= participantCount,
+      my_participant: myParticipant ? {
+        ...myParticipant,
+        rank: myRank
+      } : undefined,
       questions: sanitizedQuestions
     });
   } catch (err: any) {
@@ -295,16 +318,34 @@ router.post('/:id/submit', requireAuth, (req: AuthRequest, res: Response): void 
       return;
     }
 
+    const isCompleted = session.status === 'COMPLETED';
     const leaderboard = QuizSessionParticipantsModel.getLeaderboard(sessionId);
-    const myRank = leaderboard.find(entry => entry.student_id === req.user!.id)?.rank || 1;
+    const myRank = isCompleted
+      ? leaderboard.find(entry => entry.student_id === req.user!.id)?.rank || participant.rank || 1
+      : null;
+
+    const allParticipants = QuizSessionParticipantsModel.getParticipants(sessionId);
+    const submittedCount = allParticipants.filter(p => p.status === 'SUBMITTED').length;
+    const participantCount = allParticipants.length;
 
     res.json({
-      message: 'Quiz submitted successfully!',
-      participant,
+      message: 'Quiz finished! Your marks and completion time have been recorded.',
+      participant: {
+        ...participant,
+        rank: myRank
+      },
+      is_results_published: isCompleted,
+      waiting_for_admin: !isCompleted,
+      score: participant.score,
+      max_score: participant.max_score,
+      percentage: participant.percentage,
+      time_taken_seconds: participant.time_taken_seconds,
       rank: myRank,
-      total_participants: leaderboard.length,
-      leaderboard,
-      questions
+      total_participants: participantCount,
+      submitted_count: submittedCount,
+      all_students_finished: participantCount > 0 && submittedCount >= participantCount,
+      leaderboard: isCompleted ? leaderboard : [],
+      questions: isCompleted ? questions : []
     });
   } catch (err: any) {
     res.status(500).json({ message: err.message || 'Error submitting quiz.' });
@@ -327,6 +368,45 @@ router.post('/:id/tab-switch', requireAuth, (req: AuthRequest, res: Response): v
   }
 });
 
+// PUT /api/quiz-sessions/:id/publish-results - Admin finalizes quiz, calculates official ranks, and reveals leaderboard
+router.put('/:id/publish-results', requireAdmin, (req: AuthRequest, res: Response): void => {
+  try {
+    const id = req.params.id as string;
+    const session = QuizSessionsModel.findById(id);
+
+    if (!session) {
+      res.status(404).json({ message: 'Quiz session not found.' });
+      return;
+    }
+
+    // Mark session as COMPLETED
+    const updated = QuizSessionsModel.update(id, { status: 'COMPLETED' });
+
+    // Compute official final cohort ranks across all submitted participants
+    const leaderboard = QuizSessionParticipantsModel.getLeaderboard(id);
+    leaderboard.forEach(entry => {
+      const p = QuizSessionParticipantsModel.findBySessionAndStudent(id, entry.student_id);
+      if (p) {
+        p.rank = entry.rank;
+      }
+    });
+
+    AuditLogsModel.log(req.user!.id, 'ADMIN', 'PUBLISH_QUIZ_RESULTS', 'QUIZ_SESSION', id, {
+      title: session.title,
+      total_submissions: leaderboard.length,
+      published_at: new Date().toISOString()
+    });
+
+    res.json({
+      message: 'Quiz session finalized! Official cohort ranks have been calculated and revealed to students.',
+      session: updated,
+      leaderboard
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Error publishing quiz results.' });
+  }
+});
+
 // PUT /api/quiz-sessions/:id/status - Admin updates session status
 router.put('/:id/status', requireAdmin, (req: AuthRequest, res: Response): void => {
   try {
@@ -342,6 +422,16 @@ router.put('/:id/status', requireAdmin, (req: AuthRequest, res: Response): void 
     if (!updated) {
       res.status(404).json({ message: 'Session not found.' });
       return;
+    }
+
+    if (status === 'COMPLETED') {
+      const leaderboard = QuizSessionParticipantsModel.getLeaderboard(id);
+      leaderboard.forEach(entry => {
+        const p = QuizSessionParticipantsModel.findBySessionAndStudent(id, entry.student_id);
+        if (p) {
+          p.rank = entry.rank;
+        }
+      });
     }
 
     AuditLogsModel.log(req.user!.id, 'ADMIN', 'UPDATE_QUIZ_SESSION_STATUS', 'QUIZ_SESSION', id, { status });

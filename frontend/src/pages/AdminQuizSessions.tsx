@@ -32,7 +32,8 @@ import {
   Hash,
   Award,
   FileDown,
-  FileSpreadsheet
+  FileSpreadsheet,
+  CheckCheck
 } from 'lucide-react';
 
 const DEPARTMENTS = ['CS', 'AD', 'IT', 'ECE', 'EEE', 'MECH'];
@@ -56,6 +57,7 @@ export const AdminQuizSessions: React.FC = () => {
   const [rosterLoading, setRosterLoading] = useState<boolean>(false);
   const [sessionDetails, setSessionDetails] = useState<QuizSession | null>(null);
   const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
+  const [publishingSessionId, setPublishingSessionId] = useState<string | null>(null);
 
   // Delete modal state
   const [sessionToDelete, setSessionToDelete] = useState<QuizSession | null>(null);
@@ -209,6 +211,24 @@ export const AdminQuizSessions: React.FC = () => {
       }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to update session status.');
+    }
+  };
+
+  const handlePublishResults = async (sessionId: string) => {
+    if (!window.confirm('Are you ready to calculate final ranks and reveal official results to all students? This will lock in cohort standings and broadcast final ranks to all waiting participants.')) return;
+    setPublishingSessionId(sessionId);
+    try {
+      const res = await api.put(`/quiz-sessions/${sessionId}/publish-results`);
+      setSuccessMsg(res.data.message || 'Results published and cohort ranks calculated successfully!');
+      setTimeout(() => setSuccessMsg(null), 4000);
+      fetchSessions();
+      if (selectedSessionForRoster && selectedSessionForRoster.id === sessionId) {
+        openRoster(sessionId);
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to publish results and calculate ranks.');
+    } finally {
+      setPublishingSessionId(null);
     }
   };
 
@@ -612,15 +632,36 @@ export const AdminQuizSessions: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center space-x-1.5 text-slate-600 font-medium">
-                        <Users className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Participants:</span>
-                      </span>
-                      <span className="font-black text-slate-900">
-                        {session.participant_count || 0} joined ({session.submitted_count || 0} submitted)
-                      </span>
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center space-x-1.5 text-slate-600 font-medium">
+                          <Users className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Participants Progress:</span>
+                        </span>
+                        <span className="font-black text-slate-900">
+                          {session.submitted_count || 0} / {session.participant_count || 0} Finished
+                        </span>
+                      </div>
+                      {(session.participant_count || 0) > 0 && (
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                          <div 
+                            className={`h-full transition-all duration-500 ${
+                              session.all_students_finished 
+                                ? 'bg-emerald-500' 
+                                : 'bg-gradient-to-r from-amber-500 to-purple-500'
+                            }`}
+                            style={{ width: `${Math.min(100, Math.round(((session.submitted_count || 0) / (session.participant_count || 1)) * 100))}%` }}
+                          />
+                        </div>
+                      )}
                     </div>
+
+                    {session.all_students_finished && isActive && (
+                      <div className="bg-emerald-50 border border-emerald-300/80 rounded-xl p-2.5 flex items-center space-x-2 text-[11px] text-emerald-900 font-extrabold animate-pulse">
+                        <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>All students finished! Ready to publish final ranks.</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -662,6 +703,34 @@ export const AdminQuizSessions: React.FC = () => {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
+
+                  {/* Primary Publish Results Action for Active Sessions */}
+                  {isActive && (
+                    <button
+                      onClick={() => handlePublishResults(session.id)}
+                      disabled={publishingSessionId === session.id}
+                      className={`w-full py-2.5 px-3 rounded-xl font-black text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-md transform active:scale-98 ${
+                        session.all_students_finished
+                          ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-700 hover:to-teal-700 text-white animate-pulse shadow-emerald-500/20'
+                          : 'bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white shadow-amber-500/20'
+                      }`}
+                      title="Calculate cohort ranks and publish results to all students"
+                    >
+                      {publishingSessionId === session.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      ) : (
+                        <Award className="w-4 h-4 text-amber-200" />
+                      )}
+                      <span>{publishingSessionId === session.id ? 'Publishing Ranks...' : 'Publish Results & Calculate Final Ranks'}</span>
+                    </button>
+                  )}
+
+                  {isCompleted && (
+                    <div className="bg-purple-50 border border-purple-200 rounded-xl py-2 px-3 flex items-center justify-center space-x-2 text-[11px] font-black text-purple-800">
+                      <CheckCheck className="w-4 h-4 text-purple-600" />
+                      <span>Cohort Ranks Analyzed & Published</span>
+                    </div>
+                  )}
 
                   {/* Report Download Shortcuts */}
                   <div className="flex items-center gap-2">
@@ -1154,6 +1223,75 @@ export const AdminQuizSessions: React.FC = () => {
               </div>
             </div>
 
+            {/* Live Progress & Final Publish Action Banner */}
+            <div className={`p-4 rounded-2xl border transition-all ${
+              selectedSessionForRoster.status === 'COMPLETED'
+                ? 'bg-gradient-to-r from-purple-50 via-slate-50 to-indigo-50 border-purple-200'
+                : selectedSessionForRoster.all_students_finished || (sessionDetails?.participants?.length && sessionDetails?.participants?.every(p => p.status === 'SUBMITTED' || p.status === 'TIMED_OUT'))
+                ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border-emerald-300 shadow-sm'
+                : 'bg-gradient-to-r from-amber-50/70 via-slate-50 to-purple-50/50 border-amber-200/80'
+            }`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    {selectedSessionForRoster.status === 'COMPLETED' ? (
+                      <span className="p-1.5 bg-purple-100 text-purple-700 rounded-lg">
+                        <Award className="w-4 h-4" />
+                      </span>
+                    ) : (
+                      <span className="p-1.5 bg-amber-100 text-amber-700 rounded-lg animate-pulse">
+                        <Sparkles className="w-4 h-4" />
+                      </span>
+                    )}
+                    <h4 className="font-black text-slate-900 text-sm">
+                      {selectedSessionForRoster.status === 'COMPLETED'
+                        ? 'Official Cohort Ranks Locked & Published'
+                        : selectedSessionForRoster.all_students_finished || (sessionDetails?.participants?.length && sessionDetails?.participants?.every(p => p.status === 'SUBMITTED' || p.status === 'TIMED_OUT'))
+                        ? 'All Students Finished! Ready to Reveal Ranks'
+                        : 'Cohort Live Progress & Waiting Room'}
+                    </h4>
+                  </div>
+                  <p className="text-[11px] text-slate-600">
+                    {selectedSessionForRoster.status === 'COMPLETED'
+                      ? 'Students have been granted access to their official cohort ranks, tie-breaker results, and answer explanations.'
+                      : 'Students who submit their test wait in the lobby until you trigger the final rank calculation option.'}
+                  </p>
+                </div>
+
+                {selectedSessionForRoster.status === 'ACTIVE' && (
+                  <button
+                    type="button"
+                    onClick={() => handlePublishResults(selectedSessionForRoster.id)}
+                    disabled={publishingSessionId === selectedSessionForRoster.id}
+                    className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-2 cursor-pointer transition-all transform active:scale-95 shrink-0"
+                  >
+                    {publishingSessionId === selectedSessionForRoster.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    ) : (
+                      <Award className="w-4 h-4 text-emerald-200" />
+                    )}
+                    <span>Publish Results & Calculate Final Ranks</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Progress bar */}
+              <div className="mt-3 pt-3 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-600">
+                <div className="flex items-center space-x-2">
+                  <span className="font-extrabold text-slate-800">
+                    {sessionDetails?.participants?.filter(p => p.status === 'SUBMITTED' || p.status === 'TIMED_OUT').length || selectedSessionForRoster.submitted_count || 0}
+                  </span>
+                  <span>of</span>
+                  <span className="font-extrabold text-slate-800">
+                    {sessionDetails?.participants?.length || selectedSessionForRoster.participant_count || 0} Students Submitted
+                  </span>
+                </div>
+                <span className="font-mono font-bold text-amber-800">
+                  {Math.round((((sessionDetails?.participants?.filter(p => p.status === 'SUBMITTED' || p.status === 'TIMED_OUT').length || selectedSessionForRoster.submitted_count || 0) / Math.max(1, (sessionDetails?.participants?.length || selectedSessionForRoster.participant_count || 1)))) * 100)}% Complete
+                </span>
+              </div>
+            </div>
+
             {/* Roster / Leaderboard Content */}
             {rosterLoading ? (
               <div className="p-12 text-center text-xs text-slate-400 font-bold flex flex-col items-center justify-center space-y-2">
@@ -1198,7 +1336,15 @@ export const AdminQuizSessions: React.FC = () => {
                           {sessionDetails.leaderboard.map((lb) => (
                             <tr key={lb.student_id} className="hover:bg-slate-50/80 transition-colors">
                               <td className="p-3 font-black">
-                                {lb.rank === 1 ? '🥇 1st' : lb.rank === 2 ? '🥈 2nd' : lb.rank === 3 ? '🥉 3rd' : `#${lb.rank}`}
+                                {selectedSessionForRoster.status === 'COMPLETED' ? (
+                                  lb.rank === 1 ? '🥇 1st' : lb.rank === 2 ? '🥈 2nd' : lb.rank === 3 ? '🥉 3rd' : `#${lb.rank}`
+                                ) : lb.rank ? (
+                                  lb.rank === 1 ? '🥇 1st' : lb.rank === 2 ? '🥈 2nd' : lb.rank === 3 ? '🥉 3rd' : `#${lb.rank}`
+                                ) : (
+                                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                    Pending Publish
+                                  </span>
+                                )}
                               </td>
                               <td className="p-3 font-extrabold text-slate-800 max-w-[160px] truncate">{lb.student_name}</td>
                               <td className="p-3 font-mono text-slate-500 font-medium">{lb.student_reg}</td>

@@ -63,21 +63,21 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({ mobileOpen, onCl
               to={item.to}
               onClick={() => onCloseMobile && onCloseMobile()}
               className={({ isActive }) =>
-                `group flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all transform hover:translate-x-1 ${
+                `group flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 transform hover:translate-x-1.5 ${
                   isActive
-                    ? 'bg-sky-600 text-white shadow-md font-bold'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-lg shadow-sky-950/40 font-bold border-l-4 border-amber-400 pl-2.5'
+                    : 'text-slate-300 hover:bg-slate-800/90 hover:text-white'
                 }`
               }
             >
               <div className="flex items-center space-x-3 min-w-0">
-                <Icon className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform duration-200 text-slate-400 group-hover:text-white" />
+                <Icon className="w-5 h-5 shrink-0 group-hover:scale-125 group-hover:text-sky-300 transition-all duration-200 text-slate-400 group-hover:rotate-3" />
                 <span className="truncate">{item.label}</span>
               </div>
               {isLiveQuiz && (
-                <span className="flex h-2 w-2 relative shrink-0">
+                <span className="flex h-2.5 w-2.5 relative shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500 shadow-xs shadow-amber-500"></span>
                 </span>
               )}
             </NavLink>

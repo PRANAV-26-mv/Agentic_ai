@@ -30,7 +30,8 @@ import {
   ShieldAlert,
   ShieldCheck,
   Maximize2,
-  Volume2
+  Volume2,
+  RefreshCw
 } from 'lucide-react';
 import { GiftBurstModal, playFirstPrizeFanfare } from '../components/GiftBurstModal';
 
@@ -91,8 +92,8 @@ export const StudentQuizLobby: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Stages: 'LOBBY' | 'QUIZ' | 'RESULTS'
-  const [stage, setStage] = useState<'LOBBY' | 'QUIZ' | 'RESULTS'>('LOBBY');
+  // Stages: 'LOBBY' | 'QUIZ' | 'WAITING_FOR_ADMIN' | 'RESULTS'
+  const [stage, setStage] = useState<'LOBBY' | 'QUIZ' | 'WAITING_FOR_ADMIN' | 'RESULTS'>('LOBBY');
 
   // Quiz taking state
   const [currentQIndex, setCurrentQIndex] = useState<number>(0);
@@ -355,7 +356,7 @@ export const StudentQuizLobby: React.FC = () => {
           setTabSwitches(data.my_participant.tab_switches_count);
         }
 
-        // If user already submitted this quiz, show results and restore choices
+        // If user already submitted this quiz, check if results are officially finalized by admin
         if (data.my_participant?.status === 'SUBMITTED') {
           if (timerRef.current) {
             clearInterval(timerRef.current);
@@ -372,16 +373,33 @@ export const StudentQuizLobby: React.FC = () => {
             }
           }
 
-          setStage('RESULTS');
-          const myParticipant = data.my_participant;
-          const myRank = data.leaderboard?.find(l => l.student_id === myParticipant.student_id)?.rank || myParticipant.rank || 1;
-          setResultData({
-            participant: myParticipant,
-            rank: myRank,
-            total_participants: data.leaderboard?.length || 1,
-            leaderboard: data.leaderboard || [],
-            questions: data.questions || []
-          });
+          const isPublished = data.status === 'COMPLETED';
+          if (isPublished) {
+            setStage('RESULTS');
+            const myParticipant = data.my_participant;
+            const myRank = data.leaderboard?.find(l => l.student_id === myParticipant.student_id)?.rank || myParticipant.rank || 1;
+            setResultData({
+              participant: myParticipant,
+              rank: myRank,
+              total_participants: data.leaderboard?.length || 1,
+              leaderboard: data.leaderboard || [],
+              questions: data.questions || []
+            });
+          } else {
+            // Student finished, waiting for other students and admin to publish final ranks
+            setStage('WAITING_FOR_ADMIN');
+            setResultData({
+              participant: data.my_participant,
+              score: data.my_participant.score,
+              max_score: data.my_participant.max_score,
+              percentage: data.my_participant.percentage,
+              time_taken_seconds: data.my_participant.time_taken_seconds,
+              total_questions: data.question_ids?.length || 0,
+              submitted_count: data.submitted_count || 1,
+              total_participants: data.participant_count || 1,
+              all_students_finished: data.all_students_finished
+            });
+          }
         } else if (data.my_participant?.status === 'IN_PROGRESS') {
           // Resume in-progress quiz
           setStage('QUIZ');
@@ -405,9 +423,10 @@ export const StudentQuizLobby: React.FC = () => {
 
   useEffect(() => {
     fetchSessionDetails();
-    const interval = setInterval(fetchSessionDetails, 8000);
+    const pollInterval = stage === 'WAITING_FOR_ADMIN' ? 3000 : 8000;
+    const interval = setInterval(fetchSessionDetails, pollInterval);
     return () => clearInterval(interval);
-  }, [id]);
+  }, [id, stage]);
 
   useEffect(() => {
     return () => {
@@ -483,7 +502,11 @@ export const StudentQuizLobby: React.FC = () => {
       if (res.data.questions && res.data.questions.length > 0) {
         setSession(prev => prev ? { ...prev, questions: res.data.questions, my_participant: res.data.participant } : prev);
       }
-      setStage('RESULTS');
+      if (res.data.is_results_published) {
+        setStage('RESULTS');
+      } else {
+        setStage('WAITING_FOR_ADMIN');
+      }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Error submitting quiz.');
     } finally {
@@ -921,6 +944,120 @@ export const StudentQuizLobby: React.FC = () => {
           </div>
         )}
 
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // STAGE 2.5: WAITING ROOM (STUDENT FINISHED TEST, WAITING FOR ADMIN PUBLISH)
+  // =========================================================================
+  if (stage === 'WAITING_FOR_ADMIN') {
+    const studentScore = resultData?.score ?? pRecord?.score ?? 0;
+    const studentMaxScore = resultData?.max_score ?? pRecord?.max_score ?? questions.length;
+    const studentPercentage = resultData?.percentage ?? pRecord?.percentage ?? (studentMaxScore > 0 ? Math.round((studentScore / studentMaxScore) * 100) : 0);
+    const studentTimeSec = resultData?.time_taken_seconds ?? pRecord?.time_taken_seconds ?? 0;
+    const answeredCount = Object.keys(answers).length;
+
+    const submittedCount = session.submitted_count || resultData?.submitted_count || 1;
+    const participantCount = session.participant_count || resultData?.total_participants || 1;
+    const allFinished = session.all_students_finished || (participantCount > 0 && submittedCount >= participantCount);
+
+    return (
+      <div className="max-w-2xl mx-auto space-y-6 animate-fade-in-up my-6">
+        {/* Navigation Back */}
+        <button
+          onClick={() => navigate('/quiz-sessions')}
+          className="inline-flex items-center space-x-1.5 text-slate-500 hover:text-slate-900 text-xs font-bold transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Exit to Quiz Sessions</span>
+        </button>
+
+        {/* Confirmation Card */}
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl text-center space-y-6 relative overflow-hidden card-interactive">
+          {/* Ambient Glow */}
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-400/15 rounded-full blur-3xl pointer-events-none animate-float" />
+          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-sky-400/15 rounded-full blur-3xl pointer-events-none animate-float-subtle" />
+
+          {/* Success Animated Badge */}
+          <div className="w-20 h-20 bg-gradient-to-tr from-emerald-500 to-teal-400 text-white rounded-3xl flex items-center justify-center mx-auto shadow-xl shadow-emerald-500/25 transition-transform duration-300 hover:scale-105">
+            <CheckCircle2 className="w-10 h-10" />
+          </div>
+
+          <div className="space-y-1.5 relative z-10">
+            <div className="inline-flex items-center space-x-2 bg-emerald-50 text-emerald-800 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-emerald-200 shadow-2xs">
+              <Check className="w-3 h-3 text-emerald-600" />
+              <span>Test Finished & Recorded</span>
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Your Quiz Has Been Submitted!</h2>
+            <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+              Your responses, marks, and exact completion time have been recorded safely in the system.
+            </p>
+          </div>
+
+          {/* Recorded Performance Summary Card */}
+          <div className="grid grid-cols-3 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/80 text-left">
+            <div className="p-3 bg-white rounded-xl border border-slate-100 shadow-2xs">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Noted Marks</span>
+              <span className="text-lg font-black text-slate-900">{studentScore} <span className="text-xs text-slate-400 font-normal">/ {studentMaxScore}</span></span>
+              <span className="text-[10px] font-extrabold text-emerald-600 block mt-0.5">{studentPercentage}% score</span>
+            </div>
+
+            <div className="p-3 bg-white rounded-xl border border-slate-100 shadow-2xs">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Time Recorded</span>
+              <span className="text-lg font-black text-sky-700 font-mono">
+                {studentTimeSec >= 60 ? `${Math.floor(studentTimeSec / 60)}m ${studentTimeSec % 60}s` : `${studentTimeSec}s`}
+              </span>
+              <span className="text-[10px] font-bold text-slate-400 block mt-0.5">Completion speed</span>
+            </div>
+
+            <div className="p-3 bg-white rounded-xl border border-slate-100 shadow-2xs">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Questions</span>
+              <span className="text-lg font-black text-purple-700">{answeredCount} <span className="text-xs text-slate-400 font-normal">/ {questions.length}</span></span>
+              <span className="text-[10px] font-bold text-purple-500 block mt-0.5">Answered</span>
+            </div>
+          </div>
+
+          {/* Live Waiting Room Status Callout */}
+          <div className="p-5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-purple-500/10 border-2 border-amber-300/70 rounded-2xl text-center space-y-3 relative">
+            <div className="flex items-center justify-center space-x-2 text-amber-800 text-xs font-black uppercase tracking-wider">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 beacon-ping" />
+              <span>Waiting for Admin to Publish Final Ranks</span>
+            </div>
+            
+            <p className="text-xs font-bold text-slate-700 max-w-md mx-auto leading-relaxed">
+              {allFinished 
+                ? 'All students in this cohort have completed their tests! The administrator is now reviewing and giving the final publish option to reveal the leaderboard.'
+                : `Students are currently finishing the quiz session (${submittedCount} of ${participantCount} finished). Once the administrator publishes the final results, your official rank will unlock automatically!`}
+            </p>
+
+            {/* Cohort Progress Bar */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex justify-between text-[11px] font-extrabold text-slate-600 px-1">
+                <span>Cohort Completion</span>
+                <span>{submittedCount} / {participantCount} Students ({Math.round((submittedCount / Math.max(1, participantCount)) * 100)}%)</span>
+              </div>
+              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-amber-500 via-yellow-400 to-emerald-500 h-full rounded-full bg-stripes-animated transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.round((submittedCount / Math.max(1, participantCount)) * 100))}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={fetchSessionDetails}
+                className="px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-extrabold text-xs rounded-xl shadow-xs flex items-center space-x-2 transition-all cursor-pointer transform hover:scale-105 active:scale-95 btn-shimmer"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+                <span>Check If Results Are Published</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
       </div>
     );
   }

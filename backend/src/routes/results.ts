@@ -65,7 +65,7 @@ router.get('/quiz-sessions', requireAuth, (req: AuthRequest, res: Response) => {
 
       if (isStudent && student) {
         const p = participants.find(part => part.student_id === student.id);
-        if (p && p.status === 'SUBMITTED') {
+        if (p && p.status === 'SUBMITTED' && s.status === 'COMPLETED') {
           const rank = leaderboard.find(l => l.student_id === student.id)?.rank || p.rank || 1;
           results.push({
             id: p.id,

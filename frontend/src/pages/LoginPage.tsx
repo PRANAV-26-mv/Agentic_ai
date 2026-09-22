@@ -99,13 +99,17 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden animate-aurora">
       
+      {/* Ambient glowing orbs */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-sky-500/15 rounded-full blur-3xl pointer-events-none animate-float"></div>
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-purple-500/15 rounded-full blur-3xl pointer-events-none animate-float-subtle"></div>
+
       {/* Container */}
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100 p-8 space-y-6 text-center relative">
+      <div className="max-w-md w-full bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-white/30 p-8 space-y-6 text-center relative card-interactive animate-fade-in-up">
 
         {/* Logo Badge */}
-        <div className="mx-auto w-16 h-16 bg-sky-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-sky-500/30 mb-2">
+        <div className="mx-auto w-16 h-16 bg-gradient-to-tr from-sky-600 to-blue-500 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-sky-500/30 mb-2 transition-transform duration-300 hover:rotate-6 hover:scale-110">
           <BookOpen className="w-8 h-8" />
         </div>
 
@@ -121,8 +125,8 @@ export const LoginPage: React.FC = () => {
 
         {/* Access Denied Alert */}
         {errorMsg && (
-          <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-left flex items-start space-x-3 animate-in fade-in">
-            <ShieldAlert className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+          <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-left flex items-start space-x-3 animate-fade-in-up">
+            <ShieldAlert className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5 animate-bounce" />
             <div>
               <h4 className="text-sm font-bold text-rose-900">Access Denied</h4>
               <p className="text-xs text-rose-700 mt-1">{errorMsg}</p>
@@ -169,7 +173,7 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2"
+            className="w-full py-3 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-sky-500/25 btn-shimmer transform hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer"
           >
             <span>{loading ? 'Authenticating...' : 'Sign In to Portal'}</span>
           </button>

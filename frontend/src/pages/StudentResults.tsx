@@ -236,68 +236,97 @@ export const StudentResults: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {quizResults.map((q) => (
-              <div 
-                key={q.id}
-                className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-xs hover:border-amber-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-              >
-                <div className="space-y-2 min-w-0 flex-1">
-                  <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                    <span className="bg-purple-100 text-purple-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center space-x-1">
-                      <CheckCircle2 className="w-3 h-3 text-purple-600 shrink-0" />
-                      <span>COMPLETED</span>
-                    </span>
-                    <span className="bg-amber-50 text-amber-900 border border-amber-200 font-mono text-[10px] font-black px-2 py-0.5 rounded-md">
-                      PIN: {q.pin}
-                    </span>
-                    <span className="text-[11px] text-slate-400">
-                      {new Date(q.submitted_at).toLocaleDateString()}
-                    </span>
-                  </div>
+            {quizResults.map((q) => {
+              const isChampion = q.rank === 1;
+              const isPodium = q.rank <= 3;
+              return (
+                <div 
+                  key={q.id}
+                  className={`rounded-2xl p-4 sm:p-6 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 card-interactive animate-fade-in-up ${
+                    isChampion
+                      ? 'bg-gradient-to-r from-amber-50/70 via-white to-amber-50/50 border-2 border-amber-400/90 shadow-md animate-champion-glow'
+                      : isPodium
+                      ? 'bg-white border border-amber-200/80 shadow-xs hover:border-amber-300'
+                      : 'bg-white border border-slate-200 shadow-xs hover:border-slate-300'
+                  }`}
+                >
+                  <div className="space-y-2 min-w-0 flex-1">
+                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                      {isChampion ? (
+                        <span className="bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center space-x-1 shadow-xs shimmer-badge">
+                          <Crown className="w-3 h-3 text-slate-950 fill-slate-950 animate-bounce" />
+                          <span>CHAMPION #1</span>
+                        </span>
+                      ) : (
+                        <span className="bg-purple-100 text-purple-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center space-x-1">
+                          <CheckCircle2 className="w-3 h-3 text-purple-600 shrink-0" />
+                          <span>COMPLETED</span>
+                        </span>
+                      )}
+                      <span className="bg-amber-50 text-amber-900 border border-amber-200 font-mono text-[10px] font-black px-2 py-0.5 rounded-md">
+                        PIN: {q.pin}
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        {new Date(q.submitted_at).toLocaleDateString()}
+                      </span>
+                    </div>
 
-                  <h3 className="font-extrabold text-slate-900 text-base leading-snug break-words">
-                    {q.session_title}
-                  </h3>
+                    <h3 className="font-extrabold text-slate-900 text-base leading-snug break-words">
+                      {q.session_title}
+                    </h3>
 
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 pt-1">
-                    <span>
-                      Duration: <strong>{q.duration_minutes} mins</strong>
-                    </span>
-                    <span>•</span>
-                    <span>
-                      Completed in: <strong>{q.time_taken_seconds}s</strong>
-                    </span>
-                    <span>•</span>
-                    <span>
-                      Questions: <strong>{q.total_questions}</strong>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Score & Rank Badges - Full Width & Aligned on Mobile */}
-                <div className="flex items-center justify-between sm:justify-end space-x-4 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 sm:border-l sm:border-slate-100 sm:pl-6 w-full sm:w-auto">
-                  <div className="text-left sm:text-right space-y-0.5">
-                    <p className="font-black text-slate-900 text-base">
-                      {q.score} / {q.max_score} <span className="text-xs text-slate-400 font-normal">pts</span>
-                    </p>
-                    <p className="text-xs font-bold text-emerald-600">{q.percentage}% Accuracy</p>
-                    <div className="inline-flex items-center space-x-1 bg-amber-50 text-amber-900 px-2 py-0.5 rounded-md border border-amber-200 text-[11px] font-black">
-                      <Trophy className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
-                      <span>Rank #{q.rank} of {q.total_participants}</span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 pt-1">
+                      <span>
+                        Duration: <strong>{q.duration_minutes} mins</strong>
+                      </span>
+                      <span>•</span>
+                      <span>
+                        Completed in: <strong>{q.time_taken_seconds}s</strong>
+                      </span>
+                      <span>•</span>
+                      <span>
+                        Questions: <strong>{q.total_questions}</strong>
+                      </span>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => navigate(`/quiz-sessions/${q.session_id}`)}
-                    className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
-                  >
-                    <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Review</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
+                  {/* Score & Rank Badges - Full Width & Aligned on Mobile */}
+                  <div className="flex items-center justify-between sm:justify-end space-x-4 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 sm:border-l sm:border-slate-100 sm:pl-6 w-full sm:w-auto">
+                    <div className="text-left sm:text-right space-y-0.5">
+                      <p className="font-black text-slate-900 text-base">
+                        {q.score} / {q.max_score} <span className="text-xs text-slate-400 font-normal">pts</span>
+                      </p>
+                      <p className="text-xs font-bold text-emerald-600">{q.percentage}% Accuracy</p>
+                      <div className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[11px] font-black ${
+                        isChampion
+                          ? 'bg-amber-400 text-slate-950 shadow-xs'
+                          : q.rank === 2
+                          ? 'bg-slate-200 text-slate-800 border border-slate-300'
+                          : q.rank === 3
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                          : 'bg-amber-50 text-amber-900 border border-amber-200'
+                      }`}>
+                        {isChampion ? (
+                          <Crown className="w-3 h-3 text-slate-950 fill-slate-950 animate-bounce" />
+                        ) : (
+                          <Trophy className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+                        )}
+                        <span>Rank #{q.rank} of {q.total_participants}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => navigate(`/quiz-sessions/${q.session_id}`)}
+                      className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-xs btn-shimmer transition-all transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Review</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )
       ) : (

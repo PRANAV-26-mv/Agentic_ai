@@ -253,6 +253,7 @@ export interface QuizSession {
   created_at: string;
   participant_count?: number;
   submitted_count?: number;
+  all_students_finished?: boolean;
   my_status?: 'LOBBY' | 'IN_PROGRESS' | 'SUBMITTED' | 'TIMED_OUT' | null;
   my_score?: number | null;
   my_max_score?: number | null;
