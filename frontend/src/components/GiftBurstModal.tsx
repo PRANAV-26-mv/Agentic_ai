@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { Trophy, Crown, Sparkles, X, RotateCcw, Award, Volume2, Medal } from 'lucide-react';
+import { Trophy, Crown, Sparkles, X, RotateCcw, Award, Volume2, Medal, Zap, Music } from 'lucide-react';
 
 export interface GiftBurstModalProps {
   isOpen: boolean;
@@ -14,7 +14,11 @@ export interface GiftBurstModalProps {
   totalParticipants?: number;
 }
 
-// 1st Prize Royal Brass Trumpet Fanfare
+/* =========================================================================
+   PRIZE 1: 🥇 IMPERIAL GOLD FANFARE & GRAND VICTORY FIREWORKS
+   - Instrument: Royal Orchestral Brass Trumpets + Grand Timpani + Celestial Star Cascade
+   - Character: Majestic, Regal, Explosive, Grand Champion
+   ========================================================================= */
 export const playFirstPrizeFanfare = () => {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -24,76 +28,116 @@ export const playFirstPrizeFanfare = () => {
     const startSynth = () => {
       const now = ctx.currentTime;
 
-      // Royal Brass Trumpet Fanfare: C5 -> E5 -> G5 -> E5 -> G5 -> C6 Climax & Harmonics
+      // 1. Royal Brass Trumpet Heraldic Fanfare (C-Major)
       const brassNotes = [
-        { f: 523.25, t: 0.00, d: 0.16, v: 0.35, wave: 'sawtooth' as OscillatorType },
-        { f: 659.25, t: 0.14, d: 0.16, v: 0.35, wave: 'sawtooth' as OscillatorType },
-        { f: 783.99, t: 0.28, d: 0.22, v: 0.40, wave: 'sawtooth' as OscillatorType },
-        { f: 659.25, t: 0.48, d: 0.14, v: 0.30, wave: 'triangle' as OscillatorType },
-        { f: 783.99, t: 0.60, d: 0.18, v: 0.38, wave: 'sawtooth' as OscillatorType },
-        { f: 1046.50, t: 0.78, d: 0.95, v: 0.45, wave: 'sawtooth' as OscillatorType }, // High C Climax
-        { f: 1318.51, t: 0.88, d: 0.85, v: 0.30, wave: 'triangle' as OscillatorType }, // High E Harmony
-        { f: 1567.98, t: 0.98, d: 0.75, v: 0.25, wave: 'triangle' as OscillatorType }, // High G Flourish
+        { f: 523.25, t: 0.00, d: 0.16, v: 0.38, wave: 'sawtooth' as OscillatorType }, // C5
+        { f: 659.25, t: 0.14, d: 0.16, v: 0.38, wave: 'sawtooth' as OscillatorType }, // E5
+        { f: 783.99, t: 0.28, d: 0.22, v: 0.42, wave: 'sawtooth' as OscillatorType }, // G5
+        { f: 659.25, t: 0.48, d: 0.14, v: 0.32, wave: 'triangle' as OscillatorType }, // E5
+        { f: 783.99, t: 0.60, d: 0.18, v: 0.40, wave: 'sawtooth' as OscillatorType }, // G5
+        { f: 1046.50, t: 0.78, d: 1.10, v: 0.50, wave: 'sawtooth' as OscillatorType }, // High C6 Climax
+        { f: 1318.51, t: 0.88, d: 0.95, v: 0.35, wave: 'triangle' as OscillatorType }, // High E6 Harmony
+        { f: 1567.98, t: 0.98, d: 0.85, v: 0.30, wave: 'triangle' as OscillatorType }, // High G6 Flourish
       ];
 
       brassNotes.forEach(({ f, t, d, v, wave }) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        
         osc.type = wave;
         osc.frequency.setValueAtTime(f, now + t);
 
+        // Rich brass low-pass filter with attack sweep
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1400, now + t);
+        filter.frequency.exponentialRampToValueAtTime(4500, now + t + 0.06);
+
         if (d > 0.4) {
-          osc.frequency.setTargetAtTime(f * 1.008, now + t + 0.15, 0.08); // Brass vibrato
+          osc.frequency.setTargetAtTime(f * 1.009, now + t + 0.18, 0.08); // Brass vibrato
         }
 
         gain.gain.setValueAtTime(0.001, now + t);
-        gain.gain.exponentialRampToValueAtTime(v, now + t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(v, now + t + 0.025);
         gain.gain.exponentialRampToValueAtTime(0.001, now + t + d);
 
-        osc.connect(gain);
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(ctx.destination);
         osc.start(now + t);
         osc.stop(now + t + d + 0.05);
       });
 
-      // Celebratory Magical Bell Chimes
-      const sparkles = [
-        { f: 1760.00, t: 0.85 },
-        { f: 2093.00, t: 0.98 },
-        { f: 2637.02, t: 1.10 },
-        { f: 3135.96, t: 1.22 },
-        { f: 4186.01, t: 1.35 }
+      // 2. Grand Orchestral Timpani Drum Roll & Sub-Bass Victory Boom
+      const timpaniRoll = [
+        { f: 120, t: 0.50, v: 0.20 },
+        { f: 135, t: 0.58, v: 0.25 },
+        { f: 150, t: 0.66, v: 0.30 },
       ];
-
-      sparkles.forEach(({ f, t }) => {
+      timpaniRoll.forEach(({ f, t, v }) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(f, now + t);
+        osc.frequency.exponentialRampToValueAtTime(50, now + t + 0.12);
+        gain.gain.setValueAtTime(v, now + t);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.14);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + t);
+        osc.stop(now + t + 0.15);
+      });
 
-        gain.gain.setValueAtTime(0.22, now + t);
+      // Heavy Climax Timpani Boom
+      const bassOsc = ctx.createOscillator();
+      const bassGain = ctx.createGain();
+      bassOsc.type = 'sine';
+      bassOsc.frequency.setValueAtTime(180, now + 0.78);
+      bassOsc.frequency.exponentialRampToValueAtTime(38, now + 1.8);
+      bassGain.gain.setValueAtTime(0.55, now + 0.78);
+      bassGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+      bassOsc.connect(bassGain);
+      bassGain.connect(ctx.destination);
+      bassOsc.start(now + 0.78);
+      bassOsc.stop(now + 1.85);
+
+      // 3. Cascading Golden Star Chimes (5 octaves)
+      const starChimes = [
+        { f: 1760.00, t: 0.85 }, // A6
+        { f: 2093.00, t: 0.98 }, // C7
+        { f: 2637.02, t: 1.10 }, // E7
+        { f: 3135.96, t: 1.22 }, // G7
+        { f: 4186.01, t: 1.35 }  // C8 (Golden Sparkle)
+      ];
+
+      starChimes.forEach(({ f, t }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + t);
+        gain.gain.setValueAtTime(0.24, now + t);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.45);
-
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(now + t);
         osc.stop(now + t + 0.5);
       });
 
-      // Grand Timpani Victory Boom
-      const bassOsc = ctx.createOscillator();
-      const bassGain = ctx.createGain();
-      bassOsc.type = 'sine';
-      bassOsc.frequency.setValueAtTime(160, now + 0.78);
-      bassOsc.frequency.exponentialRampToValueAtTime(40, now + 1.5);
-
-      bassGain.gain.setValueAtTime(0.40, now + 0.78);
-      bassGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
-
-      bassOsc.connect(bassGain);
-      bassGain.connect(ctx.destination);
-      bassOsc.start(now + 0.78);
-      bassOsc.stop(now + 1.55);
+      // 4. Lush Golden Major 9th Polyphonic Chord Climax
+      const chordNotes = [261.63, 392.00, 523.25, 659.25, 987.77]; // C4, G4, C5, E5, B5
+      chordNotes.forEach((f) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + 0.80);
+        gain.gain.setValueAtTime(0.001, now + 0.80);
+        gain.gain.exponentialRampToValueAtTime(0.12, now + 0.88);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.9);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + 0.80);
+        osc.stop(now + 1.95);
+      });
     };
 
     if (ctx.state === 'suspended') {
@@ -106,7 +150,11 @@ export const playFirstPrizeFanfare = () => {
   }
 };
 
-// 2nd Prize Crisp Silver Chimes & Trumpet Triumph Fanfare
+/* =========================================================================
+   PRIZE 2: 🥈 CRYSTALLINE CYBER-SILVER GLISSANDO & HIGH-TECH HARP SWEEP
+   - Instrument: FM Metallic Silver Bells + Ascending Crystal Harp + Crisp Snappy Snare
+   - Character: High-Tech, Crisp, Crystalline, Electric, Precision Silver
+   ========================================================================= */
 export const playSecondPrizeFanfare = () => {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -116,75 +164,115 @@ export const playSecondPrizeFanfare = () => {
     const startSynth = () => {
       const now = ctx.currentTime;
 
-      // Bright Silver Trumpet: D5 -> F#5 -> A5 -> F#5 -> A5 -> D6 Climax
-      const silverBrass = [
-        { f: 587.33, t: 0.00, d: 0.15, v: 0.32, wave: 'sawtooth' as OscillatorType },
-        { f: 739.99, t: 0.13, d: 0.15, v: 0.32, wave: 'sawtooth' as OscillatorType },
-        { f: 880.00, t: 0.26, d: 0.20, v: 0.36, wave: 'sawtooth' as OscillatorType },
-        { f: 739.99, t: 0.44, d: 0.13, v: 0.28, wave: 'triangle' as OscillatorType },
-        { f: 880.00, t: 0.55, d: 0.16, v: 0.34, wave: 'sawtooth' as OscillatorType },
-        { f: 1174.66, t: 0.72, d: 0.88, v: 0.42, wave: 'sawtooth' as OscillatorType }, // High D6 Climax
-        { f: 1479.98, t: 0.82, d: 0.78, v: 0.28, wave: 'triangle' as OscillatorType }, // High F#6 Harmony
-        { f: 1760.00, t: 0.92, d: 0.70, v: 0.22, wave: 'sine' as OscillatorType },     // High A6 Flourish
+      // 1. Rapid Ascending Crystalline Harp Glissando (High-speed silver streak)
+      const harpPitches = [
+        587.33,  // D5
+        659.25,  // E5
+        739.99,  // F#5
+        880.00,  // A5
+        987.77,  // B5
+        1174.66, // D6
+        1318.51, // E6
+        1479.98, // F#6
+        1760.00  // A6
       ];
 
-      silverBrass.forEach(({ f, t, d, v, wave }) => {
+      harpPitches.forEach((pitch, i) => {
+        const t = i * 0.055; // Fast rolling cascade
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = wave;
-        osc.frequency.setValueAtTime(f, now + t);
-
-        if (d > 0.4) {
-          osc.frequency.setTargetAtTime(f * 1.006, now + t + 0.15, 0.07);
-        }
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(pitch, now + t);
 
         gain.gain.setValueAtTime(0.001, now + t);
-        gain.gain.exponentialRampToValueAtTime(v, now + t + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + t + d);
+        gain.gain.exponentialRampToValueAtTime(0.28, now + t + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.35);
 
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(now + t);
-        osc.stop(now + t + d + 0.05);
+        osc.stop(now + t + 0.40);
       });
 
-      // Crystal Silver Windchimes
-      const chimes = [
-        { f: 2200.00, t: 0.78 },
-        { f: 2637.00, t: 0.90 },
-        { f: 3135.00, t: 1.02 },
-        { f: 3520.00, t: 1.15 }
-      ];
+      // 2. FM Synthesis Metallic Silver Bell (Authentic chrome/glass clang)
+      const carrier = ctx.createOscillator();
+      const modulator = ctx.createOscillator();
+      const modGain = ctx.createGain();
+      const masterGain = ctx.createGain();
 
-      chimes.forEach(({ f, t }) => {
+      carrier.type = 'sine';
+      carrier.frequency.setValueAtTime(1174.66, now + 0.52); // D6 fundamental
+
+      modulator.type = 'sine';
+      modulator.frequency.setValueAtTime(1174.66 * 2.76, now + 0.52); // Metallic inharmonic ratio
+
+      modGain.gain.setValueAtTime(800, now + 0.52);
+      modGain.gain.exponentialRampToValueAtTime(20, now + 1.4);
+
+      modulator.connect(modGain);
+      modGain.connect(carrier.frequency);
+
+      masterGain.gain.setValueAtTime(0.001, now + 0.52);
+      masterGain.gain.exponentialRampToValueAtTime(0.40, now + 0.54);
+      masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);
+
+      carrier.connect(masterGain);
+      masterGain.connect(ctx.destination);
+
+      carrier.start(now + 0.52);
+      modulator.start(now + 0.52);
+      carrier.stop(now + 1.65);
+      modulator.stop(now + 1.65);
+
+      // 3. High-Velocity Shimmering Ice Chimes (Cascading silver frost)
+      const silverChimes = [2349.32, 2793.83, 3520.00, 4186.01];
+      silverChimes.forEach((f, idx) => {
+        const t = 0.58 + idx * 0.08;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(f, now + t);
-
-        gain.gain.setValueAtTime(0.20, now + t);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.40);
-
+        gain.gain.setValueAtTime(0.22, now + t);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.38);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(now + t);
-        osc.stop(now + t + 0.45);
+        osc.stop(now + t + 0.40);
       });
 
-      // Resonant Snare & Kick Punch
-      const drumOsc = ctx.createOscillator();
-      const drumGain = ctx.createGain();
-      drumOsc.type = 'sine';
-      drumOsc.frequency.setValueAtTime(180, now + 0.72);
-      drumOsc.frequency.exponentialRampToValueAtTime(50, now + 1.2);
+      // 4. Snappy High-Tech Snare Flam & Laser Accent
+      // Noise burst for crisp snare
+      const bufferSize = ctx.sampleRate * 0.12;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      const whiteNoise = ctx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'highpass';
+      noiseFilter.frequency.setValueAtTime(1200, now + 0.52);
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.25, now + 0.52);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.64);
+      whiteNoise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      whiteNoise.start(now + 0.52);
 
-      drumGain.gain.setValueAtTime(0.35, now + 0.72);
-      drumGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
-
-      drumOsc.connect(drumGain);
-      drumGain.connect(ctx.destination);
-      drumOsc.start(now + 0.72);
-      drumOsc.stop(now + 1.25);
+      // Electro kick punch
+      const punchOsc = ctx.createOscillator();
+      const punchGain = ctx.createGain();
+      punchOsc.type = 'sine';
+      punchOsc.frequency.setValueAtTime(240, now + 0.52);
+      punchOsc.frequency.exponentialRampToValueAtTime(65, now + 0.85);
+      punchGain.gain.setValueAtTime(0.38, now + 0.52);
+      punchGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+      punchOsc.connect(punchGain);
+      punchGain.connect(ctx.destination);
+      punchOsc.start(now + 0.52);
+      punchOsc.stop(now + 0.90);
     };
 
     if (ctx.state === 'suspended') {
@@ -197,7 +285,11 @@ export const playSecondPrizeFanfare = () => {
   }
 };
 
-// 3rd Prize Warm Bronze Victory Cadence Fanfare
+/* =========================================================================
+   PRIZE 3: 🥉 FESTIVE ISLAND MARIMBA & CELEBRATORY BRONZE GONG
+   - Instrument: Warm Wooden Marimba Riff + Tibetan Bronze Singing Bowl + Percussion Claves
+   - Character: Warm, Cheerful, Rhythmic, Playful & Uplifting
+   ========================================================================= */
 export const playThirdPrizeFanfare = () => {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -207,74 +299,103 @@ export const playThirdPrizeFanfare = () => {
     const startSynth = () => {
       const now = ctx.currentTime;
 
-      // Warm Bronze Brass: G4 -> B4 -> D5 -> B4 -> D5 -> G5 Climax
-      const bronzeBrass = [
-        { f: 392.00, t: 0.00, d: 0.16, v: 0.30, wave: 'sawtooth' as OscillatorType },
-        { f: 493.88, t: 0.14, d: 0.16, v: 0.30, wave: 'sawtooth' as OscillatorType },
-        { f: 587.33, t: 0.28, d: 0.20, v: 0.35, wave: 'sawtooth' as OscillatorType },
-        { f: 493.88, t: 0.46, d: 0.14, v: 0.26, wave: 'triangle' as OscillatorType },
-        { f: 587.33, t: 0.58, d: 0.18, v: 0.32, wave: 'sawtooth' as OscillatorType },
-        { f: 783.99, t: 0.75, d: 0.85, v: 0.40, wave: 'sawtooth' as OscillatorType }, // Warm G5 Climax
-        { f: 987.77, t: 0.85, d: 0.75, v: 0.26, wave: 'triangle' as OscillatorType }, // High B5 Harmony
-        { f: 1174.66, t: 0.95, d: 0.65, v: 0.20, wave: 'sine' as OscillatorType },     // High D6 Flourish
+      // 1. Warm Bouncy Wooden Marimba Victory Riff
+      // Melodic motif: G4 -> C5 -> E5 -> D5 -> G5 -> High C6 (syncopated joyful cadence)
+      const marimbaNotes = [
+        { f: 392.00, t: 0.00, v: 0.35 }, // G4
+        { f: 523.25, t: 0.12, v: 0.38 }, // C5
+        { f: 659.25, t: 0.24, v: 0.40 }, // E5
+        { f: 587.33, t: 0.36, v: 0.36 }, // D5
+        { f: 783.99, t: 0.48, v: 0.44 }, // G5
+        { f: 1046.50, t: 0.62, v: 0.50 }, // High C6 double bounce
+        { f: 1046.50, t: 0.74, v: 0.46 }  // High C6 accent
       ];
 
-      bronzeBrass.forEach(({ f, t, d, v, wave }) => {
+      marimbaNotes.forEach(({ f, t, v }) => {
+        // Fundamental
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = wave;
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(f, now + t);
-
-        if (d > 0.4) {
-          osc.frequency.setTargetAtTime(f * 1.005, now + t + 0.15, 0.07);
-        }
+        // Subtle mallet frequency drop on attack
+        osc.frequency.exponentialRampToValueAtTime(f * 0.99, now + t + 0.15);
 
         gain.gain.setValueAtTime(0.001, now + t);
-        gain.gain.exponentialRampToValueAtTime(v, now + t + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + t + d);
+        gain.gain.exponentialRampToValueAtTime(v, now + t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.26);
+
+        // Wooden harmonic overtone
+        const overtoneOsc = ctx.createOscillator();
+        const overtoneGain = ctx.createGain();
+        overtoneOsc.type = 'sine';
+        overtoneOsc.frequency.setValueAtTime(f * 3.8, now + t);
+        overtoneGain.gain.setValueAtTime(v * 0.28, now + t);
+        overtoneGain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.07);
 
         osc.connect(gain);
         gain.connect(ctx.destination);
+        overtoneOsc.connect(overtoneGain);
+        overtoneGain.connect(ctx.destination);
+
         osc.start(now + t);
-        osc.stop(now + t + d + 0.05);
+        overtoneOsc.start(now + t);
+        osc.stop(now + t + 0.30);
+        overtoneOsc.stop(now + t + 0.09);
       });
 
-      // Warm Cathedral Bells
-      const bells = [
-        { f: 1567.98, t: 0.80 },
-        { f: 1975.53, t: 0.92 },
-        { f: 2349.32, t: 1.05 }
-      ];
+      // 2. Deep Resonant Bronze Singing Bowl / Gong (Sub-bass warmth & metallic sustain)
+      const gongFundamentals = [110, 220, 330]; // Rich bronze harmonic series
+      gongFundamentals.forEach((freq, idx) => {
+        const gongOsc = ctx.createOscillator();
+        const gongGain = ctx.createGain();
+        gongOsc.type = 'sine';
+        gongOsc.frequency.setValueAtTime(freq, now + 0.62);
 
-      bells.forEach(({ f, t }) => {
+        // Slight gong pitch fluctuation
+        gongOsc.frequency.setTargetAtTime(freq * 1.003, now + 0.8, 0.2);
+
+        const vol = idx === 0 ? 0.35 : 0.18;
+        gongGain.gain.setValueAtTime(0.001, now + 0.62);
+        gongGain.gain.exponentialRampToValueAtTime(vol, now + 0.66);
+        gongGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.1);
+
+        gongOsc.connect(gongGain);
+        gongGain.connect(ctx.destination);
+        gongOsc.start(now + 0.62);
+        gongOsc.stop(now + 2.15);
+      });
+
+      // 3. Wooden Clave Percussion Clicks (Festive island pulse)
+      const claveTimes = [0.00, 0.24, 0.48, 0.62, 0.74];
+      claveTimes.forEach((t) => {
+        const clickOsc = ctx.createOscillator();
+        const clickGain = ctx.createGain();
+        clickOsc.type = 'sine';
+        clickOsc.frequency.setValueAtTime(2400, now + t);
+        clickOsc.frequency.exponentialRampToValueAtTime(1400, now + t + 0.04);
+        clickGain.gain.setValueAtTime(0.18, now + t);
+        clickGain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.045);
+        clickOsc.connect(clickGain);
+        clickGain.connect(ctx.destination);
+        clickOsc.start(now + t);
+        clickOsc.stop(now + t + 0.05);
+      });
+
+      // 4. Warm Celebratory Major 6th Harmonic Pad Swell
+      const warmChord = [261.63, 329.63, 392.00, 440.00]; // C4, E4, G4, A4 (Joyful C6 chord)
+      warmChord.forEach((f) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(f, now + t);
-
-        gain.gain.setValueAtTime(0.18, now + t);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.45);
-
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(f, now + 0.75);
+        gain.gain.setValueAtTime(0.001, now + 0.75);
+        gain.gain.exponentialRampToValueAtTime(0.14, now + 0.85);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.start(now + t);
-        osc.stop(now + t + 0.5);
+        osc.start(now + 0.75);
+        osc.stop(now + 1.85);
       });
-
-      // Warm Timpani Resonance
-      const bassOsc = ctx.createOscillator();
-      const bassGain = ctx.createGain();
-      bassOsc.type = 'sine';
-      bassOsc.frequency.setValueAtTime(140, now + 0.75);
-      bassOsc.frequency.exponentialRampToValueAtTime(45, now + 1.3);
-
-      bassGain.gain.setValueAtTime(0.32, now + 0.75);
-      bassGain.gain.exponentialRampToValueAtTime(0.001, now + 1.3);
-
-      bassOsc.connect(bassGain);
-      bassGain.connect(ctx.destination);
-      bassOsc.start(now + 0.75);
-      bassOsc.stop(now + 1.35);
     };
 
     if (ctx.state === 'suspended') {
@@ -287,7 +408,52 @@ export const playThirdPrizeFanfare = () => {
   }
 };
 
-// Universal Podium Fanfare Helper
+/* =========================================================================
+   POP / BURST ACCENT SOUND EFFECT
+   - Tailored blast sound right when the gift box pops open!
+   ========================================================================= */
+export const playGiftBurstBlast = (rank: number = 1) => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+
+    const startSynth = () => {
+      const now = ctx.currentTime;
+      const isGold = rank === 1;
+      const isSilver = rank === 2;
+
+      // Cannon pop frequency
+      const startFreq = isGold ? 320 : isSilver ? 480 : 260;
+      const endFreq = isGold ? 45 : isSilver ? 80 : 35;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = isSilver ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(startFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.16);
+
+      gain.gain.setValueAtTime(0.45, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.20);
+    };
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(() => startSynth()).catch(() => startSynth());
+    } else {
+      startSynth();
+    }
+  } catch (e) {
+    console.warn('Pop audio error:', e);
+  }
+};
+
+// Universal Helper that plays the exact signature sound effect for each rank
 export const playPodiumFanfare = (rank: number = 1) => {
   if (rank === 2) {
     playSecondPrizeFanfare();
@@ -382,13 +548,14 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
 
   const triggerBurst = useCallback(() => {
     setBurstState('BURSTING');
+    playGiftBurstBlast(podiumRank);
     playVictoryAudio();
 
     setTimeout(() => {
       setBurstState('REVEALED');
       triggerConfettiCannons();
     }, 450);
-  }, [playVictoryAudio, triggerConfettiCannons]);
+  }, [podiumRank, playVictoryAudio, triggerConfettiCannons]);
 
   // Reset and auto-burst when modal opens
   useEffect(() => {
@@ -680,10 +847,22 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
                     : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40'
                 }`}
               >
-                <Volume2 className="w-4 h-4" />
-                <span>
-                  {podiumRank === 1 ? 'Play Winner Fanfare 🎺' : podiumRank === 2 ? 'Play Silver Fanfare 🎵' : 'Play Bronze Fanfare 🔔'}
-                </span>
+                {podiumRank === 1 ? (
+                  <>
+                    <Volume2 className="w-4 h-4 text-amber-300" />
+                    <span>Play Imperial Trumpets 🎺</span>
+                  </>
+                ) : podiumRank === 2 ? (
+                  <>
+                    <Zap className="w-4 h-4 text-sky-300" />
+                    <span>Play Silver Chimes ⚡</span>
+                  </>
+                ) : (
+                  <>
+                    <Music className="w-4 h-4 text-amber-400" />
+                    <span>Play Bronze Marimba 🥁</span>
+                  </>
+                )}
               </button>
 
               <button
