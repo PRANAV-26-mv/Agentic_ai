@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GiftBurstModal } from '../components/GiftBurstModal';
+import { CertificateModal } from '../components/CertificateModal';
 
 export const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -29,6 +30,8 @@ export const StudentDashboard: React.FC = () => {
   const [quizSessions, setQuizSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showGiftBurst, setShowGiftBurst] = useState<boolean>(false);
+  const [showCertificate, setShowCertificate] = useState<boolean>(false);
+  const [certificateData, setCertificateData] = useState<any | null>(null);
 
   useEffect(() => {
     // 1. Fetch assessments
@@ -180,22 +183,48 @@ export const StudentDashboard: React.FC = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowGiftBurst(true)}
-              className={`px-5 py-2.5 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg cursor-pointer transform hover:scale-105 active:scale-95 transition-all inline-flex items-center space-x-2 shrink-0 btn-shimmer ${
-                podiumQuiz.my_rank === 1
-                  ? 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-500 hover:to-yellow-400 text-slate-950 shadow-amber-500/40 shimmer-badge'
-                  : podiumQuiz.my_rank === 2
-                  ? 'bg-gradient-to-r from-slate-200 via-sky-100 to-slate-200 hover:from-slate-300 hover:to-sky-200 text-slate-950 shadow-sky-400/40 shimmer-silver-badge'
-                  : 'bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 hover:from-amber-700 hover:to-orange-600 text-white shadow-orange-500/40 shimmer-bronze-badge'
-              }`}
-            >
-              <span className="text-base animate-gift-wobble">🎁</span>
-              <span>
-                {podiumQuiz.my_rank === 1 ? 'Open Champion Gift Burst' : podiumQuiz.my_rank === 2 ? 'Open Silver Reward Burst' : 'Open Bronze Reward Burst'}
-              </span>
-              <Sparkles className={`w-3.5 h-3.5 animate-sparkle-spin ${podiumQuiz.my_rank === 3 ? 'text-white' : 'text-slate-950'}`} />
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <button
+                onClick={() => {
+                  setCertificateData({
+                    studentName: user?.name || 'Candidate Student',
+                    studentReg: user?.student_id,
+                    studentDepartment: user?.department,
+                    quizTitle: podiumQuiz.title,
+                    rank: podiumQuiz.my_rank,
+                    totalParticipants: podiumQuiz.participant_count || 1,
+                    score: podiumQuiz.my_score,
+                    maxScore: podiumQuiz.my_max_score,
+                    percentage: podiumQuiz.my_percentage,
+                    completionDate: podiumQuiz.my_submitted_at || new Date().toISOString(),
+                    timeTaken: podiumQuiz.my_time_taken_seconds ? `${Math.floor(podiumQuiz.my_time_taken_seconds / 60)}m ${podiumQuiz.my_time_taken_seconds % 60}s` : undefined
+                  });
+                  setShowCertificate(true);
+                }}
+                className="px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl border border-white/30 shadow-md cursor-pointer transition-all transform hover:scale-105 active:scale-95 inline-flex items-center space-x-2 shrink-0"
+                title="Generate Official AGENTIC_AI_A7 Certificate"
+              >
+                <Award className="w-4 h-4 text-amber-300" />
+                <span>Certificate 📜</span>
+              </button>
+
+              <button
+                onClick={() => setShowGiftBurst(true)}
+                className={`px-5 py-2.5 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg cursor-pointer transform hover:scale-105 active:scale-95 transition-all inline-flex items-center space-x-2 shrink-0 btn-shimmer ${
+                  podiumQuiz.my_rank === 1
+                    ? 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-500 hover:to-yellow-400 text-slate-950 shadow-amber-500/40 shimmer-badge'
+                    : podiumQuiz.my_rank === 2
+                    ? 'bg-gradient-to-r from-slate-200 via-sky-100 to-slate-200 hover:from-slate-300 hover:to-sky-200 text-slate-950 shadow-sky-400/40 shimmer-silver-badge'
+                    : 'bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 hover:from-amber-700 hover:to-orange-600 text-white shadow-orange-500/40 shimmer-bronze-badge'
+                }`}
+              >
+                <span className="text-base animate-gift-wobble">🎁</span>
+                <span>
+                  {podiumQuiz.my_rank === 1 ? 'Open Champion Gift Burst' : podiumQuiz.my_rank === 2 ? 'Open Silver Reward Burst' : 'Open Bronze Reward Burst'}
+                </span>
+                <Sparkles className={`w-3.5 h-3.5 animate-sparkle-spin ${podiumQuiz.my_rank === 3 ? 'text-white' : 'text-slate-950'}`} />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -396,6 +425,41 @@ export const StudentDashboard: React.FC = () => {
           accuracy={podiumQuiz.my_percentage}
           timeTaken={podiumQuiz.my_time_taken_seconds ? `${Math.floor(podiumQuiz.my_time_taken_seconds / 60)}m ${podiumQuiz.my_time_taken_seconds % 60}s` : undefined}
           totalParticipants={podiumQuiz.participant_count || 1}
+          onViewCertificate={() => {
+            setCertificateData({
+              studentName: user?.name || 'Candidate Student',
+              studentReg: user?.student_id,
+              studentDepartment: user?.department,
+              quizTitle: podiumQuiz.title,
+              rank: podiumQuiz.my_rank,
+              totalParticipants: podiumQuiz.participant_count || 1,
+              score: podiumQuiz.my_score,
+              maxScore: podiumQuiz.my_max_score,
+              percentage: podiumQuiz.my_percentage,
+              completionDate: podiumQuiz.my_submitted_at || new Date().toISOString(),
+              timeTaken: podiumQuiz.my_time_taken_seconds ? `${Math.floor(podiumQuiz.my_time_taken_seconds / 60)}m ${podiumQuiz.my_time_taken_seconds % 60}s` : undefined
+            });
+            setShowCertificate(true);
+          }}
+        />
+      )}
+
+      {/* Official AGENTIC_AI_A7 Certificate Modal */}
+      {showCertificate && certificateData && (
+        <CertificateModal
+          isOpen={showCertificate}
+          onClose={() => setShowCertificate(false)}
+          studentName={certificateData.studentName}
+          studentReg={certificateData.studentReg}
+          studentDepartment={certificateData.studentDepartment}
+          quizTitle={certificateData.quizTitle}
+          rank={certificateData.rank}
+          totalParticipants={certificateData.totalParticipants}
+          score={certificateData.score}
+          maxScore={certificateData.maxScore}
+          percentage={certificateData.percentage}
+          completionDate={certificateData.completionDate}
+          timeTaken={certificateData.timeTaken}
         />
       )}
 

@@ -33,6 +33,8 @@ import {
   Volume2,
   RefreshCw
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { CertificateModal } from '../components/CertificateModal';
 import { GiftBurstModal, playFirstPrizeFanfare, playSecondPrizeFanfare, playThirdPrizeFanfare, playPodiumFanfare } from '../components/GiftBurstModal';
 
 // Helper to determine if an answer matches the question's correct answer
@@ -85,6 +87,7 @@ const getCorrectLetter = (q: Question): string => {
 };
 
 export const StudentQuizLobby: React.FC = () => {
+  const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -105,6 +108,8 @@ export const StudentQuizLobby: React.FC = () => {
   const [activeResultTab, setActiveResultTab] = useState<'REVIEW' | 'LEADERBOARD'>('REVIEW');
   const [reviewFilter, setReviewFilter] = useState<'ALL' | 'CORRECT' | 'INCORRECT' | 'SKIPPED'>('ALL');
   const [showGiftBurst, setShowGiftBurst] = useState<boolean>(false);
+  const [showCertificate, setShowCertificate] = useState<boolean>(false);
+  const [certificateTarget, setCertificateTarget] = useState<any | null>(null);
   const hasBurstTriggeredRef = useRef<boolean>(false);
 
   // Countdown timer state & refs
@@ -1132,31 +1137,87 @@ export const StudentQuizLobby: React.FC = () => {
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Quiz Completed!</h1>
             <p className="text-white/80 text-xs mt-1 break-words max-w-lg mx-auto">{session?.title || "Quiz Completed"}</p>
-            {myRank === 1 && (
-              <div className="pt-3 flex flex-wrap items-center justify-center gap-2.5">
+            
+            <div className="pt-3 flex flex-wrap items-center justify-center gap-2.5">
+              {myRank === 1 && (
+                <>
+                  <button
+                    onClick={() => {
+                      setShowGiftBurst(true);
+                      playFirstPrizeFanfare();
+                    }}
+                    className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs px-5 py-2.5 rounded-2xl shadow-xl shadow-amber-500/40 border-2 border-yellow-100 cursor-pointer transform hover:scale-105 active:scale-95 transition-all shimmer-badge animate-float"
+                  >
+                    <span className="text-base">🎁</span>
+                    <span>Open 1st Place Gift Burst</span>
+                    <Sparkles className="w-4 h-4 text-slate-950" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={playFirstPrizeFanfare}
+                    className="inline-flex items-center space-x-1.5 bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs px-4 py-2.5 rounded-2xl border border-white/30 cursor-pointer transition-all transform hover:scale-105 active:scale-95 shadow-md"
+                    title="Play 1st Prize Winner Fanfare"
+                  >
+                    <Volume2 className="w-4 h-4 text-amber-300" />
+                    <span>Victory Sound 🎺</span>
+                  </button>
+                </>
+              )}
+
+              {myRank === 2 && (
                 <button
                   onClick={() => {
                     setShowGiftBurst(true);
-                    playFirstPrizeFanfare();
+                    playSecondPrizeFanfare();
                   }}
-                  className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs px-5 py-2.5 rounded-2xl shadow-xl shadow-amber-500/40 border-2 border-yellow-100 cursor-pointer transform hover:scale-105 active:scale-95 transition-all shimmer-badge animate-float"
+                  className="inline-flex items-center space-x-2 bg-gradient-to-r from-slate-200 via-sky-100 to-slate-200 hover:from-slate-300 hover:to-sky-200 text-slate-950 font-black text-xs px-5 py-2.5 rounded-2xl shadow-xl shadow-sky-500/30 border-2 border-slate-100 cursor-pointer transform hover:scale-105 active:scale-95 transition-all shimmer-silver-badge"
                 >
                   <span className="text-base">🎁</span>
-                  <span>Open 1st Place Gift Burst</span>
-                  <Sparkles className="w-4 h-4 text-slate-950" />
+                  <span>Open Silver Reward Burst</span>
+                  <Medal className="w-4 h-4 text-slate-800" />
                 </button>
+              )}
 
+              {myRank === 3 && (
                 <button
-                  type="button"
-                  onClick={playFirstPrizeFanfare}
-                  className="inline-flex items-center space-x-1.5 bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs px-4 py-2.5 rounded-2xl border border-white/30 cursor-pointer transition-all transform hover:scale-105 active:scale-95 shadow-md"
-                  title="Play 1st Prize Winner Fanfare"
+                  onClick={() => {
+                    setShowGiftBurst(true);
+                    playThirdPrizeFanfare();
+                  }}
+                  className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-500 via-orange-400 to-amber-500 hover:from-amber-600 hover:to-orange-500 text-white font-black text-xs px-5 py-2.5 rounded-2xl shadow-xl shadow-orange-500/30 border-2 border-amber-300 cursor-pointer transform hover:scale-105 active:scale-95 transition-all shimmer-bronze-badge"
                 >
-                  <Volume2 className="w-4 h-4 text-amber-300" />
-                  <span>Victory Sound 🎺</span>
+                  <span className="text-base">🎁</span>
+                  <span>Open Bronze Reward Burst</span>
+                  <Award className="w-4 h-4 text-white" />
                 </button>
-              </div>
-            )}
+              )}
+
+              {/* Universal Certificate Generator Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setCertificateTarget({
+                    studentName: user?.name || pRecord?.student_name || 'Candidate Student',
+                    studentReg: user?.student_id || pRecord?.student_reg,
+                    studentDepartment: user?.department || pRecord?.student_department,
+                    quizTitle: session?.title || "Quiz Session",
+                    rank: myRank,
+                    totalParticipants: leaderboard.length || 1,
+                    score: earnedScore,
+                    maxScore: maxScore,
+                    percentage: accuracyPercentage,
+                    completionDate: pRecord?.submitted_at || new Date().toISOString(),
+                    timeTaken: pRecord?.time_taken_seconds ? `${Math.floor(pRecord.time_taken_seconds / 60)}m ${pRecord.time_taken_seconds % 60}s` : undefined
+                  });
+                  setShowCertificate(true);
+                }}
+                className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-500 hover:to-yellow-300 text-slate-950 font-black text-xs px-4 py-2.5 rounded-2xl border-2 border-yellow-100 cursor-pointer transition-all transform hover:scale-105 active:scale-95 shadow-lg"
+              >
+                <Award className="w-4 h-4 text-slate-950" />
+                <span>Official Certificate 📜</span>
+              </button>
+            </div>
           </div>
 
           {/* 4 Performance Metric Cards */}
@@ -1251,6 +1312,30 @@ export const StudentQuizLobby: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+            <button
+              onClick={() => {
+                setCertificateTarget({
+                  studentName: user?.name || pRecord?.student_name || 'Candidate Student',
+                  studentReg: user?.student_id || pRecord?.student_reg,
+                  studentDepartment: user?.department || pRecord?.student_department,
+                  quizTitle: session?.title || "Quiz Session",
+                  rank: myRank,
+                  totalParticipants: leaderboard.length || 1,
+                  score: earnedScore,
+                  maxScore: maxScore,
+                  percentage: accuracyPercentage,
+                  completionDate: pRecord?.submitted_at || new Date().toISOString(),
+                  timeTaken: pRecord?.time_taken_seconds ? `${Math.floor(pRecord.time_taken_seconds / 60)}m ${pRecord.time_taken_seconds % 60}s` : undefined
+                });
+                setShowCertificate(true);
+              }}
+              className="px-3.5 py-2 bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-xs transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
+              title="Generate Official AGENTIC_AI_A7 Certificate"
+            >
+              <Award className="w-3.5 h-3.5 text-slate-950" />
+              <span>Get Certificate</span>
+            </button>
+
             <button
               onClick={() => window.print()}
               className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer"
@@ -1600,7 +1685,42 @@ export const StudentQuizLobby: React.FC = () => {
         accuracy={accuracyPercentage}
         timeTaken={pRecord?.time_taken_seconds ? `${Math.floor(pRecord.time_taken_seconds / 60)}m ${pRecord.time_taken_seconds % 60}s` : undefined}
         totalParticipants={leaderboard.length || 1}
+        onViewCertificate={() => {
+          setCertificateTarget({
+            studentName: user?.name || pRecord?.student_name || 'Candidate Student',
+            studentReg: user?.student_id || pRecord?.student_reg,
+            studentDepartment: user?.department || pRecord?.student_department,
+            quizTitle: session?.title || "Quiz Session",
+            rank: myRank,
+            totalParticipants: leaderboard.length || 1,
+            score: earnedScore,
+            maxScore: maxScore,
+            percentage: accuracyPercentage,
+            completionDate: pRecord?.submitted_at || new Date().toISOString(),
+            timeTaken: pRecord?.time_taken_seconds ? `${Math.floor(pRecord.time_taken_seconds / 60)}m ${pRecord.time_taken_seconds % 60}s` : undefined
+          });
+          setShowCertificate(true);
+        }}
       />
+
+      {/* Official AGENTIC_AI_A7 Certificate Modal */}
+      {showCertificate && (
+        <CertificateModal
+          isOpen={showCertificate}
+          onClose={() => setShowCertificate(false)}
+          studentName={certificateTarget?.studentName || user?.name || pRecord?.student_name || 'Candidate Student'}
+          studentReg={certificateTarget?.studentReg || user?.student_id || pRecord?.student_reg}
+          studentDepartment={certificateTarget?.studentDepartment || user?.department || pRecord?.student_department}
+          quizTitle={certificateTarget?.quizTitle || session?.title || 'Quiz Session'}
+          rank={certificateTarget?.rank || myRank}
+          totalParticipants={certificateTarget?.totalParticipants || leaderboard.length || 1}
+          score={certificateTarget?.score ?? earnedScore}
+          maxScore={certificateTarget?.maxScore ?? maxScore}
+          percentage={certificateTarget?.percentage ?? accuracyPercentage}
+          completionDate={certificateTarget?.completionDate || pRecord?.submitted_at}
+          timeTaken={certificateTarget?.timeTaken || (pRecord?.time_taken_seconds ? `${Math.floor(pRecord.time_taken_seconds / 60)}m ${pRecord.time_taken_seconds % 60}s` : undefined)}
+        />
+      )}
 
     </div>
   );

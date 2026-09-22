@@ -12,6 +12,7 @@ export interface GiftBurstModalProps {
   accuracy?: number | string;
   timeTaken?: string;
   totalParticipants?: number;
+  onViewCertificate?: () => void;
 }
 
 /* =========================================================================
@@ -473,7 +474,8 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
   maxScore,
   accuracy,
   timeTaken,
-  totalParticipants = 1
+  totalParticipants = 1,
+  onViewCertificate
 }) => {
   const [burstState, setBurstState] = useState<'WOBBLE' | 'BURSTING' | 'REVEALED'>('WOBBLE');
   const timerRef = useRef<any>(null);
@@ -875,6 +877,21 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Burst Confetti 🎊</span>
               </button>
+
+              {onViewCertificate && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onViewCertificate();
+                  }}
+                  className="px-4 py-2.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black text-xs rounded-xl border border-yellow-200 flex items-center space-x-1.5 shadow-md cursor-pointer transition-all transform hover:scale-105 active:scale-95"
+                  title="Generate Official AGENTIC_AI_A7 Certificate"
+                >
+                  <Award className="w-4 h-4 text-slate-950" />
+                  <span>View Certificate 📜</span>
+                </button>
+              )}
 
               <button
                 onClick={onClose}

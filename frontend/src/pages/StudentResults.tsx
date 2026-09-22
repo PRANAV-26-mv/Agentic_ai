@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { CertificateModal } from '../components/CertificateModal';
 import { 
   BarChart2, 
   CheckCircle2, 
@@ -14,7 +16,8 @@ import {
   Calendar,
   Sparkles,
   Medal,
-  Crown
+  Crown,
+  FileCheck
 } from 'lucide-react';
 
 interface QuizResultItem {
@@ -36,10 +39,12 @@ interface QuizResultItem {
 }
 
 export const StudentResults: React.FC = () => {
+  const { user } = useAuth();
   const [assessmentResults, setAssessmentResults] = useState<any[]>([]);
   const [quizResults, setQuizResults] = useState<QuizResultItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'QUIZZES' | 'ASSESSMENTS'>('QUIZZES');
+  const [selectedCertificate, setSelectedCertificate] = useState<any | null>(null);
 
   const navigate = useNavigate();
 
@@ -335,14 +340,45 @@ export const StudentResults: React.FC = () => {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => navigate(`/quiz-sessions/${q.session_id}`)}
-                      className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-xs btn-shimmer transition-all transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
-                    >
-                      <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Review</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <button
+                        onClick={() => setSelectedCertificate({
+                          studentName: user?.name || 'Candidate Student',
+                          studentReg: user?.student_id,
+                          studentDepartment: user?.department,
+                          quizTitle: q.session_title,
+                          rank: q.rank,
+                          totalParticipants: q.total_participants,
+                          score: q.score,
+                          maxScore: q.max_score,
+                          percentage: q.percentage,
+                          completionDate: q.submitted_at,
+                          timeTaken: q.time_taken_seconds ? `${Math.floor(q.time_taken_seconds / 60)}m ${q.time_taken_seconds % 60}s` : undefined
+                        })}
+                        className={`px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-1.5 shadow-xs transition-all transform hover:scale-105 active:scale-95 cursor-pointer shrink-0 ${
+                          isChampion
+                            ? 'bg-amber-400 hover:bg-amber-500 text-slate-950 shadow-amber-500/30 shimmer-badge'
+                            : isSilver
+                            ? 'bg-slate-200 hover:bg-slate-300 text-slate-900 border border-slate-300 shadow-sm shimmer-silver-badge'
+                            : isBronze
+                            ? 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-950 border border-amber-400/70 shadow-sm shimmer-bronze-badge'
+                            : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300'
+                        }`}
+                        title="Generate Official AGENTIC_AI_A7 Certificate"
+                      >
+                        <Award className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>Certificate</span>
+                      </button>
+
+                      <button
+                        onClick={() => navigate(`/quiz-sessions/${q.session_id}`)}
+                        className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-xs btn-shimmer transition-all transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Review</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -462,6 +498,25 @@ export const StudentResults: React.FC = () => {
 
           </div>
         )
+      )}
+
+      {/* AGENTIC_AI_A7 Certificate Modal */}
+      {selectedCertificate && (
+        <CertificateModal
+          isOpen={Boolean(selectedCertificate)}
+          onClose={() => setSelectedCertificate(null)}
+          studentName={selectedCertificate.studentName}
+          studentReg={selectedCertificate.studentReg}
+          studentDepartment={selectedCertificate.studentDepartment}
+          quizTitle={selectedCertificate.quizTitle}
+          rank={selectedCertificate.rank}
+          totalParticipants={selectedCertificate.totalParticipants}
+          score={selectedCertificate.score}
+          maxScore={selectedCertificate.maxScore}
+          percentage={selectedCertificate.percentage}
+          completionDate={selectedCertificate.completionDate}
+          timeTaken={selectedCertificate.timeTaken}
+        />
       )}
 
     </div>
