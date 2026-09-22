@@ -33,7 +33,7 @@ import {
   Volume2,
   RefreshCw
 } from 'lucide-react';
-import { GiftBurstModal, playFirstPrizeFanfare } from '../components/GiftBurstModal';
+import { GiftBurstModal, playFirstPrizeFanfare, playSecondPrizeFanfare, playThirdPrizeFanfare, playPodiumFanfare } from '../components/GiftBurstModal';
 
 // Helper to determine if an answer matches the question's correct answer
 const checkIsCorrect = (q: Question, userAns?: string): boolean => {
@@ -439,12 +439,12 @@ export const StudentQuizLobby: React.FC = () => {
   const leaderboard: QuizLeaderboardEntry[] = resultData?.leaderboard || session?.leaderboard || [];
   const myRank: number = resultData?.rank || (pRecord?.student_id ? leaderboard.find(l => l.student_id === pRecord?.student_id)?.rank : undefined) || pRecord?.rank || 1;
 
-  // Automatically trigger celebration burst and victory sound for 1st rank
+  // Automatically trigger celebration burst and victory sound for podium ranks (1st, 2nd, 3rd)
   useEffect(() => {
-    if (stage === 'RESULTS' && myRank === 1 && !hasBurstTriggeredRef.current) {
+    if (stage === 'RESULTS' && (myRank === 1 || myRank === 2 || myRank === 3) && !hasBurstTriggeredRef.current) {
       hasBurstTriggeredRef.current = true;
       setShowGiftBurst(true);
-      playFirstPrizeFanfare();
+      playPodiumFanfare(myRank);
     }
   }, [stage, myRank]);
 
@@ -1455,48 +1455,81 @@ export const StudentQuizLobby: React.FC = () => {
             {/* Top 3 Podium Cards */}
             {leaderboard.length >= 3 && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                {/* 2nd Place */}
-                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 text-center order-2 sm:order-1 flex flex-col justify-between">
+                {/* 2nd Place - Silver Runner-Up */}
+                <div 
+                  onClick={() => {
+                    if (pRecord?.student_id === leaderboard[1].student_id) {
+                      setShowGiftBurst(true);
+                      playSecondPrizeFanfare();
+                    }
+                  }}
+                  className="bg-gradient-to-br from-slate-100 via-white to-sky-50 rounded-2xl border-2 border-slate-300 hover:border-sky-300 p-4 text-center order-2 sm:order-1 flex flex-col justify-between shadow-xs animate-silver-glow cursor-pointer transition-all transform hover:-translate-y-1 group"
+                  title={pRecord?.student_id === leaderboard[1].student_id ? "Click to replay your 2nd Place Silver celebration!" : "2nd Place Silver Medalist"}
+                >
                   <div>
-                    <span className="text-2xl">🥈</span>
-                    <p className="text-[11px] uppercase font-black text-slate-400 mt-1">2nd Place</p>
-                    <p className="font-extrabold text-slate-900 text-xs mt-1 truncate">{leaderboard[1].student_name}</p>
-                    <p className="text-[10px] text-slate-400 font-mono truncate">{leaderboard[1].student_department}</p>
+                    <span className="text-3xl inline-block animate-silver-float select-none group-hover:scale-110 transition-transform">🥈</span>
+                    <p className="text-[11px] uppercase font-black text-slate-700 mt-1 flex items-center justify-center space-x-1 shimmer-silver-badge px-2.5 py-0.5 rounded-full bg-slate-200/70 max-w-[140px] mx-auto">
+                      <Medal className="w-3.5 h-3.5 text-slate-700 shrink-0" />
+                      <span>2nd Runner-Up</span>
+                    </p>
+                    <p className="font-extrabold text-slate-900 text-xs mt-1.5 truncate">{leaderboard[1].student_name}</p>
+                    <p className="text-[10px] text-slate-500 font-mono truncate">{leaderboard[1].student_department}</p>
                   </div>
-                  <div className="mt-3 pt-2 border-t border-slate-200">
-                    <span className="font-black text-slate-800 text-sm">{leaderboard[1].score} pts</span>
-                    <span className="text-[10px] text-slate-400 ml-1">({leaderboard[1].time_taken_seconds}s)</span>
+                  <div className="mt-3 pt-2 border-t border-slate-200/80">
+                    <span className="font-black text-slate-900 text-sm">{leaderboard[1].score} pts</span>
+                    <span className="text-[10px] text-slate-500 ml-1">({leaderboard[1].time_taken_seconds}s)</span>
                   </div>
                 </div>
 
-                {/* 1st Place Champion */}
-                <div className="bg-gradient-to-br from-amber-500/10 to-amber-500/20 rounded-2xl border-2 border-amber-400 p-5 text-center order-1 sm:order-2 shadow-sm flex flex-col justify-between transform sm:-translate-y-1">
+                {/* 1st Place Champion - Gold Medalist */}
+                <div 
+                  onClick={() => {
+                    if (pRecord?.student_id === leaderboard[0].student_id) {
+                      setShowGiftBurst(true);
+                      playFirstPrizeFanfare();
+                    }
+                  }}
+                  className="bg-gradient-to-br from-amber-500/10 via-amber-400/20 to-yellow-500/20 rounded-2xl border-2 border-amber-400 p-5 text-center order-1 sm:order-2 shadow-md flex flex-col justify-between transform sm:-translate-y-1 animate-champion-glow cursor-pointer transition-all group"
+                  title={pRecord?.student_id === leaderboard[0].student_id ? "Click to replay your 1st Place Gold celebration!" : "1st Place Champion"}
+                >
                   <div>
-                    <span className="text-3xl">🥇</span>
-                    <p className="text-[11px] uppercase font-black text-amber-700 mt-1 flex items-center justify-center space-x-1">
-                      <Crown className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                    <span className="text-4xl inline-block select-none group-hover:scale-110 transition-transform">🥇</span>
+                    <p className="text-[11px] uppercase font-black text-amber-700 mt-1 flex items-center justify-center space-x-1 shimmer-badge px-3 py-0.5 rounded-full bg-amber-200/60 max-w-[130px] mx-auto">
+                      <Crown className="w-3.5 h-3.5 text-amber-600 fill-amber-500 animate-bounce" />
                       <span>Champion</span>
                     </p>
-                    <p className="font-black text-slate-900 text-sm mt-1 truncate">{leaderboard[0].student_name}</p>
+                    <p className="font-black text-slate-900 text-sm mt-1.5 truncate">{leaderboard[0].student_name}</p>
                     <p className="text-[10px] text-amber-800 font-mono truncate">{leaderboard[0].student_department}</p>
                   </div>
-                  <div className="mt-3 pt-2 border-t border-amber-200">
-                    <span className="font-black text-amber-900 text-base">{leaderboard[0].score} pts</span>
-                    <span className="text-[10px] text-amber-700 ml-1">({leaderboard[0].time_taken_seconds}s)</span>
+                  <div className="mt-3 pt-2 border-t border-amber-300/80">
+                    <span className="font-black text-amber-950 text-base">{leaderboard[0].score} pts</span>
+                    <span className="text-[10px] text-amber-800 ml-1">({leaderboard[0].time_taken_seconds}s)</span>
                   </div>
                 </div>
 
-                {/* 3rd Place */}
-                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 text-center order-3 sm:order-3 flex flex-col justify-between">
+                {/* 3rd Place - Bronze Podium Finisher */}
+                <div 
+                  onClick={() => {
+                    if (pRecord?.student_id === leaderboard[2].student_id) {
+                      setShowGiftBurst(true);
+                      playThirdPrizeFanfare();
+                    }
+                  }}
+                  className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/60 rounded-2xl border-2 border-amber-400/70 hover:border-amber-500 p-4 text-center order-3 sm:order-3 flex flex-col justify-between shadow-xs animate-bronze-glow cursor-pointer transition-all transform hover:-translate-y-1 group"
+                  title={pRecord?.student_id === leaderboard[2].student_id ? "Click to replay your 3rd Place Bronze celebration!" : "3rd Place Bronze Finisher"}
+                >
                   <div>
-                    <span className="text-2xl">🥉</span>
-                    <p className="text-[11px] uppercase font-black text-slate-400 mt-1">3rd Place</p>
-                    <p className="font-extrabold text-slate-900 text-xs mt-1 truncate">{leaderboard[2].student_name}</p>
-                    <p className="text-[10px] text-slate-400 font-mono truncate">{leaderboard[2].student_department}</p>
+                    <span className="text-3xl inline-block animate-bronze-float select-none group-hover:scale-110 transition-transform">🥉</span>
+                    <p className="text-[11px] uppercase font-black text-amber-900 mt-1 flex items-center justify-center space-x-1 shimmer-bronze-badge px-2.5 py-0.5 rounded-full bg-amber-100/80 max-w-[140px] mx-auto">
+                      <Award className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                      <span>3rd Finisher</span>
+                    </p>
+                    <p className="font-extrabold text-slate-900 text-xs mt-1.5 truncate">{leaderboard[2].student_name}</p>
+                    <p className="text-[10px] text-slate-500 font-mono truncate">{leaderboard[2].student_department}</p>
                   </div>
-                  <div className="mt-3 pt-2 border-t border-slate-200">
-                    <span className="font-black text-slate-800 text-sm">{leaderboard[2].score} pts</span>
-                    <span className="text-[10px] text-slate-400 ml-1">({leaderboard[2].time_taken_seconds}s)</span>
+                  <div className="mt-3 pt-2 border-t border-amber-200/80">
+                    <span className="font-black text-slate-900 text-sm">{leaderboard[2].score} pts</span>
+                    <span className="text-[10px] text-slate-500 ml-1">({leaderboard[2].time_taken_seconds}s)</span>
                   </div>
                 </div>
               </div>
@@ -1556,11 +1589,12 @@ export const StudentQuizLobby: React.FC = () => {
         </button>
       </div>
 
-      {/* 1st Place Champion Gift Burst Celebration */}
+      {/* 1st, 2nd, or 3rd Place Podium Celebration Modal */}
       <GiftBurstModal
         isOpen={showGiftBurst}
         onClose={() => setShowGiftBurst(false)}
         quizTitle={session?.title || "Quiz Session"}
+        rank={myRank}
         score={earnedScore}
         maxScore={maxScore}
         accuracy={accuracyPercentage}

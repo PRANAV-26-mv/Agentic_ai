@@ -238,6 +238,8 @@ export const StudentResults: React.FC = () => {
           <div className="space-y-4">
             {quizResults.map((q) => {
               const isChampion = q.rank === 1;
+              const isSilver = q.rank === 2;
+              const isBronze = q.rank === 3;
               const isPodium = q.rank <= 3;
               return (
                 <div 
@@ -245,6 +247,10 @@ export const StudentResults: React.FC = () => {
                   className={`rounded-2xl p-4 sm:p-6 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 card-interactive animate-fade-in-up ${
                     isChampion
                       ? 'bg-gradient-to-r from-amber-50/70 via-white to-amber-50/50 border-2 border-amber-400/90 shadow-md animate-champion-glow'
+                      : isSilver
+                      ? 'bg-gradient-to-r from-slate-100/80 via-white to-sky-50/40 border-2 border-slate-300 shadow-sm animate-silver-glow'
+                      : isBronze
+                      ? 'bg-gradient-to-r from-amber-50/70 via-white to-orange-50/40 border-2 border-amber-400/70 shadow-sm animate-bronze-glow'
                       : isPodium
                       ? 'bg-white border border-amber-200/80 shadow-xs hover:border-amber-300'
                       : 'bg-white border border-slate-200 shadow-xs hover:border-slate-300'
@@ -255,7 +261,17 @@ export const StudentResults: React.FC = () => {
                       {isChampion ? (
                         <span className="bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center space-x-1 shadow-xs shimmer-badge">
                           <Crown className="w-3 h-3 text-slate-950 fill-slate-950 animate-bounce" />
-                          <span>CHAMPION #1</span>
+                          <span>CHAMPION #1 🥇</span>
+                        </span>
+                      ) : isSilver ? (
+                        <span className="bg-gradient-to-r from-slate-200 to-sky-200 text-slate-900 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center space-x-1 shadow-xs shimmer-silver-badge">
+                          <Medal className="w-3 h-3 text-slate-800 fill-slate-300 animate-silver-float" />
+                          <span>SILVER RUNNER-UP #2 🥈</span>
+                        </span>
+                      ) : isBronze ? (
+                        <span className="bg-gradient-to-r from-amber-600/20 to-orange-500/20 text-amber-950 border border-amber-400/60 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center space-x-1 shadow-xs shimmer-bronze-badge">
+                          <Award className="w-3 h-3 text-amber-700 fill-amber-500 animate-bronze-float" />
+                          <span>BRONZE PODIUM #3 🥉</span>
                         </span>
                       ) : (
                         <span className="bg-purple-100 text-purple-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center space-x-1">
@@ -297,17 +313,21 @@ export const StudentResults: React.FC = () => {
                         {q.score} / {q.max_score} <span className="text-xs text-slate-400 font-normal">pts</span>
                       </p>
                       <p className="text-xs font-bold text-emerald-600">{q.percentage}% Accuracy</p>
-                      <div className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[11px] font-black ${
+                      <div className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md text-[11px] font-black ${
                         isChampion
                           ? 'bg-amber-400 text-slate-950 shadow-xs'
-                          : q.rank === 2
-                          ? 'bg-slate-200 text-slate-800 border border-slate-300'
-                          : q.rank === 3
-                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                          : isSilver
+                          ? 'bg-gradient-to-r from-slate-200 to-sky-100 text-slate-900 border border-slate-300 shadow-xs'
+                          : isBronze
+                          ? 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-950 border border-amber-300 shadow-xs'
                           : 'bg-amber-50 text-amber-900 border border-amber-200'
                       }`}>
                         {isChampion ? (
                           <Crown className="w-3 h-3 text-slate-950 fill-slate-950 animate-bounce" />
+                        ) : isSilver ? (
+                          <Medal className="w-3 h-3 text-slate-700 fill-slate-300 shrink-0" />
+                        ) : isBronze ? (
+                          <Award className="w-3 h-3 text-amber-700 fill-amber-500 shrink-0" />
                         ) : (
                           <Trophy className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
                         )}

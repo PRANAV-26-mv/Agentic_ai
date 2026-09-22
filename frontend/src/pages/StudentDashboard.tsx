@@ -14,7 +14,8 @@ import {
   MessageSquare,
   Trophy,
   Crown,
-  Zap
+  Zap,
+  Medal
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GiftBurstModal } from '../components/GiftBurstModal';
@@ -30,30 +31,43 @@ export const StudentDashboard: React.FC = () => {
   const [showGiftBurst, setShowGiftBurst] = useState<boolean>(false);
 
   useEffect(() => {
-    Promise.all([
-      api.get('/assessments'),
-      api.get('/materials'),
-      api.get('/attendance'),
-      api.get('/results'),
-      api.get('/quiz-sessions')
-    ]).then(([assRes, matRes, attRes, resRes, quizRes]) => {
-      setAssessments(assRes.data);
-      setMaterials(matRes.data);
-      setAttendanceStats(attRes.data);
-      setCompletedResults(resRes.data);
-      setQuizSessions(quizRes.data || []);
-    }).catch(err => console.error(err))
+    // 1. Fetch assessments
+    api.get('/assessments')
+      .then(res => setAssessments(res.data))
+      .catch(err => console.error(err));
+
+    // 2. Fetch learning materials
+    api.get('/materials')
+      .then(res => setMaterials(res.data.slice(0, 3)))
+      .catch(err => console.error(err));
+
+    // 3. Fetch attendance stats
+    api.get('/attendance/my-stats')
+      .then(res => setAttendanceStats(res.data))
+      .catch(err => console.error(err));
+
+    // 4. Fetch student results
+    api.get('/results')
+      .then(res => setCompletedResults(res.data))
+      .catch(err => console.error(err));
+
+    // 5. Fetch live quiz sessions
+    api.get('/quiz-sessions')
+      .then(res => setQuizSessions(res.data || []))
+      .catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, []);
 
-  const completedCount = completedResults.filter(r => r.status === 'COMPLETED' || r.status === 'AUTO_SUBMITTED').length;
+  const completedCount = completedResults.length;
   const pendingCount = Math.max(0, assessments.length - completedCount);
   const avgScore = completedResults.length > 0
     ? Math.round(completedResults.reduce((acc, curr) => acc + (curr.percentage || 0), 0) / completedResults.length)
     : 85;
 
-  // Check if student attended and won 1st place in any live quiz
-  const championQuiz = quizSessions.find(q => q.my_rank === 1);
+  // Check if student attended and secured a podium spot (1st, 2nd, or 3rd) in any live quiz
+  const podiumQuiz = quizSessions.find(q => q.my_rank === 1) ||
+                     quizSessions.find(q => q.my_rank === 2) ||
+                     quizSessions.find(q => q.my_rank === 3);
 
   if (loading) {
     return (
@@ -99,47 +113,95 @@ export const StudentDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Champion Victory Banner (When student won 1st place in a live quiz) */}
-      {championQuiz && (
-        <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 border-2 border-amber-400/80 rounded-2xl p-5 sm:p-6 shadow-2xl relative overflow-hidden animate-champion-glow animate-fade-in-up stagger-1">
-          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-amber-400/10 blur-2xl pointer-events-none animate-float" />
+      {/* Podium Victory Banner (When student won 1st, 2nd, or 3rd place in a live quiz) */}
+      {podiumQuiz && (
+        <div className={`border-2 rounded-2xl p-5 sm:p-6 shadow-2xl relative overflow-hidden animate-fade-in-up stagger-1 ${
+          podiumQuiz.my_rank === 1
+            ? 'bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 border-amber-400/80 animate-champion-glow'
+            : podiumQuiz.my_rank === 2
+            ? 'bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 border-slate-300/80 animate-silver-glow'
+            : 'bg-gradient-to-r from-amber-950 via-orange-950 to-amber-950 border-amber-500/80 animate-bronze-glow'
+        }`}>
+          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-white/5 blur-2xl pointer-events-none animate-float" />
           
           <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-start sm:items-center space-x-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-300 p-0.5 shadow-lg shadow-amber-500/40 shrink-0">
+              <div className={`w-14 h-14 rounded-2xl p-0.5 shadow-lg shrink-0 ${
+                podiumQuiz.my_rank === 1
+                  ? 'bg-gradient-to-tr from-amber-400 to-yellow-300 shadow-amber-500/40'
+                  : podiumQuiz.my_rank === 2
+                  ? 'bg-gradient-to-tr from-slate-300 to-sky-200 shadow-slate-400/40'
+                  : 'bg-gradient-to-tr from-amber-600 to-orange-400 shadow-orange-500/40'
+              }`}>
                 <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                  <Trophy className="w-7 h-7 text-amber-300 fill-amber-300 filter drop-shadow animate-float" />
+                  {podiumQuiz.my_rank === 1 ? (
+                    <Trophy className="w-7 h-7 text-amber-300 fill-amber-300 filter drop-shadow animate-float" />
+                  ) : podiumQuiz.my_rank === 2 ? (
+                    <Medal className="w-7 h-7 text-slate-200 fill-slate-300 filter drop-shadow animate-silver-float" />
+                  ) : (
+                    <Award className="w-7 h-7 text-amber-400 fill-amber-500 filter drop-shadow animate-bronze-float" />
+                  )}
                 </div>
               </div>
 
               <div>
-                <div className="inline-flex items-center space-x-1.5 bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border border-amber-400/30 mb-1">
-                  <Crown className="w-3 h-3 text-amber-300 fill-amber-300 animate-bounce" />
-                  <span>1st Place Champion Record</span>
+                <div className={`inline-flex items-center space-x-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border mb-1 ${
+                  podiumQuiz.my_rank === 1
+                    ? 'bg-amber-400/20 text-amber-300 border-amber-400/30'
+                    : podiumQuiz.my_rank === 2
+                    ? 'bg-sky-400/20 text-sky-200 border-sky-400/30 shimmer-silver-badge'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30 shimmer-bronze-badge'
+                }`}>
+                  {podiumQuiz.my_rank === 1 ? (
+                    <>
+                      <Crown className="w-3 h-3 text-amber-300 fill-amber-300 animate-bounce" />
+                      <span>1st Place Champion Record 🥇</span>
+                    </>
+                  ) : podiumQuiz.my_rank === 2 ? (
+                    <>
+                      <Medal className="w-3 h-3 text-sky-300 animate-silver-float" />
+                      <span>2nd Place Silver Podium Record 🥈</span>
+                    </>
+                  ) : (
+                    <>
+                      <Award className="w-3 h-3 text-amber-400 animate-bronze-float" />
+                      <span>3rd Place Bronze Podium Record 🥉</span>
+                    </>
+                  )}
                 </div>
                 <h3 className="text-lg font-black text-white">
-                  You Won 1st Place in {championQuiz.title}! 🥇
+                  {podiumQuiz.my_rank === 1 && `You Won 1st Place in ${podiumQuiz.title}! 🥇`}
+                  {podiumQuiz.my_rank === 2 && `You Won 2nd Place in ${podiumQuiz.title}! 🥈`}
+                  {podiumQuiz.my_rank === 3 && `You Won 3rd Place in ${podiumQuiz.title}! 🥉`}
                 </h3>
-                <p className="text-xs text-amber-200/80 mt-0.5">
-                  Top Score: <strong className="text-white">{championQuiz.my_score} / {championQuiz.my_max_score} pts</strong> ({championQuiz.my_percentage}%) • Ranked #1 among your cohort
+                <p className="text-xs text-slate-200/90 mt-0.5">
+                  Score: <strong className="text-white">{podiumQuiz.my_score} / {podiumQuiz.my_max_score} pts</strong> ({podiumQuiz.my_percentage}%) • Ranked #{podiumQuiz.my_rank} on the cohort winners podium
                 </p>
               </div>
             </div>
 
             <button
               onClick={() => setShowGiftBurst(true)}
-              className="px-5 py-2.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/40 cursor-pointer transform hover:scale-105 active:scale-95 transition-all inline-flex items-center space-x-2 shrink-0 shimmer-badge btn-shimmer"
+              className={`px-5 py-2.5 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg cursor-pointer transform hover:scale-105 active:scale-95 transition-all inline-flex items-center space-x-2 shrink-0 btn-shimmer ${
+                podiumQuiz.my_rank === 1
+                  ? 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-500 hover:to-yellow-400 text-slate-950 shadow-amber-500/40 shimmer-badge'
+                  : podiumQuiz.my_rank === 2
+                  ? 'bg-gradient-to-r from-slate-200 via-sky-100 to-slate-200 hover:from-slate-300 hover:to-sky-200 text-slate-950 shadow-sky-400/40 shimmer-silver-badge'
+                  : 'bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 hover:from-amber-700 hover:to-orange-600 text-white shadow-orange-500/40 shimmer-bronze-badge'
+              }`}
             >
               <span className="text-base animate-gift-wobble">🎁</span>
-              <span>Open Champion Gift Burst</span>
-              <Sparkles className="w-3.5 h-3.5 text-slate-950 animate-sparkle-spin" />
+              <span>
+                {podiumQuiz.my_rank === 1 ? 'Open Champion Gift Burst' : podiumQuiz.my_rank === 2 ? 'Open Silver Reward Burst' : 'Open Bronze Reward Burst'}
+              </span>
+              <Sparkles className={`w-3.5 h-3.5 animate-sparkle-spin ${podiumQuiz.my_rank === 3 ? 'text-white' : 'text-slate-950'}`} />
             </button>
           </div>
         </div>
       )}
 
-      {/* Live Quiz Callout Banner if an active session exists and student isn't champion yet */}
-      {!championQuiz && quizSessions.some(q => q.status === 'ACTIVE') && (
+      {/* Live Quiz Callout Banner if an active session exists and student isn't on podium yet */}
+      {!podiumQuiz && quizSessions.some(q => q.status === 'ACTIVE') && (
         <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-purple-500/15 border border-amber-300/80 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 animate-pulse-glow animate-fade-in-up stagger-1 shadow-sm">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 bg-amber-500 text-white rounded-xl shadow-md animate-bounce">
@@ -322,17 +384,18 @@ export const StudentDashboard: React.FC = () => {
 
       </div>
 
-      {/* 1st Place Champion Gift Burst Modal */}
-      {championQuiz && (
+      {/* Podium Celebration Gift Burst Modal */}
+      {podiumQuiz && (
         <GiftBurstModal
           isOpen={showGiftBurst}
           onClose={() => setShowGiftBurst(false)}
-          quizTitle={championQuiz.title}
-          score={championQuiz.my_score}
-          maxScore={championQuiz.my_max_score}
-          accuracy={championQuiz.my_percentage}
-          timeTaken={championQuiz.my_time_taken_seconds ? `${Math.floor(championQuiz.my_time_taken_seconds / 60)}m ${championQuiz.my_time_taken_seconds % 60}s` : undefined}
-          totalParticipants={championQuiz.participant_count || 1}
+          quizTitle={podiumQuiz.title}
+          rank={podiumQuiz.my_rank}
+          score={podiumQuiz.my_score}
+          maxScore={podiumQuiz.my_max_score}
+          accuracy={podiumQuiz.my_percentage}
+          timeTaken={podiumQuiz.my_time_taken_seconds ? `${Math.floor(podiumQuiz.my_time_taken_seconds / 60)}m ${podiumQuiz.my_time_taken_seconds % 60}s` : undefined}
+          totalParticipants={podiumQuiz.participant_count || 1}
         />
       )}
 
