@@ -4,6 +4,7 @@ import {
   MeetingParticipantsModel, 
   MeetingSettingsModel, 
   AdminsModel, 
+  StudentsModel,
   NotificationsModel, 
   AuditLogsModel,
   MeetingAudienceType
@@ -28,6 +29,36 @@ const requireSuperAdminOnly = (req: AuthRequest, res: Response, next: any) => {
   }
   next();
 };
+
+// Directory of members (Students & Admins) for instant invitation
+router.get('/directory/members', requireAuth, (_req: AuthRequest, res: Response) => {
+  try {
+    const students = StudentsModel.findAll({ status: 'ACTIVE' }).map(s => ({
+      id: s.id,
+      name: s.name,
+      email: s.email,
+      department: s.department,
+      year: s.year,
+      student_id: s.student_id,
+      role: 'STUDENT' as const
+    }));
+
+    const admins = AdminsModel.findAll().map(a => ({
+      id: a.id,
+      name: a.name,
+      email: a.email,
+      department: a.department,
+      role: 'ADMIN' as const
+    }));
+
+    res.json({
+      students,
+      admins
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Failed to fetch directory members.' });
+  }
+});
 
 // 1. GET /api/meetings (List meetings visible to current user)
 router.get('/', requireAuth, (req: AuthRequest, res: Response) => {
@@ -192,7 +223,8 @@ router.post('/', requireAdmin, (req: AuthRequest, res: Response): void => {
       allow_screen_share = true,
       allow_student_chat = true,
       mute_on_entry = false,
-      external_link
+      external_link,
+      invited_members
     } = req.body;
 
     if (!title || !title.trim()) {
@@ -214,6 +246,17 @@ router.post('/', requireAdmin, (req: AuthRequest, res: Response): void => {
     const now = new Date().toISOString();
     const isInstant = status === 'ACTIVE';
 
+    const mappedInvitedMembers = Array.isArray(invited_members) 
+      ? invited_members.map((im: any) => ({
+          id: im.id,
+          name: im.name,
+          email: im.email,
+          role: im.role,
+          department: im.department || '',
+          invited_at: now
+        }))
+      : [];
+
     const newMeeting = MeetingsModel.create({
       title: title.trim(),
       description: description?.trim() || '',
@@ -231,7 +274,8 @@ router.post('/', requireAdmin, (req: AuthRequest, res: Response): void => {
       allow_screen_share: Boolean(allow_screen_share),
       allow_student_chat: Boolean(allow_student_chat),
       mute_on_entry: Boolean(mute_on_entry),
-      external_link: external_link?.trim() || undefined
+      external_link: external_link?.trim() || undefined,
+      invited_members: mappedInvitedMembers
     });
 
     // Notify audience
@@ -379,6 +423,139 @@ router.get('/:id/attendance', requireAdmin, (req: AuthRequest, res: Response): v
     });
   } catch (err: any) {
     res.status(500).json({ message: err.message || 'Failed to fetch attendance.' });
+  }
+});
+
+// 10. POST /api/meetings/:id/invite (Instantly invite specific students or admins)
+router.post('/:id/invite', requireAdmin, (req: AuthRequest, res: Response): void => {
+  try {
+    const id = req.params.id as string;
+    const meeting = MeetingsModel.findById(id);
+    if (!meeting) {
+      res.status(404).json({ message: 'Meeting not found.' });
+      return;
+    }
+
+    const isSuper = isSuperAdminUser(req);
+    const isAdmin = req.user?.role === 'ADMIN';
+    const isHost = meeting.host_id === req.user?.id;
+    if (!isAdmin && !isSuper && !isHost) {
+      res.status(403).json({ message: 'Access Denied: Only administrators or the meeting host can invite members.' });
+      return;
+    }
+
+    const { members } = req.body;
+    if (!Array.isArray(members) || members.length === 0) {
+      res.status(400).json({ message: 'Members array is required.' });
+      return;
+    }
+
+    const updated = MeetingsModel.addInvitedMembers(id, members);
+
+    // Notify each invited member
+    for (const mem of members) {
+      try {
+        NotificationsModel.create({
+          title: `📹 Direct Invite: ${meeting.title}`,
+          message: `Host ${meeting.host_name} personally invited you to join the live meeting now! Meeting Code: ${meeting.code}`,
+          target_type: 'ALL',
+          priority: 'IMPORTANT'
+        });
+      } catch (e) {}
+    }
+
+    AuditLogsModel.log(
+      req.user!.id,
+      'ADMIN',
+      'INVITE_MEETING_MEMBERS',
+      'MEETING',
+      id,
+      { count: members.length, members: members.map((m: any) => m.name) }
+    );
+
+    res.json({
+      message: `${members.length} member(s) invited successfully!`,
+      meeting: updated
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Failed to invite members.' });
+  }
+});
+
+// 11. GET /api/meetings/:id/responses (Track invited members and attendance responses)
+router.get('/:id/responses', requireAdmin, (req: AuthRequest, res: Response): void => {
+  try {
+    const id = req.params.id as string;
+    const meeting = MeetingsModel.findById(id);
+    if (!meeting) {
+      res.status(404).json({ message: 'Meeting not found.' });
+      return;
+    }
+
+    const isSuper = isSuperAdminUser(req);
+    const isAdmin = req.user?.role === 'ADMIN';
+    const isHost = meeting.host_id === req.user?.id;
+    if (!isAdmin && !isSuper && !isHost) {
+      res.status(403).json({ message: 'Access Denied: Only administrators or the meeting host can view responses.' });
+      return;
+    }
+
+    const participants = MeetingParticipantsModel.getParticipants(meeting.id);
+    const invited = meeting.invited_members || [];
+
+    // Map invited members with their live attendance response
+    const responses = invited.map(inv => {
+      const match = participants.find(p => p.user_id === inv.id || p.user_email.toLowerCase() === inv.email.toLowerCase());
+      let status: 'JOINED' | 'LEFT' | 'INVITED' = 'INVITED';
+      if (match) {
+        status = match.left_at ? 'LEFT' : 'JOINED';
+      }
+      return {
+        id: inv.id,
+        name: inv.name,
+        email: inv.email,
+        role: inv.role,
+        department: inv.department || '',
+        status,
+        invited_at: inv.invited_at,
+        joined_at: match?.joined_at || null,
+        left_at: match?.left_at || null,
+        duration_seconds: match?.duration_seconds || null
+      };
+    });
+
+    // Also include any attendee who joined by code/link but wasn't originally in invited_members
+    for (const p of participants) {
+      if (!responses.some(r => r.id === p.user_id || r.email.toLowerCase() === p.user_email.toLowerCase())) {
+        responses.push({
+          id: p.user_id,
+          name: p.user_name,
+          email: p.user_email,
+          role: p.user_role,
+          department: '',
+          status: p.left_at ? 'LEFT' : 'JOINED',
+          invited_at: meeting.created_at,
+          joined_at: p.joined_at,
+          left_at: p.left_at || null,
+          duration_seconds: p.duration_seconds || null
+        });
+      }
+    }
+
+    const joinedCount = responses.filter(r => r.status === 'JOINED').length;
+    const leftCount = responses.filter(r => r.status === 'LEFT').length;
+    const pendingCount = responses.filter(r => r.status === 'INVITED').length;
+
+    res.json({
+      meeting,
+      total_invited: invited.length,
+      total_joined: joinedCount,
+      total_left: leftCount,
+      total_pending: pendingCount,
+      responses
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Failed to fetch responses.' });
   }
 });
 

@@ -327,11 +327,44 @@ export interface Meeting {
   allow_student_chat: boolean;
   mute_on_entry: boolean;
   external_link?: string;
+  invited_members?: InvitedMember[];
   created_at: string;
   updated_at: string;
   total_participants_count?: number;
   active_participants_count?: number;
   is_host?: boolean;
+}
+
+export interface InvitedMember {
+  id: string;
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'STUDENT';
+  department?: string;
+  invited_at?: string;
+}
+
+export interface MemberResponse {
+  id: string;
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'STUDENT';
+  department: string;
+  status: 'JOINED' | 'LEFT' | 'INVITED';
+  invited_at: string;
+  joined_at: string | null;
+  left_at: string | null;
+  duration_seconds: number | null;
+}
+
+export interface DirectoryMember {
+  id: string;
+  name: string;
+  email: string;
+  department: string;
+  year?: number;
+  student_id?: string;
+  role: 'ADMIN' | 'STUDENT';
 }
 
 export interface MeetingParticipant {

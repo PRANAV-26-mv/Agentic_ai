@@ -1,5 +1,5 @@
 import { api } from './api';
-import { Meeting, MeetingSettings, AdminMeetingPermission, MeetingParticipant } from '../types';
+import { Meeting, MeetingSettings, AdminMeetingPermission, MeetingParticipant, DirectoryMember, MemberResponse } from '../types';
 
 export interface CreateMeetingPayload {
   title: string;
@@ -15,11 +15,21 @@ export interface CreateMeetingPayload {
   allow_student_chat?: boolean;
   mute_on_entry?: boolean;
   external_link?: string;
+  invited_members?: Array<{ id: string; name: string; email: string; role: 'ADMIN' | 'STUDENT'; department?: string }>;
 }
 
 export interface SuperMeetingSettingsResponse {
   settings: MeetingSettings;
   admins: AdminMeetingPermission[];
+}
+
+export interface MeetingResponsesResponse {
+  meeting: Meeting;
+  total_invited: number;
+  total_joined: number;
+  total_left: number;
+  total_pending: number;
+  responses: MemberResponse[];
 }
 
 export const meetingService = {
@@ -55,6 +65,21 @@ export const meetingService = {
 
   async getMeetingAttendance(id: string): Promise<{ meeting: Meeting; total_attended: number; participants: MeetingParticipant[] }> {
     const res = await api.get(`/meetings/${id}/attendance`);
+    return res.data;
+  },
+
+  async getDirectoryMembers(): Promise<{ students: DirectoryMember[]; admins: DirectoryMember[] }> {
+    const res = await api.get('/meetings/directory/members');
+    return res.data;
+  },
+
+  async inviteMembers(meetingId: string, members: Array<{ id: string; name: string; email: string; role: 'ADMIN' | 'STUDENT'; department?: string }>): Promise<{ message: string; meeting: Meeting }> {
+    const res = await api.post(`/meetings/${meetingId}/invite`, { members });
+    return res.data;
+  },
+
+  async getMeetingResponses(meetingId: string): Promise<MeetingResponsesResponse> {
+    const res = await api.get(`/meetings/${meetingId}/responses`);
     return res.data;
   },
 

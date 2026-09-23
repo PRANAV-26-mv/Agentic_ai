@@ -23,10 +23,71 @@ import {
   Minimize2, 
   Crown,
   Sparkles,
-  Radio
+  Radio,
+  UserPlus,
+  Search
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useWebRTCMeeting, RemotePeer } from '../hooks/useWebRTCMeeting';
+import { meetingService } from '../services/meetingService';
+import { DirectoryMember } from '../types';
+
+// ==========================================
+// BULLETPROOF VIDEO PLAYER COMPONENT
+// ==========================================
+export const VideoPlayer: React.FC<{
+  stream: MediaStream | null;
+  muted?: boolean;
+  mirror?: boolean;
+  className?: string;
+}> = ({ stream, muted = false, mirror = false, className = '' }) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    let isSubscribed = true;
+
+    if (stream) {
+      video.muted = muted;
+      video.defaultMuted = muted;
+      video.srcObject = stream;
+
+      const attemptPlay = () => {
+        if (!isSubscribed) return;
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            console.warn('Video element play notice:', err);
+          });
+        }
+      };
+
+      video.addEventListener('loadedmetadata', attemptPlay);
+      video.addEventListener('canplay', attemptPlay);
+      attemptPlay();
+
+      return () => {
+        isSubscribed = false;
+        video.removeEventListener('loadedmetadata', attemptPlay);
+        video.removeEventListener('canplay', attemptPlay);
+      };
+    } else {
+      video.srcObject = null;
+    }
+  }, [stream, muted]);
+
+  return (
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      muted={muted}
+      className={`w-full h-full object-cover ${mirror ? 'transform -scale-x-100' : ''} ${className}`}
+    />
+  );
+};
 
 export const MeetingRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -74,39 +135,24 @@ export const MeetingRoom: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [showEndModal, setShowEndModal] = useState(false);
-  const [lobbyStreamStarted, setLobbyStreamStarted] = useState(false);
 
-  // DOM Refs
-  const localVideoRef = useRef<HTMLVideoElement | null>(null);
-  const lobbyVideoRef = useRef<HTMLVideoElement | null>(null);
-  const screenShareVideoRef = useRef<HTMLVideoElement | null>(null);
+  // Instant Add Member / Invite Modal State
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [directorySearch, setDirectorySearch] = useState('');
+  const [directoryTab, setDirectoryTab] = useState<'ALL' | 'STUDENT' | 'ADMIN'>('ALL');
+  const [directoryMembers, setDirectoryMembers] = useState<{ students: DirectoryMember[]; admins: DirectoryMember[] }>({ students: [], admins: [] });
+  const [loadingDirectory, setLoadingDirectory] = useState(false);
+  const [invitedMemberIds, setInvitedMemberIds] = useState<string[]>([]);
+  const [inviteSuccessMsg, setInviteSuccessMsg] = useState<string | null>(null);
+
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
 
-  // Initialize camera preview in pre-join lobby
+  // Initialize camera preview in pre-join lobby on load
   useEffect(() => {
-    if (!isJoined && !lobbyStreamStarted) {
-      initLocalStream(true, true).then(stream => {
-        if (stream && lobbyVideoRef.current) {
-          lobbyVideoRef.current.srcObject = stream;
-        }
-        setLobbyStreamStarted(true);
-      });
+    if (!isJoined) {
+      initLocalStream(true, true);
     }
-  }, [isJoined, lobbyStreamStarted, initLocalStream]);
-
-  // Connect local video element once joined
-  useEffect(() => {
-    if (isJoined && localStream && localVideoRef.current) {
-      localVideoRef.current.srcObject = localStream;
-    }
-  }, [isJoined, localStream, localVideoEnabled]);
-
-  // Connect screen share video element
-  useEffect(() => {
-    if (isScreenSharing && screenStream && screenShareVideoRef.current) {
-      screenShareVideoRef.current.srcObject = screenStream;
-    }
-  }, [isScreenSharing, screenStream]);
+  }, [isJoined, initLocalStream]);
 
   // Elapsed timer once joined
   useEffect(() => {
@@ -123,6 +169,32 @@ export const MeetingRoom: React.FC = () => {
       chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages, activeDrawer]);
+
+  // Load directory members for instant invite
+  const handleOpenInviteModal = async () => {
+    setShowInviteModal(true);
+    setLoadingDirectory(true);
+    try {
+      const data = await meetingService.getDirectoryMembers();
+      setDirectoryMembers(data);
+    } catch (err) {
+      console.warn('Failed to load directory members:', err);
+    } finally {
+      setLoadingDirectory(false);
+    }
+  };
+
+  const handleInviteSingleMember = async (member: DirectoryMember) => {
+    if (!meeting?.id) return;
+    try {
+      await meetingService.inviteMembers(meeting.id, [member]);
+      setInvitedMemberIds(prev => [...prev, member.id]);
+      setInviteSuccessMsg(`Invitation sent to ${member.name}!`);
+      setTimeout(() => setInviteSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to send invitation.');
+    }
+  };
 
   const formatTimer = (totalSec: number) => {
     const hrs = Math.floor(totalSec / 3600);
@@ -173,9 +245,24 @@ export const MeetingRoom: React.FC = () => {
     navigate(user?.role === 'ADMIN' ? '/admin/meetings' : '/meetings');
   };
 
-  // Find if any peer is sharing screen
+  // Screen share check
   const screenSharingPeer = peers.find(p => p.isScreenSharing);
   const activeScreenShareStream = isScreenSharing ? screenStream : screenSharingPeer?.stream;
+
+  // Filtered members for invite search
+  const allMembers = [...directoryMembers.admins, ...directoryMembers.students];
+  const filteredMembers = allMembers.filter(m => {
+    if (directoryTab === 'STUDENT' && m.role !== 'STUDENT') return false;
+    if (directoryTab === 'ADMIN' && m.role !== 'ADMIN') return false;
+    const q = directorySearch.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      m.name.toLowerCase().includes(q) ||
+      m.email.toLowerCase().includes(q) ||
+      m.department.toLowerCase().includes(q) ||
+      (m.student_id && m.student_id.toLowerCase().includes(q))
+    );
+  });
 
   // ==========================================
   // 1. PRE-JOIN LOBBY SCREEN (GOOGLE MEET STYLE)
@@ -192,13 +279,13 @@ export const MeetingRoom: React.FC = () => {
           <div className="text-center space-y-2">
             <div className="inline-flex items-center space-x-2 px-3 py-1 bg-purple-900/40 border border-purple-500/30 rounded-full text-xs font-semibold text-purple-300">
               <Radio className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
-              <span>Portal Live Meeting Engine</span>
+              <span>Portal Live Collaboration Meeting</span>
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
               Ready to Join?
             </h1>
             <p className="text-sm text-slate-400">
-              Check your camera, microphone, and preview before entering the session.
+              Your camera preview and microphone volume level are shown below.
             </p>
           </div>
 
@@ -213,33 +300,56 @@ export const MeetingRoom: React.FC = () => {
             {/* Camera Preview Tile */}
             <div className="md:col-span-7 flex flex-col items-center space-y-4">
               <div className="relative w-full aspect-video bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl shadow-purple-950/20 flex items-center justify-center">
-                {localVideoEnabled ? (
-                  <video
-                    ref={lobbyVideoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover transform -scale-x-100"
+                {localVideoEnabled && localStream && localStream.getVideoTracks().length > 0 ? (
+                  <VideoPlayer
+                    stream={localStream}
+                    muted={true}
+                    mirror={true}
                   />
                 ) : (
-                  <div className="flex flex-col items-center space-y-3">
+                  <div className="flex flex-col items-center space-y-3 p-6 text-center">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
                       {user?.name?.charAt(0).toUpperCase() || 'U'}
                     </div>
-                    <span className="text-xs font-medium text-slate-400">Camera is turned off</span>
+                    <span className="text-xs font-medium text-slate-400">
+                      {localVideoEnabled ? 'Camera input connecting...' : 'Camera is turned off'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={toggleVideo}
+                      className="px-3.5 py-1.5 bg-purple-600/90 hover:bg-purple-600 text-white rounded-xl text-xs font-bold shadow-lg transition-transform hover:scale-105"
+                    >
+                      {localVideoEnabled ? 'Retry Camera' : 'Turn On Camera'}
+                    </button>
                   </div>
                 )}
 
                 {/* Mic Volume Level Meter Indicator */}
-                {localAudioEnabled && (
-                  <div className="absolute top-4 left-4 flex items-center space-x-1.5 px-3 py-1 bg-slate-950/70 backdrop-blur-md rounded-full border border-slate-700/50">
-                    <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <div className="w-12 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                {localAudioEnabled ? (
+                  <div 
+                    onClick={toggleAudio}
+                    className="absolute top-4 left-4 flex items-center space-x-2 px-3 py-1.5 bg-slate-950/85 backdrop-blur-md rounded-full border border-slate-700/60 shadow-lg cursor-pointer hover:border-slate-500 transition-colors"
+                    title="Microphone active. Click to mute."
+                  >
+                    <Volume2 className={`w-4 h-4 ${micVolume > 5 ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
+                    <div className="w-16 h-2 bg-slate-800 rounded-full overflow-hidden p-0.5">
                       <div 
-                        className="h-full bg-emerald-400 rounded-full transition-all duration-75"
-                        style={{ width: `${Math.max(5, micVolume)}%` }}
+                        className={`h-full rounded-full transition-all duration-75 ${micVolume > 5 ? 'bg-emerald-400' : 'bg-slate-600'}`}
+                        style={{ width: `${Math.max(10, micVolume)}%` }}
                       />
                     </div>
+                    <span className={`text-[10px] font-mono font-bold ${micVolume > 5 ? 'text-emerald-300' : 'text-slate-400'}`}>
+                      {micVolume > 5 ? `${micVolume}%` : 'Mic Ready'}
+                    </span>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={toggleAudio}
+                    className="absolute top-4 left-4 flex items-center space-x-2 px-3 py-1.5 bg-rose-950/85 backdrop-blur-md rounded-full border border-rose-500/40 shadow-lg cursor-pointer hover:bg-rose-900/80 transition-colors"
+                    title="Microphone is muted. Click to unmute."
+                  >
+                    <MicOff className="w-3.5 h-3.5 text-rose-400" />
+                    <span className="text-[10px] font-semibold text-rose-300">Mic Muted</span>
                   </div>
                 )}
 
@@ -247,7 +357,7 @@ export const MeetingRoom: React.FC = () => {
                 <div className="absolute bottom-4 inset-x-0 flex items-center justify-center space-x-3">
                   <button
                     onClick={toggleAudio}
-                    className={`p-3 rounded-full transition-all duration-200 backdrop-blur-md shadow-lg ${
+                    className={`p-3.5 rounded-full transition-all duration-200 backdrop-blur-md shadow-xl ${
                       localAudioEnabled 
                         ? 'bg-slate-800/90 text-white hover:bg-slate-700' 
                         : 'bg-rose-600 text-white hover:bg-rose-500 ring-2 ring-rose-400/50'
@@ -258,7 +368,7 @@ export const MeetingRoom: React.FC = () => {
                   </button>
                   <button
                     onClick={toggleVideo}
-                    className={`p-3 rounded-full transition-all duration-200 backdrop-blur-md shadow-lg ${
+                    className={`p-3.5 rounded-full transition-all duration-200 backdrop-blur-md shadow-xl ${
                       localVideoEnabled 
                         ? 'bg-slate-800/90 text-white hover:bg-slate-700' 
                         : 'bg-rose-600 text-white hover:bg-rose-500 ring-2 ring-rose-400/50'
@@ -276,10 +386,10 @@ export const MeetingRoom: React.FC = () => {
               <div className="p-6 bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl space-y-4 shadow-xl">
                 <div>
                   <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider">
-                    Meeting Details
+                    Meeting Session
                   </span>
                   <h2 className="text-xl font-bold text-white mt-1">
-                    {meeting?.title || 'Live Collaboration Session'}
+                    {meeting?.title || 'Interactive Video Conference'}
                   </h2>
                   {meeting?.description && (
                     <p className="text-xs text-slate-400 mt-1 line-clamp-2">{meeting.description}</p>
@@ -307,11 +417,22 @@ export const MeetingRoom: React.FC = () => {
                   <button
                     onClick={joinMeetingRoom}
                     disabled={loading}
-                    className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold text-white shadow-xl shadow-purple-900/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
+                    className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold text-white shadow-xl shadow-purple-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
                   >
                     <Sparkles className="w-5 h-5 text-amber-300" />
                     <span>Join Now</span>
                   </button>
+
+                  {/* Pre-Join Instant Invite Trigger */}
+                  {(isHost || user?.role === 'ADMIN') && (
+                    <button
+                      onClick={handleOpenInviteModal}
+                      className="w-full py-2.5 px-4 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 text-purple-200 text-xs font-bold flex items-center justify-center space-x-2 transition-all shadow-md"
+                    >
+                      <UserPlus className="w-4 h-4 text-purple-400" />
+                      <span>+ Invite Students or Admins</span>
+                    </button>
+                  )}
 
                   <button
                     onClick={() => navigate(user?.role === 'ADMIN' ? '/admin/meetings' : '/meetings')}
@@ -343,6 +464,16 @@ export const MeetingRoom: React.FC = () => {
         </div>
       )}
 
+      {/* Invite Success Toast */}
+      {inviteSuccessMsg && (
+        <div className="absolute top-16 right-6 z-50 animate-in fade-in slide-in-from-top-4 duration-200">
+          <div className="px-4 py-2.5 bg-emerald-600 text-white rounded-2xl font-bold text-xs flex items-center space-x-2 shadow-2xl">
+            <Check className="w-4 h-4" />
+            <span>{inviteSuccessMsg}</span>
+          </div>
+        </div>
+      )}
+
       {/* Top Header Bar */}
       <header className="h-14 px-4 sm:px-6 bg-[#1b1b20] border-b border-slate-800/60 flex items-center justify-between z-20 shrink-0">
         <div className="flex items-center space-x-3">
@@ -365,7 +496,17 @@ export const MeetingRoom: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          {/* Add People / Invite Button */}
+          <button
+            onClick={handleOpenInviteModal}
+            className="px-3 py-1.5 bg-purple-600/90 hover:bg-purple-600 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors shadow-md"
+            title="Invite Students or Admins"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Add People</span>
+          </button>
+
           {/* Elapsed Duration Clock */}
           <div className="px-3 py-1 bg-slate-800/50 rounded-full text-xs font-mono text-slate-300 border border-slate-700/40">
             {formatTimer(elapsedSeconds)}
@@ -390,15 +531,10 @@ export const MeetingRoom: React.FC = () => {
             <div className="w-full h-full flex flex-col lg:flex-row gap-3">
               {/* Main Presentation Screen */}
               <div className="flex-1 h-full bg-black rounded-2xl overflow-hidden border border-purple-500/30 relative flex items-center justify-center">
-                <video
-                  ref={screenShareVideoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-contain"
-                />
-                <div className="absolute top-3 left-3 px-3 py-1 bg-purple-950/80 backdrop-blur-md rounded-full border border-purple-500/40 text-xs font-semibold text-purple-300 flex items-center space-x-1.5">
+                <VideoPlayer stream={activeScreenShareStream} muted={false} />
+                <div className="absolute top-3 left-3 px-3 py-1 bg-purple-950/80 backdrop-blur-md rounded-full border border-purple-500/40 text-xs font-semibold text-purple-300 flex items-center space-x-1.5 shadow-lg">
                   <ScreenShare className="w-3.5 h-3.5" />
-                  <span>{isScreenSharing ? 'You are sharing your screen' : `${screenSharingPeer?.userName} is presenting`}</span>
+                  <span>{isScreenSharing ? 'You are presenting' : `${screenSharingPeer?.userName} is presenting`}</span>
                 </div>
               </div>
 
@@ -406,8 +542,8 @@ export const MeetingRoom: React.FC = () => {
               <div className="w-full lg:w-64 flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto shrink-0 max-h-40 lg:max-h-full">
                 {/* Local User Mini Tile */}
                 <div className="w-40 lg:w-full aspect-video bg-slate-900 rounded-xl overflow-hidden border border-slate-800 relative shrink-0">
-                  {localVideoEnabled ? (
-                    <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
+                  {localVideoEnabled && localStream ? (
+                    <VideoPlayer stream={localStream} muted={true} mirror={true} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-slate-800 text-xs font-bold text-slate-300">You</div>
                   )}
@@ -431,13 +567,11 @@ export const MeetingRoom: React.FC = () => {
             }`}>
               {/* Local Participant Tile */}
               <div className="relative w-full h-full min-h-[160px] aspect-video bg-[#1a1a20] rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800/80 shadow-lg group flex items-center justify-center">
-                {localVideoEnabled ? (
-                  <video
-                    ref={localVideoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover transform -scale-x-100"
+                {localVideoEnabled && localStream ? (
+                  <VideoPlayer
+                    stream={localStream}
+                    muted={true}
+                    mirror={true}
                   />
                 ) : (
                   <div className="flex flex-col items-center space-y-2">
@@ -580,6 +714,15 @@ export const MeetingRoom: React.FC = () => {
               {/* PARTICIPANTS DRAWER */}
               {activeDrawer === 'participants' && (
                 <div className="space-y-4">
+                  {/* Instant Add People Trigger */}
+                  <button
+                    onClick={handleOpenInviteModal}
+                    className="w-full py-2.5 px-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-lg transition-transform hover:scale-[1.02]"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Invite Students or Admins</span>
+                  </button>
+
                   {/* Host Quick Controls */}
                   {isHost && peers.length > 0 && (
                     <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-2xl space-y-2">
@@ -789,6 +932,15 @@ export const MeetingRoom: React.FC = () => {
 
         {/* Right Side Tools */}
         <div className="flex items-center space-x-2">
+          {/* Add People Quick Button */}
+          <button
+            onClick={handleOpenInviteModal}
+            className="p-3 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            title="Add people to call"
+          >
+            <UserPlus className="w-5 h-5" />
+          </button>
+
           {/* Meeting Info */}
           <button
             onClick={() => setActiveDrawer(prev => prev === 'info' ? null : 'info')}
@@ -861,6 +1013,143 @@ export const MeetingRoom: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* INSTANT ADD PEOPLE / INVITE MEMBERS MODAL */}
+      {showInviteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-[#1e1e24] border border-purple-500/30 rounded-3xl p-6 max-w-lg w-full space-y-5 shadow-2xl animate-in zoom-in-95 duration-150 my-8">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="space-y-0.5">
+                <span className="text-[11px] font-bold text-purple-400 uppercase tracking-wider">
+                  Instant Collaboration
+                </span>
+                <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                  <UserPlus className="w-4 h-4 text-purple-400" />
+                  <span>Add People to Call</span>
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowInviteModal(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Share Link */}
+            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 space-y-2">
+              <p className="text-xs text-slate-400 font-medium">Share invite link with anyone:</p>
+              <div className="flex items-center justify-between p-2 bg-slate-950 rounded-xl border border-slate-800/80">
+                <span className="text-xs font-mono text-purple-300 truncate mr-2">{window.location.href}</span>
+                <button
+                  onClick={() => copyToClipboard(window.location.href, 'link')}
+                  className="px-3 py-1 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold text-white shrink-0 flex items-center space-x-1"
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedLink ? 'Copied' : 'Copy'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Category Filter Tabs */}
+            <div className="flex items-center space-x-1.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setDirectoryTab('ALL')}
+                className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                  directoryTab === 'ALL'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'bg-slate-900 text-slate-400 hover:text-white'
+                }`}
+              >
+                All ({allMembers.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setDirectoryTab('STUDENT')}
+                className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                  directoryTab === 'STUDENT'
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : 'bg-slate-900 text-slate-400 hover:text-white'
+                }`}
+              >
+                Students ({directoryMembers.students.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setDirectoryTab('ADMIN')}
+                className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                  directoryTab === 'ADMIN'
+                    ? 'bg-purple-700 text-white shadow-sm'
+                    : 'bg-slate-900 text-slate-400 hover:text-white'
+                }`}
+              >
+                Faculty ({directoryMembers.admins.length})
+              </button>
+            </div>
+
+            {/* Directory Search & Instant Invite */}
+            <div className="space-y-3">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  placeholder="Search students or faculty by name, email, department..."
+                  value={directorySearch}
+                  onChange={e => setDirectorySearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-purple-500"
+                />
+              </div>
+
+              {loadingDirectory ? (
+                <div className="p-6 text-center text-xs text-slate-500">Loading portal member directory...</div>
+              ) : (
+                <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                  {filteredMembers.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-slate-500">No members matched your search.</div>
+                  ) : (
+                    filteredMembers.map(member => {
+                      const isInvited = invitedMemberIds.includes(member.id);
+                      return (
+                        <div
+                          key={member.id}
+                          className="p-2.5 bg-slate-900/60 border border-slate-800/60 rounded-xl flex items-center justify-between hover:border-slate-700 transition-colors"
+                        >
+                          <div className="flex items-center space-x-2.5 min-w-0">
+                            <div className={`w-8 h-8 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${
+                              member.role === 'ADMIN' ? 'bg-purple-600 text-white' : 'bg-sky-600 text-white'
+                            }`}>
+                              {member.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-white truncate">{member.name}</p>
+                              <p className="text-[10px] text-slate-400 truncate">
+                                {member.email} • {member.department} {member.role === 'ADMIN' ? '• Faculty' : ''}
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => handleInviteSingleMember(member)}
+                            disabled={isInvited}
+                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ml-2 ${
+                              isInvited
+                                ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/40'
+                                : 'bg-purple-600 hover:bg-purple-500 text-white shadow-md'
+                            }`}
+                          >
+                            {isInvited ? 'Invited ✓' : '+ Invite'}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -873,11 +1162,22 @@ const PeerVideoTile: React.FC<{
   isCompact?: boolean;
   isHandRaised?: boolean;
 }> = ({ peer, isCompact, isHandRaised }) => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    if (peer.stream && videoRef.current) {
-      videoRef.current.srcObject = peer.stream;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (peer.stream) {
+      audio.srcObject = peer.stream;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Remote peer audio playback notice:', err);
+        });
+      }
+    } else {
+      audio.srcObject = null;
     }
   }, [peer.stream]);
 
@@ -885,18 +1185,20 @@ const PeerVideoTile: React.FC<{
     <div className={`relative w-full h-full min-h-[140px] aspect-video bg-[#1a1a20] rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800/80 shadow-lg flex items-center justify-center ${
       isCompact ? 'min-h-0 aspect-video rounded-xl' : ''
     }`}>
+      {/* Dedicated audio element ensuring remote peer voice is ALWAYS audible even if camera is off */}
+      <audio ref={audioRef} autoPlay playsInline />
+
       {peer.videoEnabled && peer.stream ? (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          className="w-full h-full object-cover"
+        <VideoPlayer
+          stream={peer.stream}
+          muted={true}
         />
       ) : (
         <div className="flex flex-col items-center space-y-2">
           <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-indigo-600 to-sky-600 flex items-center justify-center text-white text-xl sm:text-2xl font-bold shadow-xl border-2 border-indigo-400/30">
             {peer.userName.charAt(0).toUpperCase()}
           </div>
+          <span className="text-[10px] font-semibold text-slate-400">Camera Off</span>
         </div>
       )}
 

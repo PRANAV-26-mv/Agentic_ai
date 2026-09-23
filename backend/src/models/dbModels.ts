@@ -115,8 +115,18 @@ export interface Meeting {
   allow_student_chat: boolean;
   mute_on_entry: boolean;
   external_link?: string;
+  invited_members?: InvitedMember[];
   created_at: string;
   updated_at: string;
+}
+
+export interface InvitedMember {
+  id: string;
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'STUDENT';
+  department?: string;
+  invited_at: string;
 }
 
 export interface MeetingParticipant {
@@ -1676,6 +1686,10 @@ export const MeetingsModel = {
     if (filter?.student) {
       const std = filter.student;
       list = list.filter(m => {
+        // Specifically invited students always have access
+        if (m.invited_members && m.invited_members.some(im => im.id === std.id || im.email.toLowerCase() === std.email.toLowerCase())) {
+          return true;
+        }
         // Students can NEVER see or join ADMINS_ONLY meetings
         if (m.audience_type === 'ADMINS_ONLY') return false;
         if (m.audience_type === 'ALL' || m.audience_type === 'ALL_STUDENTS') return true;
@@ -1688,18 +1702,46 @@ export const MeetingsModel = {
       });
     } else if (filter?.admin) {
       if (!filter.isSuperAdmin) {
-        // Regular admin sees: their own meetings, meetings for admins, or meetings for all
+        // Regular admin sees: their own meetings, meetings for admins, meetings for all, or meetings they are explicitly invited to
         const adm = filter.admin;
         list = list.filter(m => 
           m.host_id === adm.id || 
           m.audience_type === 'ADMINS_ONLY' || 
-          m.audience_type === 'ALL'
+          m.audience_type === 'ALL' ||
+          (m.invited_members && m.invited_members.some(im => im.id === adm.id || im.email.toLowerCase() === adm.email.toLowerCase()))
         );
       }
       // Super admin sees all meetings
     }
 
     return [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  },
+
+  addInvitedMembers(id: string, members: Omit<InvitedMember, 'invited_at'>[]): Meeting | undefined {
+    const list = this.getList();
+    const index = list.findIndex(m => m.id === id);
+    if (index === -1) return undefined;
+
+    const currentMeeting = list[index];
+    const existing = currentMeeting.invited_members || [];
+    const now = new Date().toISOString();
+
+    const newMembers: InvitedMember[] = [];
+    for (const m of members) {
+      if (!existing.some(ex => ex.id === m.id || ex.email.toLowerCase() === m.email.toLowerCase())) {
+        newMembers.push({ ...m, invited_at: now });
+      }
+    }
+
+    const updated: Meeting = {
+      ...currentMeeting,
+      invited_members: [...existing, ...newMembers],
+      updated_at: now
+    };
+
+    list[index] = updated;
+    db.save();
+    return updated;
   },
 
   findById(id: string): Meeting | undefined {
