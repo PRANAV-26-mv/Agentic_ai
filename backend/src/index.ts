@@ -24,7 +24,10 @@ import adminsRouter from './routes/admins.js';
 import quizSessionsRouter from './routes/quizSessions.js';
 import restrictionsRouter from './routes/restrictions.js';
 import emailBroadcastRouter from './routes/emailBroadcast.js';
+import http from 'http';
 import certificateSettingsRouter from './routes/certificateSettings.js';
+import meetingsRouter from './routes/meetings.js';
+import { setupMeetingSocket } from './services/meetingSocketService.js';
 
 dotenv.config();
 
@@ -62,6 +65,7 @@ app.use('/api/analytics', analyticsRouter);
 app.use('/api/audit-logs', auditLogsRouter);
 app.use('/api/quiz-sessions', quizSessionsRouter);
 app.use('/api/certificate-settings', certificateSettingsRouter);
+app.use('/api/meetings', meetingsRouter);
 
 // Healthcheck
 app.get('/api/health', (_req, res) => {
@@ -112,8 +116,12 @@ async function startServer() {
     // 2. Safely verify baseline collections without overwriting existing data
     await seedData();
 
-    // 3. Start HTTP server
-    app.listen(Number(PORT), '0.0.0.0', () => {
+    // 3. Create HTTP server and attach Socket.io meeting signaling
+    const server = http.createServer(app);
+    setupMeetingSocket(server);
+
+    // 4. Start HTTP & WebSocket server
+    server.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`🚀 Student Assessment Portal Backend running on http://0.0.0.0:${PORT}`);
     });
   } catch (err: any) {

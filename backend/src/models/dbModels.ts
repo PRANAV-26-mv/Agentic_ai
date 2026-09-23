@@ -90,6 +90,69 @@ export interface CertificateSettings {
   updated_by?: string;
 }
 
+export type MeetingType = 'VIDEO_VOICE' | 'VOICE_ONLY';
+export type MeetingAudienceType = 'ALL_STUDENTS' | 'SPECIFIC_STUDENTS' | 'ADMINS_ONLY' | 'ALL';
+export type MeetingStatus = 'SCHEDULED' | 'ACTIVE' | 'ENDED';
+
+export interface Meeting {
+  id: string;
+  code: string;
+  title: string;
+  description?: string;
+  host_id: string;
+  host_name: string;
+  host_email: string;
+  meeting_type: MeetingType;
+  audience_type: MeetingAudienceType;
+  target_department?: string;
+  target_year?: number;
+  status: MeetingStatus;
+  scheduled_start_time: string;
+  scheduled_end_time?: string;
+  actual_start_time?: string;
+  actual_end_time?: string;
+  allow_screen_share: boolean;
+  allow_student_chat: boolean;
+  mute_on_entry: boolean;
+  external_link?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MeetingParticipant {
+  id: string;
+  meeting_id: string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  user_role: 'ADMIN' | 'STUDENT';
+  joined_at: string;
+  left_at?: string;
+  duration_seconds?: number;
+  is_host: boolean;
+}
+
+export interface MeetingSettings {
+  id: string;
+  is_enabled: boolean;
+  allow_all_admins: boolean;
+  permitted_admin_ids: string[];
+  allowed_audience_types: MeetingAudienceType[];
+  max_participants: number;
+  updated_at: string;
+  updated_by?: string;
+}
+
+export const DEFAULT_MEETING_SETTINGS: MeetingSettings = {
+  id: 'global-meeting-settings',
+  is_enabled: true,
+  allow_all_admins: true,
+  permitted_admin_ids: [],
+  allowed_audience_types: ['ALL_STUDENTS', 'SPECIFIC_STUDENTS', 'ADMINS_ONLY', 'ALL'],
+  max_participants: 100,
+  updated_at: new Date().toISOString()
+};
+
 export const DEFAULT_CERTIFICATE_SETTINGS: CertificateSettings = {
   id: 'global-cert-settings',
   header_brand_name: 'AGENTIC_AI_A7',
@@ -1586,4 +1649,254 @@ export const CertificateSettingsModel = {
     return reset;
   }
 };
+
+function generateMeetingCode(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz';
+  const pick = (len: number) => Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return `${pick(3)}-${pick(4)}-${pick(3)}`;
+}
+
+export const MeetingsModel = {
+  getList(): Meeting[] {
+    let list = memoryDb.table('meetings') as Meeting[] | undefined;
+    if (!list) {
+      list = [];
+      (memoryDb as any).data.meetings = list;
+    }
+    return list;
+  },
+
+  findAll(filter?: { status?: string; student?: Student; admin?: Admin; isSuperAdmin?: boolean }): Meeting[] {
+    let list = this.getList();
+
+    if (filter?.status) {
+      list = list.filter(m => m.status === filter.status);
+    }
+
+    if (filter?.student) {
+      const std = filter.student;
+      list = list.filter(m => {
+        // Students can NEVER see or join ADMINS_ONLY meetings
+        if (m.audience_type === 'ADMINS_ONLY') return false;
+        if (m.audience_type === 'ALL' || m.audience_type === 'ALL_STUDENTS') return true;
+        if (m.audience_type === 'SPECIFIC_STUDENTS') {
+          if (m.target_department && m.target_department !== std.department) return false;
+          if (m.target_year && Number(m.target_year) !== Number(std.year)) return false;
+          return true;
+        }
+        return false;
+      });
+    } else if (filter?.admin) {
+      if (!filter.isSuperAdmin) {
+        // Regular admin sees: their own meetings, meetings for admins, or meetings for all
+        const adm = filter.admin;
+        list = list.filter(m => 
+          m.host_id === adm.id || 
+          m.audience_type === 'ADMINS_ONLY' || 
+          m.audience_type === 'ALL'
+        );
+      }
+      // Super admin sees all meetings
+    }
+
+    return [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  },
+
+  findById(id: string): Meeting | undefined {
+    return this.getList().find(m => m.id === id);
+  },
+
+  findByCode(code: string): Meeting | undefined {
+    const clean = code.trim().toLowerCase();
+    return this.getList().find(m => m.code.toLowerCase() === clean);
+  },
+
+  create(data: Omit<Meeting, 'id' | 'created_at' | 'updated_at' | 'code'> & { code?: string }): Meeting {
+    let code = data.code?.trim().toLowerCase();
+    if (!code) {
+      do {
+        code = generateMeetingCode();
+      } while (this.findByCode(code));
+    }
+
+    const now = new Date().toISOString();
+    const newMeeting: Meeting = {
+      ...data,
+      id: `meet-${Date.now()}-${uuidv4().substring(0, 6)}`,
+      code,
+      status: data.status || 'SCHEDULED',
+      allow_screen_share: data.allow_screen_share ?? true,
+      allow_student_chat: data.allow_student_chat ?? true,
+      mute_on_entry: data.mute_on_entry ?? false,
+      created_at: now,
+      updated_at: now
+    };
+
+    this.getList().unshift(newMeeting);
+    db.save();
+    return newMeeting;
+  },
+
+  update(id: string, updates: Partial<Meeting>): Meeting | undefined {
+    const list = this.getList();
+    const index = list.findIndex(m => m.id === id);
+    if (index === -1) return undefined;
+
+    const updated: Meeting = {
+      ...list[index],
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    list[index] = updated;
+    db.save();
+    return updated;
+  },
+
+  delete(id: string): boolean {
+    const list = this.getList();
+    const index = list.findIndex(m => m.id === id);
+    if (index === -1) return false;
+
+    list.splice(index, 1);
+
+    // Also purge participants for this meeting
+    let pList = memoryDb.table('meeting_participants') as MeetingParticipant[] | undefined;
+    if (pList) {
+      for (let i = pList.length - 1; i >= 0; i--) {
+        if (pList[i].meeting_id === id) {
+          pList.splice(i, 1);
+        }
+      }
+    }
+
+    db.save();
+    return true;
+  }
+};
+
+export const MeetingParticipantsModel = {
+  getList(): MeetingParticipant[] {
+    let list = memoryDb.table('meeting_participants') as MeetingParticipant[] | undefined;
+    if (!list) {
+      list = [];
+      (memoryDb as any).data.meeting_participants = list;
+    }
+    return list;
+  },
+
+  getParticipants(meetingId: string): MeetingParticipant[] {
+    return this.getList().filter(p => p.meeting_id === meetingId);
+  },
+
+  recordJoin(data: Omit<MeetingParticipant, 'id'>): MeetingParticipant {
+    const list = this.getList();
+    // Check if user already has an active session in this meeting
+    const existing = list.find(p => p.meeting_id === data.meeting_id && p.user_id === data.user_id && !p.left_at);
+    if (existing) {
+      return existing;
+    }
+
+    const participant: MeetingParticipant = {
+      ...data,
+      id: `mp-${Date.now()}-${uuidv4().substring(0, 6)}`,
+      joined_at: data.joined_at || new Date().toISOString()
+    };
+
+    list.push(participant);
+    db.save();
+    return participant;
+  },
+
+  recordLeave(meetingId: string, userId: string): MeetingParticipant | undefined {
+    const list = this.getList();
+    const existing = list.find(p => p.meeting_id === meetingId && p.user_id === userId && !p.left_at);
+    if (!existing) return undefined;
+
+    const now = new Date();
+    existing.left_at = now.toISOString();
+    const joined = new Date(existing.joined_at);
+    existing.duration_seconds = Math.max(0, Math.floor((now.getTime() - joined.getTime()) / 1000));
+
+    db.save();
+    return existing;
+  },
+
+  getUserHistory(userId: string): MeetingParticipant[] {
+    return this.getList().filter(p => p.user_id === userId);
+  }
+};
+
+export const MeetingSettingsModel = {
+  getList(): MeetingSettings[] {
+    let list = memoryDb.table('meeting_settings') as MeetingSettings[] | undefined;
+    if (!list) {
+      list = [];
+      (memoryDb as any).data.meeting_settings = list;
+    }
+    return list;
+  },
+
+  getSettings(): MeetingSettings {
+    const list = this.getList();
+    if (list.length === 0) {
+      const initial: MeetingSettings = {
+        ...DEFAULT_MEETING_SETTINGS,
+        updated_at: new Date().toISOString()
+      };
+      list.push(initial);
+      db.save();
+      return initial;
+    }
+    return { ...DEFAULT_MEETING_SETTINGS, ...list[0] };
+  },
+
+  updateSettings(updates: Partial<MeetingSettings>, updatedBy?: string): MeetingSettings {
+    const current = this.getSettings();
+    const updated: MeetingSettings = {
+      ...current,
+      ...updates,
+      updated_at: new Date().toISOString(),
+      updated_by: updatedBy || current.updated_by
+    };
+
+    const list = this.getList();
+    if (list.length === 0) {
+      list.push(updated);
+    } else {
+      list[0] = updated;
+    }
+    db.save();
+    return updated;
+  },
+
+  canAdminCreateMeeting(adminId: string, adminEmail: string, isSuperAdmin?: boolean): { allowed: boolean; reason?: string } {
+    const isSuper = adminEmail.toLowerCase() === 'pranavannur9659@gmail.com' || Boolean(isSuperAdmin);
+    if (isSuper) {
+      return { allowed: true };
+    }
+
+    const settings = this.getSettings();
+    if (!settings.is_enabled) {
+      return { 
+        allowed: false, 
+        reason: 'The Live Meeting feature has been temporarily disabled by the Super Admin.' 
+      };
+    }
+
+    if (settings.allow_all_admins) {
+      return { allowed: true };
+    }
+
+    if (settings.permitted_admin_ids && settings.permitted_admin_ids.includes(adminId)) {
+      return { allowed: true };
+    }
+
+    return {
+      allowed: false,
+      reason: 'Access Denied: You do not have permission to create meetings. Meeting creation privileges are controlled and granted by the Super Admin.'
+    };
+  }
+};
+
 

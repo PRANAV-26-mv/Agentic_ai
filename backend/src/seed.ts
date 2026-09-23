@@ -731,6 +731,43 @@ export async function seedData() {
     seededAny = true;
   }
 
+  // 10. Initial Meeting Settings & Sample Live Session
+  if (!data.meeting_settings || data.meeting_settings.length === 0) {
+    data.meeting_settings = [{
+      id: 'global-meeting-settings',
+      is_enabled: true,
+      allow_all_admins: true,
+      permitted_admin_ids: [],
+      allowed_audience_types: ['ALL_STUDENTS', 'SPECIFIC_STUDENTS', 'ADMINS_ONLY', 'ALL'],
+      max_participants: 100,
+      updated_at: now
+    }];
+    seededAny = true;
+  }
+
+  if (!data.meetings || data.meetings.length === 0) {
+    data.meetings = [{
+      id: `meet-${Date.now()}-ai001`,
+      code: 'abc-defg-hij',
+      title: 'Agentic AI & Neural Systems Workshop (Live Meet)',
+      description: 'Interactive live video & audio discussion, Q&A on neural architectures, and model evaluations.',
+      host_id: 'adm-002',
+      host_name: 'Pranav (Super Admin)',
+      host_email: 'pranavannur9659@gmail.com',
+      meeting_type: 'VIDEO_VOICE',
+      audience_type: 'ALL_STUDENTS',
+      status: 'ACTIVE',
+      scheduled_start_time: now,
+      actual_start_time: now,
+      allow_screen_share: true,
+      allow_student_chat: true,
+      mute_on_entry: false,
+      created_at: now,
+      updated_at: now
+    }];
+    seededAny = true;
+  }
+
   if (seededAny) {
     memoryDb.save();
     console.log('✅ Portal baseline collections populated and persisted successfully!');

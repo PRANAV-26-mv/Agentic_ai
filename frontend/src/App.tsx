@@ -17,9 +17,12 @@ import { AskADoubt } from './pages/AskADoubt';
 import { StudentProfile } from './pages/StudentProfile';
 import { StudentQuizSessions } from './pages/StudentQuizSessions';
 import { StudentQuizLobby } from './pages/StudentQuizLobby';
+import { StudentMeetings } from './pages/StudentMeetings';
 
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminQuizSessions } from './pages/AdminQuizSessions';
+import { AdminMeetings } from './pages/AdminMeetings';
+import { MeetingRoom } from './pages/MeetingRoom';
 import { StudentManagement } from './pages/StudentManagement';
 import { AssessmentManagement } from './pages/AssessmentManagement';
 import { QuestionBank } from './pages/QuestionBank';
@@ -36,6 +39,13 @@ import { UserRestrictionsPage } from './pages/UserRestrictionsPage';
 import { CertificateSettingsPage } from './pages/CertificateSettingsPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { EmailBroadcastPage } from './pages/EmailBroadcastPage';
+
+const ProtectedMeetingRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="p-8 text-center text-xs text-slate-500 font-bold">Loading...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+};
 
 const ProtectedStudentRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, role, loading } = useAuth();
@@ -88,6 +98,16 @@ export function App() {
             }
           />
 
+          {/* Distraction-Free Google Meet Room */}
+          <Route
+            path="/meetings/room/:id"
+            element={
+              <ProtectedMeetingRoute>
+                <MeetingRoom />
+              </ProtectedMeetingRoute>
+            }
+          />
+
           {/* Student Portal Routes */}
           <Route
             element={
@@ -99,6 +119,7 @@ export function App() {
             <Route path="/dashboard" element={<StudentDashboard />} />
             <Route path="/materials" element={<StudentMaterials />} />
             <Route path="/assessments" element={<StudentAssessments />} />
+            <Route path="/meetings" element={<StudentMeetings />} />
             <Route path="/quiz-sessions" element={<StudentQuizSessions />} />
             <Route path="/quiz-sessions/:id" element={<StudentQuizLobby />} />
             <Route path="/results" element={<StudentResults />} />
@@ -120,6 +141,7 @@ export function App() {
             <Route path="/admin/send-emails" element={<EmailBroadcastPage />} />
             <Route path="/admin/students" element={<StudentManagement />} />
             <Route path="/admin/assessments" element={<AssessmentManagement />} />
+            <Route path="/admin/meetings" element={<AdminMeetings />} />
             <Route path="/admin/quiz-sessions" element={<AdminQuizSessions />} />
             <Route path="/admin/certificate-settings" element={<CertificateSettingsPage />} />
             <Route path="/admin/question-bank" element={<QuestionBank />} />

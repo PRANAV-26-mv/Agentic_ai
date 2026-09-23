@@ -301,3 +301,69 @@ export interface QuizLeaderboardEntry {
   submitted_at?: string;
   tab_switches_count?: number;
 }
+
+export type MeetingType = 'VIDEO_VOICE' | 'VOICE_ONLY';
+export type MeetingAudienceType = 'ALL_STUDENTS' | 'SPECIFIC_STUDENTS' | 'ADMINS_ONLY' | 'ALL';
+export type MeetingStatus = 'SCHEDULED' | 'ACTIVE' | 'ENDED';
+
+export interface Meeting {
+  id: string;
+  code: string;
+  title: string;
+  description?: string;
+  host_id: string;
+  host_name: string;
+  host_email: string;
+  meeting_type: MeetingType;
+  audience_type: MeetingAudienceType;
+  target_department?: string;
+  target_year?: number;
+  status: MeetingStatus;
+  scheduled_start_time: string;
+  scheduled_end_time?: string;
+  actual_start_time?: string;
+  actual_end_time?: string;
+  allow_screen_share: boolean;
+  allow_student_chat: boolean;
+  mute_on_entry: boolean;
+  external_link?: string;
+  created_at: string;
+  updated_at: string;
+  total_participants_count?: number;
+  active_participants_count?: number;
+  is_host?: boolean;
+}
+
+export interface MeetingParticipant {
+  id: string;
+  meeting_id: string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  user_role: 'ADMIN' | 'STUDENT';
+  joined_at: string;
+  left_at?: string;
+  duration_seconds?: number;
+  is_host: boolean;
+}
+
+export interface MeetingSettings {
+  id: string;
+  is_enabled: boolean;
+  allow_all_admins: boolean;
+  permitted_admin_ids: string[];
+  allowed_audience_types: MeetingAudienceType[];
+  max_participants: number;
+  updated_at: string;
+  updated_by?: string;
+}
+
+export interface AdminMeetingPermission {
+  id: string;
+  name: string;
+  email: string;
+  department: string;
+  is_super_admin: boolean;
+  can_create_meetings: boolean;
+}
+
