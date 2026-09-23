@@ -1641,7 +1641,102 @@
       "updated_at": "2026-09-23T17:40:29.311Z"
     }
   ],
-  "meeting_participants": [],
+  "meeting_participants": [
+    {
+      "meeting_id": "meet-1790185229311-ai001",
+      "user_id": "adm-002",
+      "user_name": "Pranav (Admin)",
+      "user_email": "pranavannur9659@gmail.com",
+      "user_role": "ADMIN",
+      "joined_at": "2026-09-23T18:25:45.694Z",
+      "is_host": true,
+      "id": "mp-1790187945694-35c526",
+      "left_at": "2026-09-23T18:25:45.776Z",
+      "duration_seconds": 0
+    },
+    {
+      "meeting_id": "meet-1790185229311-ai001",
+      "user_id": "adm-002",
+      "user_name": "Pranav (Admin)",
+      "user_email": "pranavannur9659@gmail.com",
+      "user_role": "ADMIN",
+      "joined_at": "2026-09-23T18:27:09.377Z",
+      "is_host": true,
+      "id": "mp-1790188029377-cd46a5",
+      "left_at": "2026-09-23T18:27:09.398Z",
+      "duration_seconds": 0
+    },
+    {
+      "meeting_id": "meet-1790185229311-ai001",
+      "user_id": "adm-002",
+      "user_name": "Pranav (Admin)",
+      "user_email": "pranavannur9659@gmail.com",
+      "user_role": "ADMIN",
+      "joined_at": "2026-09-23T18:29:23.481Z",
+      "is_host": true,
+      "id": "mp-1790188163481-ab846b",
+      "left_at": "2026-09-23T18:29:23.498Z",
+      "duration_seconds": 0
+    },
+    {
+      "meeting_id": "meet-1790185229311-ai001",
+      "user_id": "adm-002",
+      "user_name": "Pranav (Admin)",
+      "user_email": "pranavannur9659@gmail.com",
+      "user_role": "ADMIN",
+      "joined_at": "2026-09-23T18:29:50.673Z",
+      "is_host": true,
+      "id": "mp-1790188190673-21f9c3",
+      "left_at": "2026-09-23T18:29:50.685Z",
+      "duration_seconds": 0
+    },
+    {
+      "meeting_id": "meet-1790185229311-ai001",
+      "user_id": "adm-002",
+      "user_name": "Pranav (Admin)",
+      "user_email": "pranavannur9659@gmail.com",
+      "user_role": "ADMIN",
+      "joined_at": "2026-09-23T18:30:24.762Z",
+      "is_host": true,
+      "id": "mp-1790188224762-e70412",
+      "left_at": "2026-09-23T18:30:24.791Z",
+      "duration_seconds": 0
+    },
+    {
+      "meeting_id": "meet-1790185229311-ai001",
+      "user_id": "adm-002",
+      "user_name": "Pranav (Admin)",
+      "user_email": "pranavannur9659@gmail.com",
+      "user_role": "ADMIN",
+      "joined_at": "2026-09-23T18:31:02.973Z",
+      "is_host": true,
+      "id": "mp-1790188262973-2a003e",
+      "left_at": "2026-09-23T18:31:02.983Z",
+      "duration_seconds": 0
+    },
+    {
+      "meeting_id": "meet-1790185229311-ai001",
+      "user_id": "adm-002",
+      "user_name": "Pranav (Admin)",
+      "user_email": "pranavannur9659@gmail.com",
+      "user_role": "ADMIN",
+      "joined_at": "2026-09-23T18:32:56.091Z",
+      "is_host": true,
+      "id": "mp-1790188376091-aa7009",
+      "left_at": "2026-09-23T18:32:56.107Z",
+      "duration_seconds": 0
+    },
+    {
+      "meeting_id": "meet-1790185229311-ai001",
+      "user_id": "adm-002",
+      "user_name": "Pranav (Admin)",
+      "user_email": "pranavannur9659@gmail.com",
+      "user_role": "ADMIN",
+      "joined_at": "2026-09-23T18:39:17.927Z",
+      "is_host": true,
+      "id": "mp-1790188757927-3fb48e"
+    }
+  ],
   "meeting_settings": [
     {
       "id": "global-meeting-settings",

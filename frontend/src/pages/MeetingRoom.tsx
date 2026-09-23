@@ -52,7 +52,9 @@ export const VideoPlayer: React.FC<{
     if (stream) {
       video.muted = muted;
       video.defaultMuted = muted;
-      video.srcObject = stream;
+      if (video.srcObject !== stream) {
+        video.srcObject = stream;
+      }
 
       const attemptPlay = () => {
         if (!isSubscribed) return;
@@ -94,6 +96,14 @@ export const MeetingRoom: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  // Memoize user object so reference never changes on every re-render
+  const meetingUser = React.useMemo(() => (user ? {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role
+  } : null), [user?.id, user?.name, user?.email, user?.role]);
+
   // WebRTC hook
   const {
     meeting,
@@ -120,12 +130,7 @@ export const MeetingRoom: React.FC = () => {
     sendChatMessage,
     performHostAction,
     leaveMeeting
-  } = useWebRTCMeeting(id || '', user ? {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role
-  } : null);
+  } = useWebRTCMeeting(id || '', meetingUser);
 
   // UI Panels
   const [activeDrawer, setActiveDrawer] = useState<'chat' | 'participants' | 'info' | null>(null);
@@ -567,7 +572,7 @@ export const MeetingRoom: React.FC = () => {
             }`}>
               {/* Local Participant Tile */}
               <div className="relative w-full h-full min-h-[160px] aspect-video bg-[#1a1a20] rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800/80 shadow-lg group flex items-center justify-center">
-                {localVideoEnabled && localStream ? (
+                {localVideoEnabled && localStream && localStream.getVideoTracks().some(t => t.enabled && t.readyState === 'live') ? (
                   <VideoPlayer
                     stream={localStream}
                     muted={true}
@@ -578,6 +583,9 @@ export const MeetingRoom: React.FC = () => {
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xl sm:text-2xl font-bold shadow-xl border-2 border-purple-400/30">
                       {user?.name?.charAt(0).toUpperCase() || 'U'}
                     </div>
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      {localVideoEnabled ? 'Connecting camera...' : 'Camera Off'}
+                    </span>
                   </div>
                 )}
 
@@ -1169,7 +1177,9 @@ const PeerVideoTile: React.FC<{
     if (!audio) return;
 
     if (peer.stream) {
-      audio.srcObject = peer.stream;
+      if (audio.srcObject !== peer.stream) {
+        audio.srcObject = peer.stream;
+      }
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => {
@@ -1181,6 +1191,8 @@ const PeerVideoTile: React.FC<{
     }
   }, [peer.stream]);
 
+  const hasLivePeerVideo = peer.videoEnabled && peer.stream && peer.stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
+
   return (
     <div className={`relative w-full h-full min-h-[140px] aspect-video bg-[#1a1a20] rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800/80 shadow-lg flex items-center justify-center ${
       isCompact ? 'min-h-0 aspect-video rounded-xl' : ''
@@ -1188,9 +1200,9 @@ const PeerVideoTile: React.FC<{
       {/* Dedicated audio element ensuring remote peer voice is ALWAYS audible even if camera is off */}
       <audio ref={audioRef} autoPlay playsInline />
 
-      {peer.videoEnabled && peer.stream ? (
+      {hasLivePeerVideo ? (
         <VideoPlayer
-          stream={peer.stream}
+          stream={peer.stream!}
           muted={true}
         />
       ) : (

@@ -25,6 +25,8 @@ export function setupMeetingSocket(httpServer: HttpServer): SocketIOServer {
   });
 
   io.on('connection', (socket: Socket) => {
+    console.log(`[Socket.io] New client connected: ${socket.id}`);
+
     // 1. Join Meeting Room
     socket.on('join-meeting', async (payload: {
       meetingId: string;
@@ -60,6 +62,8 @@ export function setupMeetingSocket(httpServer: HttpServer): SocketIOServer {
 
         const actualMeetingId = meeting.id;
         const isHost = meeting.host_id === user.id || user.email.toLowerCase() === 'pranavannur9659@gmail.com';
+
+        console.log(`[Socket.io] User ${user.name} (${user.role}, ${user.id}) joining meeting ${actualMeetingId} (Host: ${isHost})`);
 
         // Store metadata on socket
         socket.data = {
