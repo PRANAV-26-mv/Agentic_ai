@@ -14,14 +14,23 @@ import {
   Download,
   Upload,
   HardDrive,
-  RefreshCw
+  RefreshCw,
+  Search,
+  Calendar,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+type AdminDateLimit = 'ALL' | '30D' | '1Y' | 'CUSTOM';
 
 export const AdminManagement: React.FC = () => {
   const { user } = useAuth();
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [adminDateLimit, setAdminDateLimit] = useState<AdminDateLimit>('ALL');
+  const [adminSearch, setAdminSearch] = useState<string>('');
+  const [adminCustomStart, setAdminCustomStart] = useState<string>('');
+  const [adminCustomEnd, setAdminCustomEnd] = useState<string>('');
 
   const [formData, setFormData] = useState({
     email: '',
@@ -287,6 +296,33 @@ export const AdminManagement: React.FC = () => {
     }).catch(() => {});
   }, []);
 
+  const filteredAdmins = admins.filter(a => {
+    if (adminSearch.trim()) {
+      const q = adminSearch.toLowerCase();
+      const match = a.name.toLowerCase().includes(q) || a.email.toLowerCase().includes(q) || (a.department || '').toLowerCase().includes(q);
+      if (!match) return false;
+    }
+
+    if (adminDateLimit !== 'ALL') {
+      if (!a.created_at) return true;
+      const created = new Date(a.created_at);
+      if (isNaN(created.getTime())) return true;
+      const now = new Date();
+      if (adminDateLimit === '30D') {
+        const threshold = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        if (created < threshold) return false;
+      } else if (adminDateLimit === '1Y') {
+        const threshold = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        if (created < threshold) return false;
+      } else if (adminDateLimit === 'CUSTOM') {
+        if (adminCustomStart && created < new Date(adminCustomStart + 'T00:00:00')) return false;
+        if (adminCustomEnd && created > new Date(adminCustomEnd + 'T23:59:59')) return false;
+      }
+    }
+
+    return true;
+  });
+
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-12">
       
@@ -431,23 +467,93 @@ export const AdminManagement: React.FC = () => {
         </div>
       </form>
 
-      {/* Roster of Registered Admins */}
+      {/* Registered Admin Members List */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b pb-3">
-          <h3 className="font-extrabold text-slate-900 text-sm flex items-center space-x-2">
-            <Shield className="w-4 h-4 text-purple-600" />
-            <span>Registered Admin Members ({admins.length})</span>
-          </h3>
-          <span className="text-xs text-slate-400">Total authorized portal controllers</span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="font-extrabold text-slate-900 text-sm flex items-center space-x-2">
+              <Shield className="w-4 h-4 text-purple-600" />
+              <span>Registered Admin Members ({filteredAdmins.length})</span>
+            </h3>
+            <span className="text-xs text-slate-400">Total authorized portal controllers</span>
+          </div>
+
+          {/* Search Admin */}
+          <div className="relative w-full sm:w-64">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by name, email, dept..."
+              value={adminSearch}
+              onChange={e => setAdminSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        {/* Date Limit Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+              <Calendar className="w-3.5 h-3.5 text-purple-600" />
+              <span>Date Limit:</span>
+            </span>
+            <div className="flex flex-wrap items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-xs">
+              {(
+                [
+                  { id: '30D', label: 'Last 30 Days ⭐' },
+                  { id: '1Y', label: 'Last 1 Year 📅' },
+                  { id: 'ALL', label: 'All Time' },
+                  { id: 'CUSTOM', label: 'Custom Range' },
+                ] as const
+              ).map(opt => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setAdminDateLimit(opt.id)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    adminDateLimit === opt.id
+                      ? 'bg-purple-600 text-white shadow-xs ring-2 ring-purple-200'
+                      : 'text-slate-600 hover:text-purple-700 hover:bg-slate-50'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {adminDateLimit === 'CUSTOM' && (
+            <div className="flex items-center space-x-2 text-xs">
+              <span className="text-slate-500 font-bold">From:</span>
+              <input
+                type="date"
+                value={adminCustomStart}
+                onChange={e => setAdminCustomStart(e.target.value)}
+                className="p-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-none"
+              />
+              <span className="text-slate-500 font-bold">To:</span>
+              <input
+                type="date"
+                value={adminCustomEnd}
+                onChange={e => setAdminCustomEnd(e.target.value)}
+                className="p-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-none"
+              />
+            </div>
+          )}
         </div>
 
         {loading ? (
           <div className="h-32 bg-slate-100 rounded-xl animate-pulse flex items-center justify-center">
             <span className="text-xs text-slate-400 font-bold">Loading admin roster...</span>
           </div>
+        ) : filteredAdmins.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 text-xs font-medium bg-slate-50 rounded-xl border border-dashed border-slate-200">
+            No admin members match the selected date limit or search criteria.
+          </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {admins.map((adm) => {
+            {filteredAdmins.map((adm) => {
               const isSuper = adm.email.toLowerCase() === 'pranavannur9659@gmail.com' || adm.is_super_admin;
               return (
                 <div key={adm.id} className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-slate-50/80 px-2 rounded-xl transition-all">
@@ -472,6 +578,15 @@ export const AdminManagement: React.FC = () => {
                         <span className="font-mono text-purple-700 font-semibold">{adm.email}</span>
                         <span>•</span>
                         <span>{adm.department}</span>
+                        {adm.created_at && (
+                          <>
+                            <span>•</span>
+                            <span className="text-slate-400 flex items-center space-x-1">
+                              <Clock className="w-3 h-3" />
+                              <span>Joined: {new Date(adm.created_at).toLocaleDateString()}</span>
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

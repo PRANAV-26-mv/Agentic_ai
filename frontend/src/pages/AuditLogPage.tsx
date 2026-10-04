@@ -13,15 +13,22 @@ import {
   Download,
   Filter,
   CheckCircle,
-  FileText
+  FileText,
+  Calendar,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+export type DateLimit = 'TODAY' | '7D' | '30D' | '90D' | '1Y' | 'ALL' | 'CUSTOM';
 
 export const AuditLogPage: React.FC = () => {
   const { user } = useAuth();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'STUDENT' | 'ADMIN'>('ALL');
+  const [dateLimit, setDateLimit] = useState<DateLimit>('30D');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchLogs = () => {
@@ -36,8 +43,48 @@ export const AuditLogPage: React.FC = () => {
     fetchLogs();
   }, []);
 
+  const getDateThreshold = (limit: DateLimit): { start?: Date; end?: Date; label: string } => {
+    const now = new Date();
+    if (limit === 'TODAY') {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      return { start, end: now, label: 'Today' };
+    }
+    if (limit === '7D') {
+      const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return { start, end: now, label: 'Last 7 Days' };
+    }
+    if (limit === '30D') {
+      const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      return { start, end: now, label: 'Last 30 Days' };
+    }
+    if (limit === '90D') {
+      const start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      return { start, end: now, label: 'Last 90 Days' };
+    }
+    if (limit === '1Y') {
+      const start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      return { start, end: now, label: 'Last 1 Year' };
+    }
+    if (limit === 'CUSTOM') {
+      const start = customStartDate ? new Date(customStartDate + 'T00:00:00') : undefined;
+      const end = customEndDate ? new Date(customEndDate + 'T23:59:59') : undefined;
+      return { start, end, label: 'Custom Range' };
+    }
+    return { label: 'All Time' };
+  };
+
+  const { start: dateStart, end: dateEnd, label: activeDateLabel } = getDateThreshold(dateLimit);
+
   const filteredLogs = logs.filter(l => {
     const matchesRole = roleFilter === 'ALL' || l.actor_role === roleFilter;
+
+    // Date limit filter
+    if (l.timestamp) {
+      const logDate = new Date(l.timestamp);
+      if (dateStart && logDate < dateStart) return false;
+      if (dateEnd && logDate > dateEnd) return false;
+    }
+
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
       (l.actor_name || '').toLowerCase().includes(searchLower) ||
@@ -50,11 +97,11 @@ export const AuditLogPage: React.FC = () => {
     return matchesRole && matchesSearch;
   });
 
-  // Calculate statistics
-  const totalEvents = logs.length;
-  const studentEvents = logs.filter(l => l.actor_role === 'STUDENT').length;
-  const adminEvents = logs.filter(l => l.actor_role === 'ADMIN').length;
-  const loginEvents = logs.filter(l => l.action === 'LOGIN').length;
+  // Calculate statistics for active date period
+  const totalEvents = filteredLogs.length;
+  const studentEvents = filteredLogs.filter(l => l.actor_role === 'STUDENT').length;
+  const adminEvents = filteredLogs.filter(l => l.actor_role === 'ADMIN').length;
+  const loginEvents = filteredLogs.filter(l => l.action === 'LOGIN').length;
 
   const exportToCSV = () => {
     if (filteredLogs.length === 0) return;
@@ -192,53 +239,113 @@ export const AuditLogPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
-        
-        {/* Role Segment Filters */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl w-full md:w-auto">
-          <button
-            onClick={() => setRoleFilter('ALL')}
-            className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              roleFilter === 'ALL'
-                ? 'bg-white text-purple-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            All Roles ({logs.length})
-          </button>
-          <button
-            onClick={() => setRoleFilter('STUDENT')}
-            className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              roleFilter === 'STUDENT'
-                ? 'bg-sky-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Students ({studentEvents})
-          </button>
-          <button
-            onClick={() => setRoleFilter('ADMIN')}
-            className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              roleFilter === 'ADMIN'
-                ? 'bg-purple-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Admins ({adminEvents})
-          </button>
+      {/* Filter and Date Limit Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+          {/* Role Segment Filters */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl w-full md:w-auto">
+            <button
+              onClick={() => setRoleFilter('ALL')}
+              className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                roleFilter === 'ALL'
+                  ? 'bg-white text-purple-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              All Roles ({filteredLogs.length})
+            </button>
+            <button
+              onClick={() => setRoleFilter('STUDENT')}
+              className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                roleFilter === 'STUDENT'
+                  ? 'bg-sky-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Students ({studentEvents})
+            </button>
+            <button
+              onClick={() => setRoleFilter('ADMIN')}
+              className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                roleFilter === 'ADMIN'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Admins ({adminEvents})
+            </button>
+          </div>
+
+          {/* Search Field */}
+          <div className="relative w-full md:w-80">
+            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by Name, Email, Action, Entity..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none"
+            />
+          </div>
         </div>
 
-        {/* Search Field */}
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search by Name, Email, Action, Entity..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none"
-          />
+        {/* Date Limit Filter Row */}
+        <div className="pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+              <Calendar className="w-3.5 h-3.5 text-purple-600" />
+              <span>Date Limit:</span>
+            </span>
+            <div className="flex flex-wrap items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
+              {(
+                [
+                  { id: '30D', label: 'Last 30 Days ⭐' },
+                  { id: '1Y', label: 'Last 1 Year 📅' },
+                  { id: '7D', label: 'Last 7 Days' },
+                  { id: 'TODAY', label: 'Today' },
+                  { id: 'ALL', label: 'All Time' },
+                  { id: 'CUSTOM', label: 'Custom Range' },
+                ] as const
+              ).map(opt => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setDateLimit(opt.id)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    dateLimit === opt.id
+                      ? 'bg-purple-600 text-white shadow-xs ring-2 ring-purple-200'
+                      : 'text-slate-600 hover:text-purple-700 hover:bg-white'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {dateLimit === 'CUSTOM' ? (
+            <div className="flex items-center space-x-2 text-xs">
+              <span className="text-slate-500 font-bold">From:</span>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={e => setCustomStartDate(e.target.value)}
+                className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none"
+              />
+              <span className="text-slate-500 font-bold">To:</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={e => setCustomEndDate(e.target.value)}
+                className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none"
+              />
+            </div>
+          ) : (
+            <span className="text-xs text-slate-500 font-medium flex items-center space-x-1.5">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <span>Showing <strong>{filteredLogs.length}</strong> events in <strong>{activeDateLabel}</strong></span>
+            </span>
+          )}
         </div>
       </div>
 
