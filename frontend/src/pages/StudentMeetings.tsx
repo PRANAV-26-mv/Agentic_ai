@@ -13,7 +13,8 @@ import {
   Check, 
   Users,
   Search,
-  BookOpen
+  BookOpen,
+  Link as LinkIcon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { meetingService } from '../services/meetingService';
@@ -48,14 +49,29 @@ export const StudentMeetings: React.FC = () => {
 
   const handleJoinByCode = (e: React.FormEvent) => {
     e.preventDefault();
-    const clean = codeInputValue.trim().toLowerCase();
+    let clean = codeInputValue.trim();
     if (!clean) return;
-    navigate(`/meetings/room/${clean}`);
+
+    // Handle full URL pasted (e.g. http://localhost:5173/meetings/room/xyz-123 or xyz-123)
+    if (clean.includes('/meetings/room/')) {
+      clean = clean.split('/meetings/room/').pop()?.split('?')[0] || clean;
+    } else if (clean.includes('/')) {
+      clean = clean.split('/').pop()?.split('?')[0] || clean;
+    }
+
+    navigate(`/meetings/room/${clean.trim()}`);
   };
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopiedId(code);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleCopyDirectLink = (meeting: Meeting) => {
+    const url = `${window.location.origin}/meetings/room/${meeting.id}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(meeting.id + '-link');
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -185,6 +201,19 @@ export const StudentMeetings: React.FC = () => {
                         {copiedId === meeting.code ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                       </button>
                     </div>
+
+                    <div className="flex justify-between items-center pt-1 border-t border-slate-800/60">
+                      <span>Direct Link:</span>
+                      <button
+                        onClick={() => handleCopyDirectLink(meeting)}
+                        className="font-mono text-[11px] font-bold text-sky-300 hover:text-white flex items-center space-x-1 bg-sky-950/80 hover:bg-sky-900 border border-sky-500/40 px-2 py-0.5 rounded-lg transition-all"
+                        title="Copy direct meeting link"
+                      >
+                        <LinkIcon className="w-3 h-3 text-sky-400" />
+                        <span>{copiedId === meeting.id + '-link' ? 'Copied Link!' : 'Copy Link'}</span>
+                        {copiedId === meeting.id + '-link' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-sky-300" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -248,6 +277,18 @@ export const StudentMeetings: React.FC = () => {
                   <div className="flex justify-between">
                     <span>Host:</span>
                     <span className="text-slate-300">{meeting.host_name}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 border-t border-slate-800/60">
+                    <span>Direct Link:</span>
+                    <button
+                      onClick={() => handleCopyDirectLink(meeting)}
+                      className="font-mono text-[11px] font-bold text-purple-300 hover:text-white flex items-center space-x-1 bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 px-2 py-0.5 rounded-lg transition-all"
+                      title="Copy direct meeting link"
+                    >
+                      <LinkIcon className="w-3 h-3 text-purple-400" />
+                      <span>{copiedId === meeting.id + '-link' ? 'Copied Link!' : 'Copy Link'}</span>
+                      {copiedId === meeting.id + '-link' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-purple-300" />}
+                    </button>
                   </div>
                 </div>
               </div>

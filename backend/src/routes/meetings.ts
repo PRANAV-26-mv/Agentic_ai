@@ -10,6 +10,7 @@ import {
   MeetingAudienceType
 } from '../models/dbModels.js';
 import { requireAuth, requireAdmin, AuthRequest } from '../middleware/authMiddleware.js';
+import { broadcastNotification } from '../services/meetingSocketService.js';
 
 const router = Router();
 
@@ -287,12 +288,29 @@ router.post('/', requireAdmin, (req: AuthRequest, res: Response): void => {
         notifMsg = `Meeting scheduled for ${new Date(newMeeting.scheduled_start_time).toLocaleString()}. Code: ${newMeeting.code}`;
       }
 
-      NotificationsModel.create({
+      const notifTargetType = (newMeeting.audience_type === 'ADMINS_ONLY')
+        ? 'ADMINS_ONLY'
+        : (newMeeting.audience_type === 'SPECIFIC_STUDENTS' && newMeeting.target_department)
+          ? 'DEPARTMENT'
+          : 'ALL';
+
+      const notif = NotificationsModel.create({
         title: notifTitle,
         message: notifMsg,
-        target_type: (newMeeting.audience_type === 'SPECIFIC_STUDENTS' && newMeeting.target_department) ? 'DEPARTMENT' : 'ALL',
+        target_type: notifTargetType,
         target_department: newMeeting.target_department,
-        priority: isInstant ? 'IMPORTANT' : 'NORMAL'
+        priority: isInstant ? 'IMPORTANT' : 'NORMAL',
+        action_url: `/meetings/room/${newMeeting.id}`,
+        meeting_code: newMeeting.code,
+        sender_role: isSuper ? 'SUPER_ADMIN' : 'ADMIN',
+        sender_name: req.user!.name
+      });
+
+      broadcastNotification({
+        ...notif,
+        action_url: `/meetings/room/${newMeeting.id}`,
+        meeting_code: newMeeting.code,
+        meeting_id: newMeeting.id
       });
     } catch (notifErr) {
       console.warn('Notification trigger warning:', notifErr);
@@ -455,11 +473,24 @@ router.post('/:id/invite', requireAdmin, (req: AuthRequest, res: Response): void
     // Notify each invited member
     for (const mem of members) {
       try {
-        NotificationsModel.create({
+        const notif = NotificationsModel.create({
           title: `📹 Direct Invite: ${meeting.title}`,
           message: `Host ${meeting.host_name} personally invited you to join the live meeting now! Meeting Code: ${meeting.code}`,
           target_type: 'ALL',
-          priority: 'IMPORTANT'
+          priority: 'IMPORTANT',
+          action_url: `/meetings/room/${meeting.id}`,
+          meeting_code: meeting.code,
+          sender_role: isSuper ? 'SUPER_ADMIN' : 'ADMIN',
+          sender_name: req.user!.name
+        });
+
+        broadcastNotification({
+          ...notif,
+          target_user_id: mem.id,
+          target_user_email: mem.email,
+          action_url: `/meetings/room/${meeting.id}`,
+          meeting_code: meeting.code,
+          meeting_id: meeting.id
         });
       } catch (e) {}
     }

@@ -1631,14 +1631,15 @@
       "host_email": "pranavannur9659@gmail.com",
       "meeting_type": "VIDEO_VOICE",
       "audience_type": "ALL_STUDENTS",
-      "status": "ACTIVE",
+      "status": "ENDED",
       "scheduled_start_time": "2026-09-23T17:40:29.311Z",
       "actual_start_time": "2026-09-23T17:40:29.311Z",
       "allow_screen_share": true,
       "allow_student_chat": true,
       "mute_on_entry": false,
       "created_at": "2026-09-23T17:40:29.311Z",
-      "updated_at": "2026-09-23T17:40:29.311Z"
+      "updated_at": "2026-09-23T18:48:48.041Z",
+      "actual_end_time": "2026-09-23T18:48:48.041Z"
     }
   ],
   "meeting_participants": [
@@ -1734,7 +1735,9 @@
       "user_role": "ADMIN",
       "joined_at": "2026-09-23T18:39:17.927Z",
       "is_host": true,
-      "id": "mp-1790188757927-3fb48e"
+      "id": "mp-1790188757927-3fb48e",
+      "left_at": "2026-09-23T18:48:48.089Z",
+      "duration_seconds": 570
     }
   ],
   "meeting_settings": [

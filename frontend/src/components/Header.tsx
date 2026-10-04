@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Bell, LogOut, Shield, User as UserIcon, BookOpen, Crown, Menu, X } from 'lucide-react';
-import { api } from '../services/api';
+import { useNotifications } from '../context/NotificationContext';
+import { Bell, LogOut, Shield, User as UserIcon, BookOpen, Crown, Menu, X, Sparkles, Check } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 
 interface HeaderProps {
@@ -12,20 +12,10 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMenu }) => {
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
-  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const { unreadCount, permission, requestPermission } = useNotifications();
 
   const isSuperAdmin = user?.email?.toLowerCase() === 'pranavannur9659@gmail.com' || user?.is_super_admin;
-
-  useEffect(() => {
-    if (user && role === 'STUDENT') {
-      api.get('/notifications')
-        .then(res => {
-          const unread = res.data.filter((n: any) => !n.is_read).length;
-          setUnreadCount(unread);
-        })
-        .catch(() => {});
-    }
-  }, [user, role]);
+  const notifTargetRoute = role === 'ADMIN' ? '/admin/notifications' : '/notifications';
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
@@ -76,21 +66,40 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
             </span>
           )}
 
-          {/* Notifications (Student) */}
-          {role === 'STUDENT' && (
-            <Link 
-              to="/notifications" 
-              className="relative p-1.5 sm:p-2 text-slate-600 hover:text-brand-600 hover:bg-slate-100 rounded-full transition-all duration-200 hover:scale-110"
-              title="Notifications"
+          {/* Desktop Notification Status / Permission Quick Trigger */}
+          {permission === 'granted' ? (
+            <div 
+              className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
+              title="Native desktop pop-ups outside the browser are active"
             >
-              <Bell className={`w-4 h-4 sm:w-5 sm:h-5 ${unreadCount > 0 ? 'animate-bell-ring text-sky-600' : ''}`} />
-              {unreadCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse shadow-xs">
-                  {unreadCount}
-                </span>
-              )}
-            </Link>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span>Desktop Alerts ON</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => requestPermission()}
+              className="hidden sm:inline-flex items-center space-x-1 px-2.5 py-1 text-[10px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-full transition-all duration-200 hover:scale-105 active:scale-95 shadow-2xs"
+              title="Click to enable native pop-ups outside the browser window"
+            >
+              <Sparkles className="w-3 h-3 text-purple-600 animate-spin" />
+              <span>Enable Desktop Pop-ups</span>
+            </button>
           )}
+
+          {/* Notifications Bell (Both Student & Admin) */}
+          <Link 
+            to={notifTargetRoute} 
+            className="relative p-1.5 sm:p-2 text-slate-600 hover:text-purple-600 hover:bg-slate-100 rounded-full transition-all duration-200 hover:scale-110"
+            title={role === 'ADMIN' ? 'Admin Notifications & Broadcasts' : 'Student Notifications'}
+          >
+            <Bell className={`w-4 h-4 sm:w-5 sm:h-5 ${unreadCount > 0 ? 'animate-bell-ring text-purple-600' : ''}`} />
+            {unreadCount > 0 && (
+              <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse shadow-xs">
+                {unreadCount}
+              </span>
+            )}
+          </Link>
 
           {/* User Name */}
           <div className="hidden md:flex flex-col text-right">

@@ -205,13 +205,17 @@ export interface NotificationItem {
   id: string;
   title: string;
   message: string;
-  target_type: 'ALL' | 'COMMUNITY' | 'DEPARTMENT' | 'SELECTED';
+  target_type: 'ALL' | 'COMMUNITY' | 'DEPARTMENT' | 'SELECTED' | 'ADMINS_ONLY' | 'STUDENTS_ONLY';
   target_department?: string;
   target_community?: string;
   priority: 'NORMAL' | 'IMPORTANT';
   scheduled_at?: string;
   created_at: string;
   is_read?: boolean;
+  sender_role?: 'SUPER_ADMIN' | 'ADMIN';
+  sender_name?: string;
+  action_url?: string;
+  meeting_code?: string;
 }
 
 export interface AuditLog {

@@ -26,7 +26,11 @@ import {
   UserCheck,
   Search,
   MailCheck,
-  Activity
+  Activity,
+  Share2,
+  Link as LinkIcon,
+  MessageCircle,
+  Mail
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -97,6 +101,11 @@ export const AdminMeetings: React.FC = () => {
   const [loadingResponses, setLoadingResponses] = useState(false);
   const [responseSearch, setResponseSearch] = useState('');
 
+  // Share & Direct Link Modal State
+  const [shareModalMeeting, setShareModalMeeting] = useState<Meeting | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedInvite, setCopiedInvite] = useState(false);
+
   // Copy feedback states
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -151,6 +160,40 @@ export const AdminMeetings: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const getDirectMeetingLink = (m: Meeting) => `${window.location.origin}/meetings/room/${m.id}`;
+
+  const handleCopyDirectLink = (m: Meeting) => {
+    const url = getDirectMeetingLink(m);
+    navigator.clipboard.writeText(url);
+    setCopiedId(m.id + '-link');
+    setCopiedLink(true);
+    setTimeout(() => {
+      setCopiedId(null);
+      setCopiedLink(false);
+    }, 2000);
+  };
+
+  const getFullInvitationText = (m: Meeting) => {
+    const directLink = getDirectMeetingLink(m);
+    const timeStr = m.status === 'ACTIVE' 
+      ? '🔴 Happening NOW (Live Meeting)' 
+      : new Date(m.scheduled_start_time).toLocaleString();
+    return `📌 Live Meeting Invitation: ${m.title}
+👤 Host: ${m.host_name}
+🕒 Time: ${timeStr}
+🔗 Direct Join Link: ${directLink}
+🔑 Meeting Code: ${m.code}
+
+Click the link above to join directly without entering codes!`;
+  };
+
+  const handleCopyFullInvitation = (m: Meeting) => {
+    const text = getFullInvitationText(m);
+    navigator.clipboard.writeText(text);
+    setCopiedInvite(true);
+    setTimeout(() => setCopiedInvite(false), 2500);
+  };
+
   // Create Meeting
   const handleCreateMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,9 +232,8 @@ export const AdminMeetings: React.FC = () => {
 
       await fetchMeetings();
 
-      if (created.status === 'ACTIVE') {
-        navigate(`/meetings/room/${created.id}`);
-      }
+      // Immediately provide the direct meeting link modal to send to others!
+      setShareModalMeeting(created);
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to create meeting.');
     } finally {
@@ -598,6 +640,28 @@ export const AdminMeetings: React.FC = () => {
                           {copiedId === meeting.code ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                         </button>
                       </div>
+                      <div className="flex justify-between items-center pt-1 border-t border-slate-800/60">
+                        <span className="text-slate-300 font-semibold">Direct Link:</span>
+                        <div className="flex items-center space-x-1.5">
+                          <button
+                            onClick={() => handleCopyDirectLink(meeting)}
+                            className="font-mono text-[11px] font-bold text-purple-300 hover:text-white flex items-center space-x-1 bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 px-2 py-0.5 rounded-lg transition-all"
+                            title="Copy full direct meeting URL"
+                          >
+                            <LinkIcon className="w-3 h-3 text-purple-400" />
+                            <span>{copiedId === meeting.id + '-link' ? 'Copied Link!' : 'Copy Link'}</span>
+                            {copiedId === meeting.id + '-link' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-purple-300" />}
+                          </button>
+
+                          <button
+                            onClick={() => setShareModalMeeting(meeting)}
+                            className="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors"
+                            title="Share Direct Meeting Link & Full Invitation"
+                          >
+                            <Share2 className="w-3.5 h-3.5 text-indigo-400" />
+                          </button>
+                        </div>
+                      </div>
                       <div className="flex justify-between">
                         <span>Participants Inside:</span>
                         <span className="font-bold text-purple-300">{meeting.active_participants_count || 1}</span>
@@ -707,6 +771,28 @@ export const AdminMeetings: React.FC = () => {
                       <div className="flex justify-between items-center">
                         <span>Code:</span>
                         <span className="font-mono font-bold text-indigo-300">{meeting.code}</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1 border-t border-slate-800/60">
+                        <span className="text-slate-300 font-semibold">Direct Link:</span>
+                        <div className="flex items-center space-x-1.5">
+                          <button
+                            onClick={() => handleCopyDirectLink(meeting)}
+                            className="font-mono text-[11px] font-bold text-purple-300 hover:text-white flex items-center space-x-1 bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 px-2 py-0.5 rounded-lg transition-all"
+                            title="Copy full direct meeting URL"
+                          >
+                            <LinkIcon className="w-3 h-3 text-purple-400" />
+                            <span>{copiedId === meeting.id + '-link' ? 'Copied Link!' : 'Copy Link'}</span>
+                            {copiedId === meeting.id + '-link' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-purple-300" />}
+                          </button>
+
+                          <button
+                            onClick={() => setShareModalMeeting(meeting)}
+                            className="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors"
+                            title="Share Direct Meeting Link & Full Invitation"
+                          >
+                            <Share2 className="w-3.5 h-3.5 text-indigo-400" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1684,6 +1770,150 @@ export const AdminMeetings: React.FC = () => {
                 </table>
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* Share Direct Meeting Link & Full Invitation Modal */}
+      {shareModalMeeting && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-purple-500/50 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-5 text-white">
+            <div className="flex items-start justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 bg-purple-600/30 border border-purple-500/40 rounded-xl text-purple-300">
+                  <Video className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-full">
+                      Ready to Share
+                    </span>
+                    {isSuperAdmin && (
+                      <span className="text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full flex items-center space-x-1">
+                        <Crown className="w-2.5 h-2.5" />
+                        <span>Super Admin</span>
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-base font-bold text-white mt-0.5 line-clamp-1">{shareModalMeeting.title}</h2>
+                </div>
+              </div>
+              <button
+                onClick={() => setShareModalMeeting(null)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Direct Join Link Box */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 flex items-center space-x-1.5">
+                <LinkIcon className="w-3.5 h-3.5 text-purple-400" />
+                <span>Direct Join Link (Send to Others)</span>
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={getDirectMeetingLink(shareModalMeeting)}
+                  className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-purple-300 font-mono focus:outline-none select-all"
+                />
+                <button
+                  onClick={() => handleCopyDirectLink(shareModalMeeting)}
+                  className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition-all active:scale-95 flex items-center space-x-1.5 shrink-0"
+                >
+                  {copiedLink ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedLink ? 'Copied!' : 'Copy Link'}</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Anyone with this link can join directly without needing to enter the 6-character code.
+              </p>
+            </div>
+
+            {/* Meeting Code Box */}
+            <div className="flex items-center justify-between p-3 bg-slate-950/70 border border-slate-800 rounded-xl text-xs">
+              <div>
+                <span className="text-slate-400 block text-[11px]">Meeting Code</span>
+                <span className="font-mono text-base font-extrabold text-indigo-300 tracking-wider">
+                  {shareModalMeeting.code}
+                </span>
+              </div>
+              <button
+                onClick={() => handleCopyCode(shareModalMeeting.code)}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 transition-colors flex items-center space-x-1"
+              >
+                {copiedId === shareModalMeeting.code ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedId === shareModalMeeting.code ? 'Copied' : 'Copy Code'}</span>
+              </button>
+            </div>
+
+            {/* Quick Share Options (WhatsApp, Email, Full Text) */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-slate-300">Quick Share to Participants</span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    const text = getFullInvitationText(shareModalMeeting);
+                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+                  }}
+                  className="py-2.5 px-3 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all active:scale-95"
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-400" />
+                  <span>WhatsApp</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const text = getFullInvitationText(shareModalMeeting);
+                    window.open(`mailto:?subject=${encodeURIComponent('Meeting Invitation: ' + shareModalMeeting.title)}&body=${encodeURIComponent(text)}`);
+                  }}
+                  className="py-2.5 px-3 bg-sky-950/80 hover:bg-sky-900 border border-sky-500/40 text-sky-300 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all active:scale-95"
+                >
+                  <Mail className="w-4 h-4 text-sky-400" />
+                  <span>Email Invite</span>
+                </button>
+              </div>
+
+              <button
+                onClick={() => handleCopyFullInvitation(shareModalMeeting)}
+                className="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 flex items-center justify-center space-x-2 transition-colors"
+              >
+                {copiedInvite ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-purple-400" />}
+                <span>{copiedInvite ? 'Full Invitation Copied to Clipboard!' : 'Copy Formatted Invitation Text'}</span>
+              </button>
+            </div>
+
+            {/* Actions Footer */}
+            <div className="pt-2 flex items-center space-x-3 border-t border-slate-800">
+              {shareModalMeeting.status === 'ACTIVE' ? (
+                <button
+                  onClick={() => {
+                    const meetId = shareModalMeeting.id;
+                    setShareModalMeeting(null);
+                    navigate(`/meetings/room/${meetId}`);
+                  }}
+                  className="flex-1 py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-lg transition-all active:scale-95"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>Enter Meeting Room Now</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShareModalMeeting(null)}
+                  className="flex-1 py-3 px-4 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold shadow-lg transition-colors"
+                >
+                  Done
+                </button>
+              )}
+
+              <button
+                onClick={() => setShareModalMeeting(null)}
+                className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

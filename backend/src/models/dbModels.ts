@@ -314,12 +314,16 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  target_type: 'ALL' | 'COMMUNITY' | 'DEPARTMENT' | 'SELECTED';
+  target_type: 'ALL' | 'COMMUNITY' | 'DEPARTMENT' | 'SELECTED' | 'ADMINS_ONLY' | 'STUDENTS_ONLY';
   target_department?: string;
   target_community?: string;
   priority: 'NORMAL' | 'IMPORTANT';
   scheduled_at?: string;
   created_at: string;
+  sender_role?: 'SUPER_ADMIN' | 'ADMIN';
+  sender_name?: string;
+  action_url?: string;
+  meeting_code?: string;
 }
 
 export interface NotificationRead {
@@ -1236,7 +1240,9 @@ export const NotificationsModel = {
     const readSet = new Set(reads.map(r => r.notification_id));
 
     const targeted = all.filter(n => {
-      if (n.target_type === 'ALL') return true;
+      // Students should NEVER receive notifications intended for admins only
+      if (n.target_type === 'ADMINS_ONLY') return false;
+      if (n.target_type === 'ALL' || n.target_type === 'STUDENTS_ONLY') return true;
       if (n.target_type === 'DEPARTMENT' && n.target_department === student.department) return true;
       if (n.target_type === 'COMMUNITY' && n.target_community === student.community) return true;
       return false;
@@ -1247,12 +1253,35 @@ export const NotificationsModel = {
       is_read: readSet.has(n.id)
     })).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   },
-  markRead(notificationId: string, studentId: string) {
+  getForAdmin(admin?: Admin): (Notification & { is_read: boolean })[] {
+    const all = memoryDb.table('notifications');
+    const adminId = admin?.id || '';
+    const reads = memoryDb.table('notification_reads').filter(r => r.student_id === adminId);
+    const readSet = new Set(reads.map(r => r.notification_id));
+
+    const isSuper = admin?.email?.toLowerCase() === 'pranavannur9659@gmail.com' || Boolean(admin?.is_super_admin);
+
+    const targeted = all.filter(n => {
+      // Super admin sees all notifications
+      if (isSuper) return true;
+      // Other admins see ALL, ADMINS_ONLY, or their department
+      if (n.target_type === 'ALL' || n.target_type === 'ADMINS_ONLY') return true;
+      if (admin?.department && n.target_department === admin.department) return true;
+      // Also show student notifications so admins can monitor them
+      return true;
+    });
+
+    return targeted.map(n => ({
+      ...n,
+      is_read: readSet.has(n.id)
+    })).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  },
+  markRead(notificationId: string, userId: string) {
     const reads = memoryDb.table('notification_reads');
-    if (!reads.some(r => r.notification_id === notificationId && r.student_id === studentId)) {
+    if (!reads.some(r => r.notification_id === notificationId && r.student_id === userId)) {
       reads.push({
         notification_id: notificationId,
-        student_id: studentId,
+        student_id: userId,
         read_at: new Date().toISOString()
       });
       db.save();

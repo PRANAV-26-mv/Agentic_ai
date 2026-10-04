@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 
 import { LoginPage } from './pages/LoginPage';
 import { StudentLayout } from './layouts/StudentLayout';
@@ -80,108 +81,110 @@ const RootRedirect: React.FC = () => {
 export function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <ErrorBoundary>
-          <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          
-          {/* Root Redirect */}
-          <Route path="/" element={<RootRedirect />} />
+      <NotificationProvider>
+        <BrowserRouter>
+          <ErrorBoundary>
+            <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            
+            {/* Root Redirect */}
+            <Route path="/" element={<RootRedirect />} />
 
-          {/* Distraction-Free Assessment View */}
-          <Route
-            path="/assessments/take/:id"
-            element={
-              <ProtectedStudentRoute>
-                <StudentAssessmentTake />
-              </ProtectedStudentRoute>
-            }
-          />
-
-          {/* Distraction-Free Google Meet Room */}
-          <Route
-            path="/meetings/room/:id"
-            element={
-              <ProtectedMeetingRoute>
-                <MeetingRoom />
-              </ProtectedMeetingRoute>
-            }
-          />
-
-          {/* Student Portal Routes */}
-          <Route
-            element={
-              <ProtectedStudentRoute>
-                <StudentLayout />
-              </ProtectedStudentRoute>
-            }
-          >
-            <Route path="/dashboard" element={<StudentDashboard />} />
-            <Route path="/materials" element={<StudentMaterials />} />
-            <Route path="/assessments" element={<StudentAssessments />} />
-            <Route path="/meetings" element={<StudentMeetings />} />
-            <Route path="/quiz-sessions" element={<StudentQuizSessions />} />
-            <Route path="/quiz-sessions/:id" element={<StudentQuizLobby />} />
-            <Route path="/results" element={<StudentResults />} />
-            <Route path="/attendance" element={<StudentAttendance />} />
-            <Route path="/notifications" element={<StudentNotifications />} />
-            <Route path="/ask-doubt" element={<AskADoubt />} />
-            <Route path="/profile" element={<StudentProfile />} />
-          </Route>
-
-          {/* Admin Portal Routes */}
-          <Route
-            element={
-              <ProtectedAdminRoute>
-                <AdminLayout />
-              </ProtectedAdminRoute>
-            }
-          >
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/send-emails" element={<EmailBroadcastPage />} />
-            <Route path="/admin/students" element={<StudentManagement />} />
-            <Route path="/admin/assessments" element={<AssessmentManagement />} />
-            <Route path="/admin/meetings" element={<AdminMeetings />} />
-            <Route path="/admin/quiz-sessions" element={<AdminQuizSessions />} />
-            <Route path="/admin/certificate-settings" element={<CertificateSettingsPage />} />
-            <Route path="/admin/question-bank" element={<QuestionBank />} />
-            <Route path="/admin/study-materials" element={<StudyMaterialManagement />} />
-            <Route path="/admin/attendance" element={<AttendanceManagement />} />
-            <Route path="/admin/notifications" element={<NotificationManagement />} />
-            <Route path="/admin/results" element={<AdminResults />} />
-            <Route path="/admin/evaluation" element={<WritingEvaluation />} />
-            <Route path="/admin/monitoring" element={<AssessmentMonitoring />} />
-            <Route path="/admin/analytics" element={<AnalyticsPage />} />
+            {/* Distraction-Free Assessment View */}
             <Route
-              path="/admin/audit-log"
+              path="/assessments/take/:id"
               element={
-                <ProtectedSuperAdminRoute>
-                  <AuditLogPage />
-                </ProtectedSuperAdminRoute>
+                <ProtectedStudentRoute>
+                  <StudentAssessmentTake />
+                </ProtectedStudentRoute>
               }
             />
-            <Route
-              path="/admin/manage-admins"
-              element={
-                <ProtectedSuperAdminRoute>
-                  <AdminManagement />
-                </ProtectedSuperAdminRoute>
-              }
-            />
-            <Route
-              path="/admin/restrictions"
-              element={
-                <ProtectedSuperAdminRoute>
-                  <UserRestrictionsPage />
-                </ProtectedSuperAdminRoute>
-              }
-            />
-          </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        </ErrorBoundary>
-      </BrowserRouter>
+            {/* Distraction-Free Google Meet Room */}
+            <Route
+              path="/meetings/room/:id"
+              element={
+                <ProtectedMeetingRoute>
+                  <MeetingRoom />
+                </ProtectedMeetingRoute>
+              }
+            />
+
+            {/* Student Portal Routes */}
+            <Route
+              element={
+                <ProtectedStudentRoute>
+                  <StudentLayout />
+                </ProtectedStudentRoute>
+              }
+            >
+              <Route path="/dashboard" element={<StudentDashboard />} />
+              <Route path="/materials" element={<StudentMaterials />} />
+              <Route path="/assessments" element={<StudentAssessments />} />
+              <Route path="/meetings" element={<StudentMeetings />} />
+              <Route path="/quiz-sessions" element={<StudentQuizSessions />} />
+              <Route path="/quiz-sessions/:id" element={<StudentQuizLobby />} />
+              <Route path="/results" element={<StudentResults />} />
+              <Route path="/attendance" element={<StudentAttendance />} />
+              <Route path="/notifications" element={<StudentNotifications />} />
+              <Route path="/ask-doubt" element={<AskADoubt />} />
+              <Route path="/profile" element={<StudentProfile />} />
+            </Route>
+
+            {/* Admin Portal Routes */}
+            <Route
+              element={
+                <ProtectedAdminRoute>
+                  <AdminLayout />
+                </ProtectedAdminRoute>
+              }
+            >
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/send-emails" element={<EmailBroadcastPage />} />
+              <Route path="/admin/students" element={<StudentManagement />} />
+              <Route path="/admin/assessments" element={<AssessmentManagement />} />
+              <Route path="/admin/meetings" element={<AdminMeetings />} />
+              <Route path="/admin/quiz-sessions" element={<AdminQuizSessions />} />
+              <Route path="/admin/certificate-settings" element={<CertificateSettingsPage />} />
+              <Route path="/admin/question-bank" element={<QuestionBank />} />
+              <Route path="/admin/study-materials" element={<StudyMaterialManagement />} />
+              <Route path="/admin/attendance" element={<AttendanceManagement />} />
+              <Route path="/admin/notifications" element={<NotificationManagement />} />
+              <Route path="/admin/results" element={<AdminResults />} />
+              <Route path="/admin/evaluation" element={<WritingEvaluation />} />
+              <Route path="/admin/monitoring" element={<AssessmentMonitoring />} />
+              <Route path="/admin/analytics" element={<AnalyticsPage />} />
+              <Route
+                path="/admin/audit-log"
+                element={
+                  <ProtectedSuperAdminRoute>
+                    <AuditLogPage />
+                  </ProtectedSuperAdminRoute>
+                }
+              />
+              <Route
+                path="/admin/manage-admins"
+                element={
+                  <ProtectedSuperAdminRoute>
+                    <AdminManagement />
+                  </ProtectedSuperAdminRoute>
+                }
+              />
+              <Route
+                path="/admin/restrictions"
+                element={
+                  <ProtectedSuperAdminRoute>
+                    <UserRestrictionsPage />
+                  </ProtectedSuperAdminRoute>
+                }
+              />
+            </Route>
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          </ErrorBoundary>
+        </BrowserRouter>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

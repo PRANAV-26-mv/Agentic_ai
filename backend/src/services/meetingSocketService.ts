@@ -15,6 +15,34 @@ interface MeetingSocketData {
   isHost?: boolean;
 }
 
+let globalIo: SocketIOServer | null = null;
+
+export function getSocketIO(): SocketIOServer | null {
+  return globalIo;
+}
+
+export function broadcastNotification(notif: any) {
+  if (!globalIo) return;
+  try {
+    console.log(`[Socket.io] Broadcasting notification: "${notif.title}" (target: ${notif.target_type || 'ALL'})`);
+    if (notif.target_user_id) {
+      globalIo.to(`user:${notif.target_user_id}`).emit('notification-received', notif);
+    } else if (notif.target_type === 'ADMINS_ONLY') {
+      globalIo.to('role:ADMIN').emit('notification-received', notif);
+    } else if (notif.target_type === 'STUDENTS_ONLY') {
+      globalIo.to('role:STUDENT').emit('notification-received', notif);
+    } else if (notif.target_type === 'DEPARTMENT' && notif.target_department) {
+      globalIo.to(`dept:${notif.target_department}`).emit('notification-received', notif);
+      globalIo.to('role:ADMIN').emit('notification-received', notif);
+    } else {
+      // Broadcast to ALL connected clients
+      globalIo.emit('notification-received', notif);
+    }
+  } catch (err) {
+    console.error('Failed to broadcast socket notification:', err);
+  }
+}
+
 export function setupMeetingSocket(httpServer: HttpServer): SocketIOServer {
   const io = new SocketIOServer(httpServer, {
     cors: {
@@ -23,9 +51,39 @@ export function setupMeetingSocket(httpServer: HttpServer): SocketIOServer {
     },
     path: '/socket.io'
   });
+  globalIo = io;
 
   io.on('connection', (socket: Socket) => {
     console.log(`[Socket.io] New client connected: ${socket.id}`);
+
+    // Global Client User Registration (for targeted Desktop OS Notifications)
+    socket.on('register-user', (payload: { id: string; name?: string; email?: string; role: 'ADMIN' | 'STUDENT'; department?: string }) => {
+      if (!payload?.id) return;
+      socket.data.userId = payload.id;
+      socket.data.userName = payload.name;
+      socket.data.userEmail = payload.email;
+      socket.data.userRole = payload.role;
+
+      socket.join(`user:${payload.id}`);
+      socket.join(`role:${payload.role}`);
+      if (payload.department) {
+        socket.join(`dept:${payload.department}`);
+      }
+      console.log(`[Socket.io] User ${payload.name || payload.id} registered for notifications (Role: ${payload.role})`);
+    });
+
+    // Test Desktop Notification Handler
+    socket.on('test-desktop-notification', () => {
+      socket.emit('notification-received', {
+        id: `test-${Date.now()}`,
+        title: '🔔 Desktop Notification Verified!',
+        message: 'This is a sample alert showing that native pop-ups outside the browser are active and operational.',
+        priority: 'IMPORTANT',
+        created_at: new Date().toISOString(),
+        sender_role: 'SUPER_ADMIN',
+        sender_name: 'Super Admin Portal'
+      });
+    });
 
     // 1. Join Meeting Room
     socket.on('join-meeting', async (payload: {
