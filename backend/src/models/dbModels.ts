@@ -375,6 +375,7 @@ export interface QuizSession {
   pin: string;
   assessment_id?: string;
   question_ids: string[];
+  draw_count?: number;
   target_type: 'ALL' | 'DEPARTMENT' | 'COMMUNITY';
   target_department?: string;
   target_community?: string;
@@ -926,10 +927,25 @@ export const AssessmentAttemptsModel = {
           .filter((q): q is Question => q !== undefined && q.status === 'APPROVED');
         
         // Shuffle pool questions deterministically for this attempt draw
-        const drawCount = assessment.draw_count || Math.min(poolQuestions.length, 10);
+        const drawCount = assessment.draw_count || Math.min(poolQuestions.length, 40);
         const shuffled = [...poolQuestions].sort(() => 0.5 - Math.random());
         assignedQuestions = shuffled.slice(0, drawCount);
       }
+    } else if (
+      (assessment.question_selection_mode === 'RANDOMIZED_POOL' || (assessment.draw_count && assessment.draw_count > 0)) &&
+      assessment.question_ids && assessment.question_ids.length > 0
+    ) {
+      // Randomized draw from assessment's assigned questions (e.g. 100 questions from PDF, draw 40)
+      const allAssigned = assessment.question_ids
+        .map(qid => QuestionsModel.findById(qid))
+        .filter((q): q is Question => q !== undefined);
+      
+      const drawCount = (assessment.draw_count && assessment.draw_count > 0 && assessment.draw_count < allAssigned.length)
+        ? assessment.draw_count
+        : allAssigned.length;
+      
+      const shuffled = [...allAssigned].sort(() => 0.5 - Math.random());
+      assignedQuestions = shuffled.slice(0, drawCount);
     } else {
       // Fixed set of questions
       const fixedIds = assessment.question_ids || [];

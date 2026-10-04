@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { AssessmentsModel, AssessmentAttemptsModel, AuditLogsModel, QuestionsModel, ensureDefaultQuestions } from '../models/dbModels.js';
+import { AssessmentsModel, AssessmentAttemptsModel, AuditLogsModel, QuestionsModel, QuestionPoolsModel, ensureDefaultQuestions } from '../models/dbModels.js';
 import { requireAuth, requireAdmin, requireStudent, AuthRequest } from '../middleware/authMiddleware.js';
 
 const router = Router();
@@ -24,9 +24,16 @@ router.get('/:id', requireAuth, (req: AuthRequest, res: Response) => {
   }
 
   let questions: any[] = [];
-  if (assessment.question_selection_mode === 'FIXED' && assessment.question_ids && assessment.question_ids.length > 0) {
+  if (assessment.question_ids && assessment.question_ids.length > 0) {
     questions = assessment.question_ids.map(qid => QuestionsModel.findById(qid)).filter(Boolean);
-  } else {
+  } else if (assessment.pool_id) {
+    const pool = QuestionPoolsModel.findById(assessment.pool_id);
+    if (pool && pool.question_ids) {
+      questions = pool.question_ids.map(qid => QuestionsModel.findById(qid)).filter(Boolean);
+    }
+  }
+
+  if (questions.length === 0) {
     questions = QuestionsModel.findAll({ status: 'APPROVED' }).slice(0, 5);
   }
 

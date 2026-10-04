@@ -68,6 +68,8 @@ router.post('/', requireAdmin, (req: AuthRequest, res: Response): void => {
       pin, 
       assessment_id, 
       question_ids, 
+      draw_count,
+      random_count,
       target_type, 
       target_department, 
       target_community, 
@@ -102,6 +104,12 @@ router.post('/', requireAdmin, (req: AuthRequest, res: Response): void => {
       }
     }
 
+    // Support randomly assigning a specific count of questions (e.g. 40 questions from a 100 question upload)
+    const countToDraw = parseInt(draw_count || random_count || '0', 10);
+    if (countToDraw > 0 && finalQuestionIds.length > countToDraw) {
+      finalQuestionIds = [...finalQuestionIds].sort(() => 0.5 - Math.random()).slice(0, countToDraw);
+    }
+
     const duration = parseInt(duration_minutes || '15', 10);
     const now = new Date();
     const startTime = start_time || now.toISOString();
@@ -113,6 +121,7 @@ router.post('/', requireAdmin, (req: AuthRequest, res: Response): void => {
       pin: pin ? pin.trim() : undefined,
       assessment_id: assessment_id || undefined,
       question_ids: finalQuestionIds,
+      draw_count: countToDraw > 0 ? countToDraw : undefined,
       target_type: target_type || 'ALL',
       target_department: target_department ? target_department.trim() : undefined,
       target_community: target_community ? target_community.trim() : undefined,

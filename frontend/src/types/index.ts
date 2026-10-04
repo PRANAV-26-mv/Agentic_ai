@@ -246,6 +246,7 @@ export interface QuizSession {
   pin: string;
   assessment_id?: string;
   question_ids: string[];
+  draw_count?: number;
   target_type: 'ALL' | 'DEPARTMENT' | 'COMMUNITY';
   target_department?: string;
   target_community?: string;

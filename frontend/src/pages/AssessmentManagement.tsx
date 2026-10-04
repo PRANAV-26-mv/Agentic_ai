@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Assessment, QuestionPool } from '../types';
-import { FileCheck, Plus, Copy, Trash2, Clock, CheckCircle2, Shuffle } from 'lucide-react';
+import { FileCheck, Plus, Copy, Trash2, Clock, CheckCircle2, Shuffle, Search, Sparkles, Dices } from 'lucide-react';
 
 export const AssessmentManagement: React.FC = () => {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -9,6 +9,8 @@ export const AssessmentManagement: React.FC = () => {
   const [allQuestions, setAllQuestions] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [randomCountInput, setRandomCountInput] = useState<number>(40);
+  const [questionSearch, setQuestionSearch] = useState<string>('');
 
   const [formData, setFormData] = useState<any>({
     title: '',
@@ -16,7 +18,7 @@ export const AssessmentManagement: React.FC = () => {
     type: 'HYBRID',
     question_selection_mode: 'FIXED',
     pool_id: '',
-    draw_count: 5,
+    draw_count: 40,
     question_ids: [],
     target_type: 'ALL',
     community: 'Agentic AI & LLM Optimization',
@@ -27,6 +29,13 @@ export const AssessmentManagement: React.FC = () => {
     passing_percentage: 60,
     max_marks: 20
   });
+
+  const handleSelectRandom = (count: number) => {
+    const approved = allQuestions.filter(q => q.status === 'APPROVED');
+    const shuffled = [...approved].sort(() => 0.5 - Math.random());
+    const picked = shuffled.slice(0, Math.min(count, approved.length)).map(q => q.id);
+    setFormData((prev: any) => ({ ...prev, question_ids: picked }));
+  };
 
   const fetchAssessments = () => {
     setLoading(true);
@@ -208,55 +217,198 @@ export const AssessmentManagement: React.FC = () => {
               </div>
 
               {formData.question_selection_mode === 'RANDOMIZED_POOL' && (
-                <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl space-y-2">
-                  <label className="block font-bold text-purple-900">Select Question Pool</label>
-                  <select
-                    value={formData.pool_id}
-                    onChange={e => setFormData({ ...formData, pool_id: e.target.value })}
-                    className="w-full p-2 bg-white border border-purple-300 rounded-lg font-semibold"
-                  >
-                    <option value="">Select Pool...</option>
-                    {pools.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
+                <div className="p-4 bg-purple-50/70 border border-purple-200 rounded-2xl space-y-3.5">
+                  <div className="flex items-center space-x-2 text-purple-900 font-bold">
+                    <Dices className="w-4 h-4 text-purple-600" />
+                    <span>Randomized Pool Configuration</span>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Select Question Pool Source (Optional)</label>
+                    <select
+                      value={formData.pool_id}
+                      onChange={e => setFormData({ ...formData, pool_id: e.target.value })}
+                      className="w-full p-2.5 bg-white border border-purple-300 rounded-xl font-medium focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="">-- All Approved Questions / Selected Questions ({allQuestions.filter(q => q.status === 'APPROVED').length} available) --</option>
+                      {pools.map(p => (
+                        <option key={p.id} value={p.id}>{p.name} ({p.question_ids?.length || 0} questions)</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Draw Count Selector */}
+                  <div className="bg-white p-3 rounded-xl border border-purple-200/80 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-purple-900 text-xs flex items-center space-x-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                        <span>Random Questions Assigned per Student (Draw Count)</span>
+                      </label>
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-purple-100 text-purple-800">
+                        {formData.draw_count || 40} Questions
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {[10, 20, 30, 40, 50, 60].map(cnt => (
+                        <button
+                          key={cnt}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, draw_count: cnt })}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            formData.draw_count === cnt
+                              ? 'bg-purple-600 text-white shadow-xs ring-2 ring-purple-300'
+                              : 'bg-purple-50 border border-purple-200 text-purple-700 hover:bg-purple-100'
+                          }`}
+                        >
+                          {cnt === 40 ? '40 ⭐' : cnt}
+                        </button>
+                      ))}
+                      <div className="flex items-center space-x-1 ml-auto">
+                        <span className="text-slate-500 text-[11px] font-bold">Custom:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={200}
+                          value={formData.draw_count || 40}
+                          onChange={e => setFormData({ ...formData, draw_count: parseInt(e.target.value, 10) || 1 })}
+                          className="w-16 p-1 bg-purple-50 border border-purple-300 rounded-lg text-xs font-bold text-center"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500 italic">
+                      When a student starts the test, the system will randomly draw and assign {formData.draw_count || 40} questions from the pool.
+                    </p>
+                  </div>
                 </div>
               )}
 
               {formData.question_selection_mode === 'FIXED' && (
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                  <label className="block font-bold text-slate-800">
-                    Select Questions for Assessment ({formData.question_ids?.length || 0} selected)
-                  </label>
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="block font-bold text-slate-800">
+                      Select Questions ({formData.question_ids?.length || 0} of {allQuestions.filter(q => q.status === 'APPROVED').length} selected)
+                    </label>
+                    <div className="relative flex-1 max-w-xs">
+                      <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Filter questions..."
+                        value={questionSearch}
+                        onChange={e => setQuestionSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Random Selection Toolbar */}
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-purple-900 flex items-center space-x-1">
+                        <Dices className="w-3.5 h-3.5 text-purple-600" />
+                        <span>Quick Random Picker:</span>
+                      </span>
+                      <div className="flex items-center space-x-1 text-xs">
+                        <input
+                          type="number"
+                          min={1}
+                          max={allQuestions.length}
+                          value={randomCountInput}
+                          onChange={e => setRandomCountInput(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                          className="w-14 p-1 bg-slate-50 border border-slate-300 rounded-md text-center font-bold text-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSelectRandom(randomCountInput)}
+                          className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-md text-xs cursor-pointer shadow-xs"
+                        >
+                          Pick Random
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectRandom(10)}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs cursor-pointer"
+                      >
+                        Random 10
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectRandom(20)}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs cursor-pointer"
+                      >
+                        Random 20
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectRandom(40)}
+                        className="px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold rounded-lg text-xs cursor-pointer border border-purple-300 shadow-2xs"
+                      >
+                        Random 40 ⭐
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectRandom(50)}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs cursor-pointer"
+                      >
+                        Random 50
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, question_ids: allQuestions.filter(q => q.status === 'APPROVED').map(q => q.id) })}
+                        className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-xs cursor-pointer ml-auto"
+                      >
+                        Select All
+                      </button>
+                      {formData.question_ids?.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, question_ids: [] })}
+                          className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg text-xs cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                   {allQuestions.filter(q => q.status === 'APPROVED').length === 0 ? (
                     <div className="text-slate-500 text-xs italic">
                       No approved questions found. Baseline standard questions will be automatically assigned.
                     </div>
                   ) : (
-                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                      {allQuestions.filter(q => q.status === 'APPROVED').map(q => {
-                        const selected = formData.question_ids?.includes(q.id);
-                        return (
-                          <label key={q.id} className="flex items-center space-x-2 text-xs p-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={!!selected}
-                              onChange={e => {
-                                const current = formData.question_ids || [];
-                                const updated = e.target.checked
-                                  ? [...current, q.id]
-                                  : current.filter((qid: string) => qid !== q.id);
-                                setFormData({ ...formData, question_ids: updated });
-                              }}
-                              className="rounded text-purple-600 focus:ring-purple-500"
-                            />
-                            <div className="flex-1 truncate">
-                              <span className="font-bold text-purple-700 mr-1.5">[{q.question_type}]</span>
-                              <span className="text-slate-800 font-medium">{q.question_text}</span>
-                            </div>
-                          </label>
-                        );
-                      })}
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                      {allQuestions
+                        .filter(q => q.status === 'APPROVED')
+                        .filter(q => !questionSearch || q.question_text.toLowerCase().includes(questionSearch.toLowerCase()) || (q.topic || '').toLowerCase().includes(questionSearch.toLowerCase()))
+                        .map(q => {
+                          const selected = formData.question_ids?.includes(q.id);
+                          return (
+                            <label key={q.id} className={`flex items-center space-x-2 text-xs p-2 rounded-lg border cursor-pointer transition-colors ${
+                              selected ? 'bg-purple-50/80 border-purple-200' : 'bg-white border-slate-200 hover:bg-slate-50'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={!!selected}
+                                onChange={e => {
+                                  const current = formData.question_ids || [];
+                                  const updated = e.target.checked
+                                    ? [...current, q.id]
+                                    : current.filter((qid: string) => qid !== q.id);
+                                  setFormData({ ...formData, question_ids: updated });
+                                }}
+                                className="rounded text-purple-600 focus:ring-purple-500"
+                              />
+                              <div className="flex-1 truncate">
+                                <span className="font-bold text-purple-700 mr-1.5">[{q.question_type}]</span>
+                                <span className="text-slate-800 font-medium">{q.question_text}</span>
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-semibold">{q.difficulty} • {q.marks}m</span>
+                            </label>
+                          );
+                        })}
                     </div>
                   )}
                 </div>

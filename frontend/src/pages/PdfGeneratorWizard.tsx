@@ -20,7 +20,9 @@ import {
   FileInput,
   Edit3,
   Check,
-  HelpCircle
+  HelpCircle,
+  Zap,
+  Dices
 } from 'lucide-react';
 
 interface PdfGeneratorWizardProps {
@@ -105,6 +107,100 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
   const [includeAnswers, setIncludeAnswers] = useState<boolean>(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
+
+  // Assign to Assessment / Live Quiz modal state
+  const [showAssignModal, setShowAssignModal] = useState<boolean>(false);
+  const [assignTarget, setAssignTarget] = useState<'ASSESSMENT' | 'QUIZ'>('ASSESSMENT');
+  const [assignTitle, setAssignTitle] = useState<string>('');
+  const [assignDrawCount, setAssignDrawCount] = useState<number>(40);
+  const [assignSelectionType, setAssignSelectionType] = useState<'RANDOM_SUBSET' | 'ALL' | 'RANDOM_POOL'>('RANDOM_SUBSET');
+  const [assignDuration, setAssignDuration] = useState<number>(30);
+  const [assignLoading, setAssignLoading] = useState<boolean>(false);
+  const [assignSuccessMsg, setAssignSuccessMsg] = useState<string | null>(null);
+  const [assignErrorMsg, setAssignErrorMsg] = useState<string | null>(null);
+
+  const handleCreateAssessmentOrQuiz = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assignTitle.trim()) {
+      setAssignErrorMsg('Please provide a title.');
+      return;
+    }
+    if (generatedQuestions.length === 0) {
+      setAssignErrorMsg('No questions available.');
+      return;
+    }
+
+    setAssignLoading(true);
+    setAssignErrorMsg(null);
+    setAssignSuccessMsg(null);
+
+    try {
+      const allIds = generatedQuestions.map(q => q.id);
+
+      if (assignTarget === 'ASSESSMENT') {
+        let questionIdsToUse = allIds;
+        let mode: 'FIXED' | 'RANDOMIZED_POOL' = 'FIXED';
+        let drawCountVal: number | undefined = undefined;
+
+        if (assignSelectionType === 'RANDOM_SUBSET') {
+          const shuffled = [...allIds].sort(() => 0.5 - Math.random());
+          questionIdsToUse = shuffled.slice(0, Math.min(assignDrawCount, allIds.length));
+          mode = 'FIXED';
+        } else if (assignSelectionType === 'RANDOM_POOL') {
+          questionIdsToUse = allIds;
+          mode = 'RANDOMIZED_POOL';
+          drawCountVal = assignDrawCount;
+        }
+
+        await api.post('/assessments', {
+          title: assignTitle.trim(),
+          description: `Created from PDF. ${assignSelectionType === 'RANDOM_POOL' ? `Each student gets ${assignDrawCount} random questions from ${allIds.length}-question pool.` : `Contains ${questionIdsToUse.length} questions.`}`,
+          type: 'HYBRID',
+          question_selection_mode: mode,
+          question_ids: questionIdsToUse,
+          draw_count: drawCountVal,
+          duration_minutes: assignDuration,
+          start_time: new Date().toISOString(),
+          end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          passing_percentage: 60,
+          max_marks: (drawCountVal || questionIdsToUse.length) * 2,
+          target_type: 'ALL'
+        });
+
+        setAssignSuccessMsg(`Assessment "${assignTitle.trim()}" created successfully! (${assignSelectionType === 'RANDOM_POOL' ? `Random pool of ${allIds.length}, draw ${assignDrawCount}` : `${questionIdsToUse.length} questions assigned`})`);
+      } else {
+        // Quiz Session
+        let questionIdsToUse = allIds;
+        if (assignSelectionType === 'RANDOM_SUBSET') {
+          const shuffled = [...allIds].sort(() => 0.5 - Math.random());
+          questionIdsToUse = shuffled.slice(0, Math.min(assignDrawCount, allIds.length));
+        }
+
+        const res = await api.post('/quiz-sessions', {
+          title: assignTitle.trim(),
+          description: `Live Quiz created from PDF with ${questionIdsToUse.length} questions.`,
+          duration_minutes: assignDuration,
+          question_ids: questionIdsToUse,
+          draw_count: assignSelectionType === 'RANDOM_POOL' ? assignDrawCount : undefined,
+          target_type: 'ALL',
+          status: 'ACTIVE'
+        });
+
+        setAssignSuccessMsg(`Quiz Session "${assignTitle.trim()}" launched successfully with PIN: ${res.data?.pin}! (${questionIdsToUse.length} questions assigned)`);
+      }
+
+      setTimeout(() => {
+        setShowAssignModal(false);
+        setAssignSuccessMsg(null);
+        onSuccess();
+        onClose();
+      }, 2500);
+    } catch (err: any) {
+      setAssignErrorMsg(err.response?.data?.message || 'Failed to create assessment or quiz.');
+    } finally {
+      setAssignLoading(false);
+    }
+  };
 
   const totalRequested = mcqCount + writingCount;
 
@@ -941,6 +1037,23 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
               </div>
 
               <div className="flex items-center space-x-2">
+                {/* Assign to Assessment / Quiz Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAssignTitle(paperTitle.trim() || 'Curriculum Test');
+                    setAssignDrawCount(Math.min(40, generatedQuestions.length));
+                    setAssignErrorMsg(null);
+                    setAssignSuccessMsg(null);
+                    setShowAssignModal(true);
+                  }}
+                  className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center space-x-1.5 cursor-pointer"
+                  title="Assign questions directly to an Assessment or Live Quiz session with random 40 draw"
+                >
+                  <Zap className="w-4 h-4 text-amber-300" />
+                  <span>Assign to Assessment / Quiz (Random 40)</span>
+                </button>
+
                 {/* Export to PDF Button (Admin Only) */}
                 <button
                   type="button"
@@ -1268,6 +1381,225 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign to Assessment / Live Quiz Modal */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto border border-slate-200">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="font-extrabold text-slate-900 text-base flex items-center space-x-2">
+                <Zap className="w-5 h-5 text-amber-500" />
+                <span>Create Assessment or Quiz from PDF</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAssignModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {assignSuccessMsg ? (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-bold flex items-center space-x-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>{assignSuccessMsg}</span>
+              </div>
+            ) : (
+              <form onSubmit={handleCreateAssessmentOrQuiz} className="space-y-4 text-xs">
+                {/* Target Type */}
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block">Target Type</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAssignTarget('ASSESSMENT')}
+                      className={`p-2.5 rounded-xl border font-bold text-xs transition-all cursor-pointer ${
+                        assignTarget === 'ASSESSMENT'
+                          ? 'bg-purple-50 border-purple-500 text-purple-800 ring-2 ring-purple-200'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      Formal Assessment
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAssignTarget('QUIZ')}
+                      className={`p-2.5 rounded-xl border font-bold text-xs transition-all cursor-pointer ${
+                        assignTarget === 'QUIZ'
+                          ? 'bg-amber-50 border-amber-500 text-amber-800 ring-2 ring-amber-200'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      Live Quiz Session (PIN)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Title */}
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={assignTitle}
+                    onChange={e => setAssignTitle(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 outline-none"
+                    placeholder="e.g. Artificial Intelligence Test"
+                  />
+                </div>
+
+                {/* Question Assignment Mode */}
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-800 flex items-center space-x-1.5">
+                      <Dices className="w-4 h-4 text-purple-600" />
+                      <span>Random Question Assignment</span>
+                    </label>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800">
+                      Total: {generatedQuestions.length} Questions Available
+                    </span>
+                  </div>
+
+                  {assignTarget === 'ASSESSMENT' && (
+                    <div className="space-y-1.5">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="assignMode"
+                          checked={assignSelectionType === 'RANDOM_SUBSET'}
+                          onChange={() => setAssignSelectionType('RANDOM_SUBSET')}
+                          className="text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="font-bold text-slate-700">Random Subset (Pick {assignDrawCount} random questions from PDF)</span>
+                      </label>
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="assignMode"
+                          checked={assignSelectionType === 'RANDOM_POOL'}
+                          onChange={() => setAssignSelectionType('RANDOM_POOL')}
+                          className="text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="font-bold text-slate-700">Randomized Pool (each student gets random {assignDrawCount} drawn from the {generatedQuestions.length} questions)</span>
+                      </label>
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="assignMode"
+                          checked={assignSelectionType === 'ALL'}
+                          onChange={() => setAssignSelectionType('ALL')}
+                          className="text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="font-medium text-slate-600">Assign All {generatedQuestions.length} Questions</span>
+                      </label>
+                    </div>
+                  )}
+
+                  {assignSelectionType !== 'ALL' && (
+                    <div className="space-y-2 pt-1 border-t border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-700">Number of Questions to Assign:</span>
+                        <span className="font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                          {assignDrawCount} Questions
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {[10, 20, 30, 40, 50].filter(c => c <= generatedQuestions.length).map(cnt => (
+                          <button
+                            key={cnt}
+                            type="button"
+                            onClick={() => setAssignDrawCount(cnt)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                              assignDrawCount === cnt
+                                ? 'bg-purple-600 text-white shadow-xs ring-2 ring-purple-300'
+                                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                            }`}
+                          >
+                            {cnt === 40 ? 'Random 40 ⭐' : `Random ${cnt}`}
+                          </button>
+                        ))}
+                        {generatedQuestions.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setAssignDrawCount(generatedQuestions.length)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                              assignDrawCount === generatedQuestions.length
+                                ? 'bg-purple-600 text-white shadow-xs'
+                                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                            }`}
+                          >
+                            All ({generatedQuestions.length})
+                          </button>
+                        )}
+                        <div className="flex items-center space-x-1 ml-auto">
+                          <span className="text-[11px] text-slate-500 font-bold">Custom:</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={generatedQuestions.length}
+                            value={assignDrawCount}
+                            onChange={e => setAssignDrawCount(Math.max(1, Math.min(generatedQuestions.length, parseInt(e.target.value, 10) || 1)))}
+                            className="w-14 p-1 bg-white border border-slate-300 rounded-lg text-xs font-bold text-center"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Duration */}
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Duration (Minutes)</label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={300}
+                    value={assignDuration}
+                    onChange={e => setAssignDuration(Math.max(5, parseInt(e.target.value, 10) || 15))}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                  />
+                </div>
+
+                {assignErrorMsg && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-bold flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>{assignErrorMsg}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-end space-x-2.5 pt-3 border-t">
+                  <button
+                    type="button"
+                    onClick={() => setShowAssignModal(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={assignLoading}
+                    className="px-6 py-2 bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700 text-white font-black rounded-xl shadow-md flex items-center space-x-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {assignLoading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Creating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4" />
+                        <span>Create & Assign {assignSelectionType === 'ALL' ? generatedQuestions.length : assignDrawCount} Questions</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
