@@ -141,17 +141,30 @@ router.post('/bulk-import', requireAdmin, upload.single('file'), (req: AuthReque
 // GET /api/students/:id/report-card
 router.get('/:id/report-card', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const studentId = req.params.id as string;
-    if (req.user?.role === 'STUDENT' && req.user.id !== studentId) {
-      res.status(403).json({ message: 'Access denied.' });
+    let studentParam = req.params.id as string;
+    if (studentParam === 'me' && req.user?.id) {
+      studentParam = req.user.id;
+    }
+
+    const student = StudentsModel.findById(studentParam) || StudentsModel.findByStudentId(studentParam);
+    if (!student) {
+      res.status(404).json({ message: 'Student record not found.' });
       return;
     }
 
-    const pdfBuffer = await generateReportCardPDF(studentId);
+    if (req.user?.role === 'STUDENT' && req.user.id !== student.id && req.user.student?.id !== student.id) {
+      res.status(403).json({ message: 'Access denied. You can only view your own report card.' });
+      return;
+    }
+
+    const pdfBuffer = await generateReportCardPDF(student.id);
+    const sanitizedName = (student.name || 'Student').replace(/[^a-zA-Z0-9_-]/g, '_');
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=Report_Card_${studentId}.pdf`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('Content-Disposition', `attachment; filename=Report_Card_${sanitizedName}_${student.student_id}.pdf`);
     res.send(pdfBuffer);
   } catch (err: any) {
+    console.error('Error generating PDF report card:', err);
     res.status(500).json({ message: err.message || 'Error generating PDF report card.' });
   }
 });

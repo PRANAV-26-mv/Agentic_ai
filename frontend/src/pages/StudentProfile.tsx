@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api, API_BASE_URL } from '../services/api';
-import { User, Download, Save, CheckCircle2, Lock } from 'lucide-react';
+import { User, Download, Save, CheckCircle2, Lock, Loader2, AlertCircle, FileText } from 'lucide-react';
 
 export const StudentProfile: React.FC = () => {
   const { user } = useAuth();
@@ -11,6 +11,9 @@ export const StudentProfile: React.FC = () => {
   const [skillLevel, setSkillLevel] = useState<string>(user?.skill_level || 'Intermediate');
   const [saving, setSaving] = useState<boolean>(false);
   const [successMsg, setSuccessMsg] = useState<boolean>(false);
+  const [downloadingReport, setDownloadingReport] = useState<boolean>(false);
+  const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -35,10 +38,45 @@ export const StudentProfile: React.FC = () => {
     }).finally(() => setSaving(false));
   };
 
-  const handleDownloadReportCard = () => {
+  const handleDownloadReportCard = async () => {
     if (!user) return;
-    const token = localStorage.getItem('portal_auth_token');
-    window.open(`${API_BASE_URL}/students/${user.id}/report-card?token=${token}`, '_blank');
+    setDownloadingReport(true);
+    setDownloadError(null);
+    setDownloadSuccess(false);
+
+    try {
+      // 1. Preferred modern method: authenticated Axios blob download
+      const res = await api.get(`/students/${user.id}/report-card`, {
+        responseType: 'blob'
+      });
+
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      const cleanName = (user.name || 'Student').replace(/[^a-zA-Z0-9_-]/g, '_');
+      link.setAttribute('download', `Official_Report_Card_${cleanName}_${user.student_id || ''}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 4000);
+    } catch (err: any) {
+      console.warn('Axios blob download failed, falling back to direct URL navigation:', err);
+      try {
+        const token = localStorage.getItem('portal_auth_token') || '';
+        const url = `${API_BASE_URL}/students/${user.id}/report-card?token=${encodeURIComponent(token)}`;
+        window.open(url, '_blank');
+        setDownloadSuccess(true);
+        setTimeout(() => setDownloadSuccess(false), 4000);
+      } catch (fallbackErr: any) {
+        setDownloadError('Failed to generate report card. Please try again or re-login.');
+      }
+    } finally {
+      setDownloadingReport(false);
+    }
   };
 
   return (
@@ -53,14 +91,39 @@ export const StudentProfile: React.FC = () => {
           <p className="text-slate-500 text-xs mt-1">Manage your skills, interests, and download your official performance report card.</p>
         </div>
 
-        {/* PDF Report Card Export matching §48 */}
-        <button
-          onClick={handleDownloadReportCard}
-          className="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          <span>Download Report Card PDF</span>
-        </button>
+        {/* PDF Report Card Export */}
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <button
+            onClick={handleDownloadReportCard}
+            disabled={downloadingReport}
+            className="px-4 py-2.5 bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 disabled:opacity-60 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-all cursor-pointer"
+          >
+            {downloadingReport ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                <span>Generating Report Card...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 text-white" />
+                <span>Download Report Card PDF</span>
+              </>
+            )}
+          </button>
+          
+          {downloadSuccess && (
+            <span className="text-[11px] font-bold text-emerald-600 flex items-center space-x-1 animate-fade-in">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Report Card downloaded successfully!</span>
+            </span>
+          )}
+          {downloadError && (
+            <span className="text-[11px] font-bold text-red-600 flex items-center space-x-1 animate-fade-in">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>{downloadError}</span>
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Form matching §7 */}

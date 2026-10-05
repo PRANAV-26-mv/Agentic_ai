@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { api, API_BASE_URL } from '../services/api';
 import { 
   FileText, 
   CheckCircle2, 
@@ -9,13 +9,15 @@ import {
   Award, 
   TrendingUp, 
   BookOpen, 
-  ArrowRight,
-  Sparkles,
-  MessageSquare,
-  Trophy,
-  Crown,
-  Zap,
-  Medal
+  ArrowRight, 
+  Sparkles, 
+  MessageSquare, 
+  Trophy, 
+  Crown, 
+  Zap, 
+  Medal,
+  Download,
+  Loader2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GiftBurstModal } from '../components/GiftBurstModal';
@@ -32,6 +34,31 @@ export const StudentDashboard: React.FC = () => {
   const [showGiftBurst, setShowGiftBurst] = useState<boolean>(false);
   const [showCertificate, setShowCertificate] = useState<boolean>(false);
   const [certificateData, setCertificateData] = useState<any | null>(null);
+  const [downloadingReport, setDownloadingReport] = useState<boolean>(false);
+
+  const handleDownloadReportCard = async () => {
+    if (!user) return;
+    setDownloadingReport(true);
+    try {
+      const res = await api.get(`/students/${user.id}/report-card`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const cleanName = (user.name || 'Student').replace(/[^a-zA-Z0-9_-]/g, '_');
+      link.setAttribute('download', `Official_Report_Card_${cleanName}_${user.student_id || ''}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.warn('Axios blob download failed, falling back to direct URL navigation:', err);
+      const token = localStorage.getItem('portal_auth_token') || '';
+      window.open(`${API_BASE_URL}/students/${user.id}/report-card?token=${encodeURIComponent(token)}`, '_blank');
+    } finally {
+      setDownloadingReport(false);
+    }
+  };
 
   useEffect(() => {
     // 1. Fetch assessments
@@ -106,13 +133,33 @@ export const StudentDashboard: React.FC = () => {
               Department of {user?.department} • Year {user?.year} • Suggested Role: <span className="text-sky-300 font-bold bg-sky-950/60 px-2 py-0.5 rounded-md border border-sky-800/60">{user?.suggested_role || 'AI Developer'}</span>
             </p>
           </div>
-          <Link
-            to="/ask-doubt"
-            className="inline-flex items-center space-x-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-sky-500/30 btn-shimmer transform hover:scale-105 active:scale-95 transition-all"
-          >
-            <MessageSquare className="w-4 h-4 animate-pulse" />
-            <span>Ask AI Assistant</span>
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleDownloadReportCard}
+              disabled={downloadingReport}
+              className="inline-flex items-center space-x-2 bg-white/10 hover:bg-white/20 text-white font-extrabold text-sm px-4 py-2.5 rounded-xl border border-white/20 shadow-md backdrop-blur-xs transition-all transform hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-60"
+              title="Download your official academic performance report card PDF"
+            >
+              {downloadingReport ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-sky-300" />
+                  <span>Generating PDF...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 text-sky-300" />
+                  <span>Report Card PDF</span>
+                </>
+              )}
+            </button>
+            <Link
+              to="/ask-doubt"
+              className="inline-flex items-center space-x-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-sky-500/30 btn-shimmer transform hover:scale-105 active:scale-95 transition-all"
+            >
+              <MessageSquare className="w-4 h-4 animate-pulse" />
+              <span>Ask AI Assistant</span>
+            </Link>
+          </div>
         </div>
       </div>
 

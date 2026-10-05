@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { api, API_BASE_URL } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { CertificateModal } from '../components/CertificateModal';
@@ -17,7 +17,9 @@ import {
   Sparkles,
   Medal,
   Crown,
-  FileCheck
+  FileCheck,
+  Download,
+  Loader2
 } from 'lucide-react';
 
 interface QuizResultItem {
@@ -45,8 +47,33 @@ export const StudentResults: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'QUIZZES' | 'ASSESSMENTS'>('QUIZZES');
   const [selectedCertificate, setSelectedCertificate] = useState<any | null>(null);
+  const [downloadingReport, setDownloadingReport] = useState<boolean>(false);
 
   const navigate = useNavigate();
+
+  const handleDownloadReportCard = async () => {
+    if (!user) return;
+    setDownloadingReport(true);
+    try {
+      const res = await api.get(`/students/${user.id}/report-card`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const cleanName = (user.name || 'Student').replace(/[^a-zA-Z0-9_-]/g, '_');
+      link.setAttribute('download', `Official_Report_Card_${cleanName}_${user.student_id || ''}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.warn('Axios blob download failed, falling back to direct URL navigation:', err);
+      const token = localStorage.getItem('portal_auth_token') || '';
+      window.open(`${API_BASE_URL}/students/${user.id}/report-card?token=${encodeURIComponent(token)}`, '_blank');
+    } finally {
+      setDownloadingReport(false);
+    }
+  };
 
   const fetchAllResults = async () => {
     setLoading(true);
@@ -139,13 +166,34 @@ export const StudentResults: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => navigate('/quiz-sessions')}
-          className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center space-x-1.5 shrink-0"
-        >
-          <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
-          <span>Go to Live Quizzes</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <button
+            onClick={handleDownloadReportCard}
+            disabled={downloadingReport}
+            className="px-4 py-2.5 bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 disabled:opacity-60 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center space-x-1.5 shrink-0"
+            title="Download Comprehensive Official Academic Report Card PDF"
+          >
+            {downloadingReport ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                <span>Generating Report...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 text-white" />
+                <span>Download Report Card</span>
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={() => navigate('/quiz-sessions')}
+            className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center space-x-1.5 shrink-0"
+          >
+            <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+            <span>Go to Live Quizzes</span>
+          </button>
+        </div>
       </div>
 
       {/* Top Overview Metric Cards */}
