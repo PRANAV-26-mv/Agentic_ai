@@ -250,7 +250,7 @@ export const AssessmentManagement: React.FC = () => {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {[5, 10, 20, 30, 40, 50, 60].map(cnt => (
+                      {[5, 10, 15, 20, 25, 30, 40, 50, 60].map(cnt => (
                         <button
                           key={cnt}
                           type="button"

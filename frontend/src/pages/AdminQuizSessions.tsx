@@ -146,9 +146,12 @@ export const AdminQuizSessions: React.FC = () => {
   };
 
   const handleSelectRandomQuestions = (count: number) => {
-    const shuffled = [...availableQuestions].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, Math.min(count, availableQuestions.length)).map(q => q.id);
-    setSelectedQuestionIds(selected);
+    // If no questions are currently selected or less than count, select all available questions as pool
+    if (selectedQuestionIds.length <= count) {
+      setSelectedQuestionIds(availableQuestions.map(q => q.id));
+    }
+    setQuestionsDrawCount(count);
+    setQuestionsSelectionMode('RANDOM_POOL');
   };
 
   const toggleQuestionSelection = (id: string) => {
@@ -1144,6 +1147,13 @@ export const AdminQuizSessions: React.FC = () => {
                         </button>
                         <button
                           type="button"
+                          onClick={() => handleSelectRandomQuestions(15)}
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[10px] cursor-pointer"
+                        >
+                          Random 15
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => handleSelectRandomQuestions(20)}
                           className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[10px] cursor-pointer"
                         >
@@ -1155,6 +1165,13 @@ export const AdminQuizSessions: React.FC = () => {
                           className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[10px] cursor-pointer"
                         >
                           Random 25
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectRandomQuestions(30)}
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[10px] cursor-pointer"
+                        >
+                          Random 30
                         </button>
                         <button
                           type="button"
@@ -1279,7 +1296,7 @@ export const AdminQuizSessions: React.FC = () => {
                         {questionsSelectionMode === 'RANDOM_POOL' && (
                           <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-amber-200/60">
                             <span className="text-[11px] font-bold text-amber-900 mr-1">Draw per student:</span>
-                            {[5, 10, 20, 30, 40, 50].filter(c => c < selectedQuestionIds.length).map(cnt => (
+                            {[5, 10, 15, 20, 25, 30, 40, 50].filter(c => c < selectedQuestionIds.length).map(cnt => (
                               <button
                                 key={cnt}
                                 type="button"
