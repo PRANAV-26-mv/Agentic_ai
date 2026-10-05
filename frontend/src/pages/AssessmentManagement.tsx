@@ -250,7 +250,7 @@ export const AssessmentManagement: React.FC = () => {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {[10, 20, 30, 40, 50, 60].map(cnt => (
+                      {[5, 10, 20, 30, 40, 50, 60].map(cnt => (
                         <button
                           key={cnt}
                           type="button"
@@ -261,7 +261,7 @@ export const AssessmentManagement: React.FC = () => {
                               : 'bg-purple-50 border border-purple-200 text-purple-700 hover:bg-purple-100'
                           }`}
                         >
-                          {cnt === 40 ? '40 ⭐' : cnt}
+                          {cnt === 5 ? '5 ⭐' : cnt === 40 ? '40 ⭐' : cnt}
                         </button>
                       ))}
                       <div className="flex items-center space-x-1 ml-auto">

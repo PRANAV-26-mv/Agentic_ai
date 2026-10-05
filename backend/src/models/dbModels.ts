@@ -406,6 +406,7 @@ export interface QuizSessionParticipant {
   rank?: number;
   answers_json?: string;
   tab_switches_count?: number;
+  assigned_questions_json?: string;
 }
 
 // Data Model Helpers
@@ -1437,6 +1438,31 @@ export const QuizSessionParticipantsModel = {
     const list = memoryDb.table('quiz_session_participants') as QuizSessionParticipant[];
     return list.filter(p => p.session_id === sessionId);
   },
+  ensureAssignedQuestions(session: QuizSession, participant: QuizSessionParticipant): string[] {
+    if (participant.assigned_questions_json) {
+      try {
+        const parsed = JSON.parse(participant.assigned_questions_json);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) {
+        // Fall through to re-draw
+      }
+    }
+
+    let assignedIds = session.question_ids || [];
+    const drawCount = session.draw_count;
+
+    if (drawCount && drawCount > 0 && assignedIds.length > drawCount) {
+      // Pick a unique randomized subset of questions for this student
+      const shuffled = [...assignedIds].sort(() => 0.5 - Math.random());
+      assignedIds = shuffled.slice(0, drawCount);
+    }
+
+    participant.assigned_questions_json = JSON.stringify(assignedIds);
+    db.save();
+    return assignedIds;
+  },
   join(sessionId: string, student: Student): QuizSessionParticipant {
     let participant = this.findBySessionAndStudent(sessionId, student.id);
     if (!participant) {
@@ -1452,8 +1478,17 @@ export const QuizSessionParticipantsModel = {
         status: 'LOBBY',
         tab_switches_count: 0
       };
+      const session = QuizSessionsModel.findById(sessionId);
+      if (session) {
+        this.ensureAssignedQuestions(session, participant);
+      }
       memoryDb.table('quiz_session_participants').push(participant);
       db.save();
+    } else {
+      const session = QuizSessionsModel.findById(sessionId);
+      if (session && !participant.assigned_questions_json) {
+        this.ensureAssignedQuestions(session, participant);
+      }
     }
     return participant;
   },
@@ -1468,10 +1503,16 @@ export const QuizSessionParticipantsModel = {
   },
   startQuiz(sessionId: string, studentId: string): QuizSessionParticipant | undefined {
     const participant = this.findBySessionAndStudent(sessionId, studentId);
-    if (participant && (participant.status === 'LOBBY' || !participant.started_at)) {
-      participant.status = 'IN_PROGRESS';
-      participant.started_at = new Date().toISOString();
-      db.save();
+    if (participant) {
+      const session = QuizSessionsModel.findById(sessionId);
+      if (session && !participant.assigned_questions_json) {
+        this.ensureAssignedQuestions(session, participant);
+      }
+      if (participant.status === 'LOBBY' || !participant.started_at) {
+        participant.status = 'IN_PROGRESS';
+        participant.started_at = new Date().toISOString();
+        db.save();
+      }
     }
     return participant;
   },

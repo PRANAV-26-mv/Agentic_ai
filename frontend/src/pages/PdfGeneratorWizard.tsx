@@ -112,8 +112,8 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
   const [showAssignModal, setShowAssignModal] = useState<boolean>(false);
   const [assignTarget, setAssignTarget] = useState<'ASSESSMENT' | 'QUIZ'>('ASSESSMENT');
   const [assignTitle, setAssignTitle] = useState<string>('');
-  const [assignDrawCount, setAssignDrawCount] = useState<number>(40);
-  const [assignSelectionType, setAssignSelectionType] = useState<'RANDOM_SUBSET' | 'ALL' | 'RANDOM_POOL'>('RANDOM_SUBSET');
+  const [assignDrawCount, setAssignDrawCount] = useState<number>(5);
+  const [assignSelectionType, setAssignSelectionType] = useState<'RANDOM_POOL' | 'RANDOM_SUBSET' | 'ALL'>('RANDOM_POOL');
   const [assignDuration, setAssignDuration] = useState<number>(30);
   const [assignLoading, setAssignLoading] = useState<boolean>(false);
   const [assignSuccessMsg, setAssignSuccessMsg] = useState<string | null>(null);
@@ -171,22 +171,29 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
       } else {
         // Quiz Session
         let questionIdsToUse = allIds;
-        if (assignSelectionType === 'RANDOM_SUBSET') {
+        let drawCountVal: number | undefined = undefined;
+
+        if (assignSelectionType === 'RANDOM_POOL') {
+          // Send all pool questions, and specify drawCount so each student gets their own unique randomized draw!
+          questionIdsToUse = allIds;
+          drawCountVal = assignDrawCount;
+        } else if (assignSelectionType === 'RANDOM_SUBSET') {
+          // Fixed single subset shared by everyone
           const shuffled = [...allIds].sort(() => 0.5 - Math.random());
           questionIdsToUse = shuffled.slice(0, Math.min(assignDrawCount, allIds.length));
         }
 
         const res = await api.post('/quiz-sessions', {
           title: assignTitle.trim(),
-          description: `Live Quiz created from PDF with ${questionIdsToUse.length} questions.`,
+          description: `Live Quiz created from PDF. ${assignSelectionType === 'RANDOM_POOL' ? `Each student gets a unique random set of ${assignDrawCount} questions from the ${allIds.length}-question pool.` : `Contains ${questionIdsToUse.length} questions.`}`,
           duration_minutes: assignDuration,
           question_ids: questionIdsToUse,
-          draw_count: assignSelectionType === 'RANDOM_POOL' ? assignDrawCount : undefined,
+          draw_count: drawCountVal,
           target_type: 'ALL',
           status: 'ACTIVE'
         });
 
-        setAssignSuccessMsg(`Quiz Session "${assignTitle.trim()}" launched successfully with PIN: ${res.data?.pin}! (${questionIdsToUse.length} questions assigned)`);
+        setAssignSuccessMsg(`Quiz Session "${assignTitle.trim()}" launched successfully with PIN: ${res.data?.pin}! (${assignSelectionType === 'RANDOM_POOL' ? `Random pool of ${allIds.length} — each student receives ${assignDrawCount} unique random questions` : `${questionIdsToUse.length} questions assigned`})`);
       }
 
       setTimeout(() => {
@@ -1464,40 +1471,38 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
                     </span>
                   </div>
 
-                  {assignTarget === 'ASSESSMENT' && (
-                    <div className="space-y-1.5">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="assignMode"
-                          checked={assignSelectionType === 'RANDOM_SUBSET'}
-                          onChange={() => setAssignSelectionType('RANDOM_SUBSET')}
-                          className="text-purple-600 focus:ring-purple-500"
-                        />
-                        <span className="font-bold text-slate-700">Random Subset (Pick {assignDrawCount} random questions from PDF)</span>
-                      </label>
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="assignMode"
-                          checked={assignSelectionType === 'RANDOM_POOL'}
-                          onChange={() => setAssignSelectionType('RANDOM_POOL')}
-                          className="text-purple-600 focus:ring-purple-500"
-                        />
-                        <span className="font-bold text-slate-700">Randomized Pool (each student gets random {assignDrawCount} drawn from the {generatedQuestions.length} questions)</span>
-                      </label>
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="assignMode"
-                          checked={assignSelectionType === 'ALL'}
-                          onChange={() => setAssignSelectionType('ALL')}
-                          className="text-purple-600 focus:ring-purple-500"
-                        />
-                        <span className="font-medium text-slate-600">Assign All {generatedQuestions.length} Questions</span>
-                      </label>
-                    </div>
-                  )}
+                  <div className="space-y-1.5">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="assignMode"
+                        checked={assignSelectionType === 'RANDOM_POOL'}
+                        onChange={() => setAssignSelectionType('RANDOM_POOL')}
+                        className="text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="font-bold text-slate-700">Randomized Pool (each student gets a different random {assignDrawCount} questions from the {generatedQuestions.length}-question pool) 🎲</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="assignMode"
+                        checked={assignSelectionType === 'RANDOM_SUBSET'}
+                        onChange={() => setAssignSelectionType('RANDOM_SUBSET')}
+                        className="text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="font-bold text-slate-700">Fixed Single Subset (same {assignDrawCount} random questions for all students)</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="assignMode"
+                        checked={assignSelectionType === 'ALL'}
+                        onChange={() => setAssignSelectionType('ALL')}
+                        className="text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="font-medium text-slate-600">Assign All {generatedQuestions.length} Questions</span>
+                    </label>
+                  </div>
 
                   {assignSelectionType !== 'ALL' && (
                     <div className="space-y-2 pt-1 border-t border-slate-200">
@@ -1509,7 +1514,7 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
                       </div>
 
                       <div className="flex flex-wrap items-center gap-1.5">
-                        {[10, 20, 30, 40, 50].filter(c => c <= generatedQuestions.length).map(cnt => (
+                        {[5, 10, 20, 30, 40, 50].filter(c => c <= generatedQuestions.length).map(cnt => (
                           <button
                             key={cnt}
                             type="button"
@@ -1520,7 +1525,7 @@ export const PdfGeneratorWizard: React.FC<PdfGeneratorWizardProps> = ({
                                 : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
                             }`}
                           >
-                            {cnt === 40 ? 'Random 40 ⭐' : `Random ${cnt}`}
+                            {cnt === 5 ? 'Random 5 ⭐' : cnt === 40 ? 'Random 40 ⭐' : `Random ${cnt}`}
                           </button>
                         ))}
                         {generatedQuestions.length > 0 && (

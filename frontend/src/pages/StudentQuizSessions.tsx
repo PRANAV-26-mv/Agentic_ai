@@ -383,8 +383,14 @@ export const StudentQuizSessions: React.FC = () => {
                       <Users className="w-3.5 h-3.5 text-slate-400" />
                       <span>{session.participant_count || 0} participants</span>
                     </span>
-                    <span className="text-[10px] text-slate-400 font-semibold">
-                      {session.question_ids?.length || 0} questions
+                    <span className="text-[10px] text-slate-500 font-bold">
+                      {session.draw_count && session.draw_count > 0 && session.draw_count < (session.question_ids?.length || 0) ? (
+                        <span className="text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200 font-extrabold">
+                          🎲 {session.my_assigned_count || session.draw_count} random qs (pool of {session.question_ids.length})
+                        </span>
+                      ) : (
+                        <span>{session.my_assigned_count || session.question_ids?.length || 0} questions</span>
+                      )}
                     </span>
                   </div>
 

@@ -633,7 +633,9 @@ export const AdminQuizSessions: React.FC = () => {
                         <span>Duration: <strong>{session.duration_minutes} mins</strong></span>
                       </span>
                       <span className="font-extrabold text-purple-700 bg-purple-50 border border-purple-200/60 px-2.5 py-0.5 rounded-lg">
-                        {session.question_ids?.length || 0} Questions
+                        {session.draw_count && session.draw_count > 0 && session.draw_count < (session.question_ids?.length || 0)
+                          ? `🎲 Draw ${session.draw_count} of ${session.question_ids.length}`
+                          : `${session.question_ids?.length || 0} Questions`}
                       </span>
                     </div>
 
@@ -1064,7 +1066,7 @@ export const AdminQuizSessions: React.FC = () => {
                                 All ({totalAssQs})
                               </button>
                             )}
-                            {[10, 20, 30, 40, 50].filter(c => c < totalAssQs).map(cnt => (
+                            {[5, 10, 20, 30, 40, 50].filter(c => c < totalAssQs).map(cnt => (
                               <button
                                 key={cnt}
                                 type="button"
@@ -1075,7 +1077,7 @@ export const AdminQuizSessions: React.FC = () => {
                                     : 'bg-white border border-amber-200 text-amber-800 hover:bg-amber-100'
                                 }`}
                               >
-                                {cnt === 40 ? 'Random 40 ⭐' : `Random ${cnt}`}
+                                {cnt === 5 ? 'Random 5 ⭐' : cnt === 40 ? 'Random 40 ⭐' : `Random ${cnt}`}
                               </button>
                             ))}
                             <div className="flex items-center space-x-1 ml-auto">

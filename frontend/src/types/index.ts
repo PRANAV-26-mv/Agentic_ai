@@ -265,6 +265,7 @@ export interface QuizSession {
   my_percentage?: number | null;
   my_time_taken_seconds?: number | null;
   my_rank?: number | null;
+  my_assigned_count?: number;
   questions?: Question[];
   participants?: QuizSessionParticipant[];
   leaderboard?: QuizLeaderboardEntry[];
@@ -290,6 +291,7 @@ export interface QuizSessionParticipant {
   rank?: number;
   answers_json?: string;
   tab_switches_count?: number;
+  assigned_questions_json?: string;
 }
 
 export interface QuizLeaderboardEntry {

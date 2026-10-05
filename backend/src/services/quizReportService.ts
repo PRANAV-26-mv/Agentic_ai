@@ -23,8 +23,11 @@ export function generateQuizSessionReportPDF(sessionId: string): Promise<Buffer>
       const submitted = participants.filter(p => p.status === 'SUBMITTED');
 
       // Metric calculations
-      const totalQuestions = questions.length;
-      const totalMaxMarks = questions.reduce((sum, q) => sum + (typeof q.marks === 'number' && q.marks > 0 ? q.marks : 1), 0);
+      const isRandomPool = Boolean(session.draw_count && session.draw_count > 0 && session.draw_count < questions.length);
+      const totalQuestions = isRandomPool ? session.draw_count! : questions.length;
+      const totalMaxMarks = submitted.length > 0 && submitted[0].max_score
+        ? submitted[0].max_score
+        : (isRandomPool ? session.draw_count! : questions.reduce((sum, q) => sum + (typeof q.marks === 'number' && q.marks > 0 ? q.marks : 1), 0));
       const scores = submitted.map(p => p.score ?? 0);
       const avgScore = scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '0';
       const avgPercentage = totalMaxMarks > 0 ? Math.round((Number(avgScore) / totalMaxMarks) * 100) : 0;

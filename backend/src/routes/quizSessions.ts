@@ -5,7 +5,8 @@ import {
   QuizSessionParticipantsModel, 
   QuestionsModel, 
   AssessmentsModel,
-  AuditLogsModel 
+  AuditLogsModel,
+  Question
 } from '../models/dbModels.js';
 import { requireAuth, requireAdmin, AuthRequest } from '../middleware/authMiddleware.js';
 
@@ -49,7 +50,10 @@ router.get('/', requireAuth, (req: AuthRequest, res: Response): void => {
         my_max_score: studentParticipant?.max_score ?? null,
         my_percentage: studentParticipant?.percentage ?? null,
         my_time_taken_seconds: studentParticipant?.time_taken_seconds ?? null,
-        my_rank: myRank
+        my_rank: myRank,
+        my_assigned_count: studentParticipant?.assigned_questions_json
+          ? (() => { try { return JSON.parse(studentParticipant.assigned_questions_json).length; } catch { return s.draw_count || s.question_ids.length; } })()
+          : (s.draw_count || s.question_ids.length)
       };
     });
 
@@ -104,11 +108,9 @@ router.post('/', requireAdmin, (req: AuthRequest, res: Response): void => {
       }
     }
 
-    // Support randomly assigning a specific count of questions (e.g. 40 questions from a 100 question upload)
+    // Support randomly assigning a specific count of questions (e.g. 5 questions from a 100 question upload)
     const countToDraw = parseInt(draw_count || random_count || '0', 10);
-    if (countToDraw > 0 && finalQuestionIds.length > countToDraw) {
-      finalQuestionIds = [...finalQuestionIds].sort(() => 0.5 - Math.random()).slice(0, countToDraw);
-    }
+    // Keep all questions in pool (finalQuestionIds) so each student receives their own unique randomized draw!
 
     const duration = parseInt(duration_minutes || '15', 10);
     const now = new Date();
@@ -221,13 +223,18 @@ router.get('/:id', requireAuth, (req: AuthRequest, res: Response): void => {
       myParticipant = participants.find(p => p.student_id === req.user!.id);
     }
 
-    // Resolve questions
-    const allQuestions = session.question_ids
-      .map(qId => QuestionsModel.findById(qId))
-      .filter(Boolean);
-
     const isSubmitted = myParticipant?.status === 'SUBMITTED';
     const isAdmin = req.user?.role === 'ADMIN';
+
+    // Resolve student-specific assigned questions or admin question pool
+    let activeQuestionIds = session.question_ids;
+    if (!isAdmin && myParticipant) {
+      activeQuestionIds = QuizSessionParticipantsModel.ensureAssignedQuestions(session, myParticipant);
+    }
+
+    const allQuestions = activeQuestionIds
+      .map(qId => QuestionsModel.findById(qId))
+      .filter((q): q is Question => q !== undefined);
 
     // Show correct answers and explanations only to admins or after results are officially published
     const sanitizedQuestions = allQuestions.map(q => {
@@ -249,6 +256,7 @@ router.get('/:id', requireAuth, (req: AuthRequest, res: Response): void => {
 
     res.json({
       ...session,
+      question_ids: (!isAdmin && myParticipant) ? activeQuestionIds : session.question_ids,
       participants,
       leaderboard: isCompleted || isAdmin ? leaderboard : [],
       is_results_published: isCompleted,
@@ -310,12 +318,23 @@ router.post('/:id/submit', requireAuth, (req: AuthRequest, res: Response): void 
       return;
     }
 
-    const { answers } = req.body;
-    const questions = session.question_ids
-      .map(qId => QuestionsModel.findById(qId))
-      .filter((q): q is NonNullable<typeof q> => Boolean(q));
+    const { answers, tab_switches_count } = req.body;
+    let participant = QuizSessionParticipantsModel.findBySessionAndStudent(sessionId, req.user.id);
+    if (!participant) {
+      res.status(400).json({ message: 'Participant record not found for this session. Please join the lobby first.' });
+      return;
+    }
 
-    const participant = QuizSessionParticipantsModel.submit(
+    if (typeof tab_switches_count === 'number') {
+      participant.tab_switches_count = tab_switches_count;
+    }
+
+    const assignedIds = QuizSessionParticipantsModel.ensureAssignedQuestions(session, participant);
+    const questions = assignedIds
+      .map(qId => QuestionsModel.findById(qId))
+      .filter((q): q is Question => q !== undefined);
+
+    participant = QuizSessionParticipantsModel.submit(
       sessionId,
       req.user.id,
       answers || {},
@@ -323,7 +342,7 @@ router.post('/:id/submit', requireAuth, (req: AuthRequest, res: Response): void 
     );
 
     if (!participant) {
-      res.status(400).json({ message: 'Participant record not found for this session. Please join the lobby first.' });
+      res.status(500).json({ message: 'Failed to submit quiz answers.' });
       return;
     }
 
