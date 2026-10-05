@@ -87,8 +87,10 @@ export const AdminQuizSessions: React.FC = () => {
     assessment_id: ''
   });
 
-  const [customRandomCount, setCustomRandomCount] = useState<number>(40);
-  const [assessmentDrawCount, setAssessmentDrawCount] = useState<number>(40);
+  const [customRandomCount, setCustomRandomCount] = useState<number>(5);
+  const [assessmentDrawCount, setAssessmentDrawCount] = useState<number>(5);
+  const [questionsDrawCount, setQuestionsDrawCount] = useState<number>(5);
+  const [questionsSelectionMode, setQuestionsSelectionMode] = useState<'RANDOM_POOL' | 'FIXED'>('RANDOM_POOL');
   const [creating, setCreating] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -134,8 +136,10 @@ export const AdminQuizSessions: React.FC = () => {
       source_type: 'QUESTIONS',
       assessment_id: ''
     });
-    setAssessmentDrawCount(40);
-    setCustomRandomCount(40);
+    setAssessmentDrawCount(5);
+    setQuestionsDrawCount(5);
+    setQuestionsSelectionMode('RANDOM_POOL');
+    setCustomRandomCount(5);
     setSelectedQuestionIds([]);
     setErrorMsg(null);
     setShowCreateModal(true);
@@ -186,7 +190,9 @@ export const AdminQuizSessions: React.FC = () => {
         end_time: new Date(formData.end_time).toISOString(),
         question_ids: formData.source_type === 'QUESTIONS' ? selectedQuestionIds : undefined,
         assessment_id: formData.source_type === 'ASSESSMENT' ? formData.assessment_id : undefined,
-        draw_count: formData.source_type === 'ASSESSMENT' ? assessmentDrawCount : undefined,
+        draw_count: formData.source_type === 'ASSESSMENT' 
+          ? assessmentDrawCount 
+          : (questionsSelectionMode === 'RANDOM_POOL' && questionsDrawCount < selectedQuestionIds.length ? questionsDrawCount : undefined),
         status: 'ACTIVE'
       });
 
@@ -1233,6 +1239,75 @@ export const AdminQuizSessions: React.FC = () => {
                           );
                         })}
                     </div>
+
+                    {/* Randomized Question Pool Delivery Configuration for Selected Questions */}
+                    {selectedQuestionIds.length > 1 && (
+                      <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-amber-900 flex items-center space-x-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Question Assignment Mode</span>
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-200 text-amber-900">
+                            {questionsSelectionMode === 'RANDOM_POOL' && questionsDrawCount < selectedQuestionIds.length
+                              ? `🎲 Random ${questionsDrawCount} of ${selectedQuestionIds.length} per student`
+                              : `All ${selectedQuestionIds.length} for everyone`}
+                          </span>
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-0.5">
+                          <label className="flex items-center space-x-1.5 cursor-pointer font-bold text-slate-700">
+                            <input
+                              type="radio"
+                              name="qDeliveryMode"
+                              checked={questionsSelectionMode === 'RANDOM_POOL'}
+                              onChange={() => setQuestionsSelectionMode('RANDOM_POOL')}
+                              className="text-amber-600 focus:ring-amber-500"
+                            />
+                            <span>Randomized Pool (different random {questionsDrawCount} questions for each student) 🎲</span>
+                          </label>
+                          <label className="flex items-center space-x-1.5 cursor-pointer font-bold text-slate-700">
+                            <input
+                              type="radio"
+                              name="qDeliveryMode"
+                              checked={questionsSelectionMode === 'FIXED'}
+                              onChange={() => setQuestionsSelectionMode('FIXED')}
+                              className="text-amber-600 focus:ring-amber-500"
+                            />
+                            <span>Fixed Set (all {selectedQuestionIds.length} questions for everyone)</span>
+                          </label>
+                        </div>
+                        {questionsSelectionMode === 'RANDOM_POOL' && (
+                          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-amber-200/60">
+                            <span className="text-[11px] font-bold text-amber-900 mr-1">Draw per student:</span>
+                            {[5, 10, 20, 30, 40, 50].filter(c => c < selectedQuestionIds.length).map(cnt => (
+                              <button
+                                key={cnt}
+                                type="button"
+                                onClick={() => setQuestionsDrawCount(cnt)}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                  questionsDrawCount === cnt
+                                    ? 'bg-amber-600 text-white shadow-xs'
+                                    : 'bg-white border border-amber-200 text-amber-800 hover:bg-amber-100'
+                                }`}
+                              >
+                                {cnt === 5 ? 'Random 5 ⭐' : `Random ${cnt}`}
+                              </button>
+                            ))}
+                            <div className="flex items-center space-x-1 ml-auto">
+                              <span className="text-[11px] text-slate-500 font-bold">Custom:</span>
+                              <input
+                                type="number"
+                                min={1}
+                                max={selectedQuestionIds.length}
+                                value={questionsDrawCount}
+                                onChange={e => setQuestionsDrawCount(Math.max(1, Math.min(selectedQuestionIds.length, parseInt(e.target.value, 10) || 1)))}
+                                className="w-14 p-1 bg-white border border-amber-300 rounded-lg text-xs font-bold text-center"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
