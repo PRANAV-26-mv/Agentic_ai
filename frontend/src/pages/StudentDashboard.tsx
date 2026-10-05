@@ -201,7 +201,7 @@ export const StudentDashboard: React.FC = () => {
                   });
                   setShowCertificate(true);
                 }}
-                className="px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl border border-white/30 shadow-md cursor-pointer transition-all transform hover:scale-105 active:scale-95 inline-flex items-center space-x-2 shrink-0"
+                className="px-3.5 py-2 sm:px-4 sm:py-2.5 bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl border border-white/30 shadow-md cursor-pointer transition-all transform hover:scale-105 active:scale-95 inline-flex items-center space-x-2 shrink-0"
                 title="Generate Official AGENTIC_AI_A7 Certificate"
               >
                 <Award className="w-4 h-4 text-amber-300" />
@@ -210,7 +210,7 @@ export const StudentDashboard: React.FC = () => {
 
               <button
                 onClick={() => setShowGiftBurst(true)}
-                className={`px-5 py-2.5 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg cursor-pointer transform hover:scale-105 active:scale-95 transition-all inline-flex items-center space-x-2 shrink-0 btn-shimmer ${
+                className={`px-4 py-2 sm:px-5 sm:py-2.5 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg cursor-pointer transform hover:scale-105 active:scale-95 transition-all inline-flex items-center space-x-2 shrink-0 btn-shimmer ${
                   podiumQuiz.my_rank === 1
                     ? 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-500 hover:to-yellow-400 text-slate-950 shadow-amber-500/40 shimmer-badge'
                     : podiumQuiz.my_rank === 2

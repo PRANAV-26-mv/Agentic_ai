@@ -578,16 +578,19 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all animate-in fade-in duration-300">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md transition-all animate-in fade-in duration-300 overflow-y-auto"
+      onClick={onClose}
+    >
       
       {/* Celebration Card */}
       <div 
-        className={`relative w-full max-w-lg bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 text-center shadow-2xl overflow-hidden ${
+        className={`relative w-full max-w-lg bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 sm:p-6 text-center shadow-2xl overflow-y-auto max-h-[92vh] sm:max-h-[88vh] border-2 my-auto ${
           podiumRank === 1
-            ? 'border-2 border-amber-400/50 animate-champion-glow'
+            ? 'border-amber-400/50 animate-champion-glow'
             : podiumRank === 2
-            ? 'border-2 border-slate-300/60 animate-silver-glow'
-            : 'border-2 border-amber-500/50 animate-bronze-glow'
+            ? 'border-slate-300/60 animate-silver-glow'
+            : 'border-amber-500/50 animate-bronze-glow'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -595,7 +598,7 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all cursor-pointer z-20"
+          className="absolute top-3.5 right-3.5 p-1.5 text-slate-400 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all cursor-pointer z-20"
           title="Close celebration"
         >
           <X className="w-5 h-5" />
@@ -611,24 +614,24 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
 
         {/* STATE 1: WOBBLING GIFT BOX */}
         {burstState === 'WOBBLE' && (
-          <div className="py-8 space-y-6 flex flex-col items-center justify-center">
+          <div className="py-4 sm:py-6 space-y-4 sm:space-y-5 flex flex-col items-center justify-center">
             
             {/* Top Pill */}
             {podiumRank === 1 && (
-              <div className="inline-flex items-center space-x-2 bg-amber-400/20 border border-amber-400/40 text-amber-300 px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider animate-pulse">
-                <Sparkles className="w-4 h-4 text-amber-300" />
+              <div className="inline-flex items-center space-x-1.5 bg-amber-400/20 border border-amber-400/40 text-amber-300 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider animate-pulse">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                 <span>1st Place Champion Reward! 🥇</span>
               </div>
             )}
             {podiumRank === 2 && (
-              <div className="inline-flex items-center space-x-2 bg-sky-400/20 border border-sky-400/40 text-sky-200 px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider animate-pulse">
-                <Medal className="w-4 h-4 text-sky-300 animate-silver-float" />
+              <div className="inline-flex items-center space-x-1.5 bg-sky-400/20 border border-sky-400/40 text-sky-200 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider animate-pulse">
+                <Medal className="w-3.5 h-3.5 text-sky-300 animate-silver-float" />
                 <span>2nd Place Silver Podium Reward! 🥈</span>
               </div>
             )}
             {podiumRank === 3 && (
-              <div className="inline-flex items-center space-x-2 bg-amber-600/20 border border-amber-500/40 text-amber-300 px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider animate-pulse">
-                <Award className="w-4 h-4 text-amber-400 animate-bronze-float" />
+              <div className="inline-flex items-center space-x-1.5 bg-amber-600/20 border border-amber-500/40 text-amber-300 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider animate-pulse">
+                <Award className="w-3.5 h-3.5 text-amber-400 animate-bronze-float" />
                 <span>3rd Place Bronze Podium Reward! 🥉</span>
               </div>
             )}
@@ -636,11 +639,11 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
             {/* Interactive Wobbling Gift Box */}
             <div 
               onClick={triggerBurst}
-              className="cursor-pointer transform hover:scale-105 transition-transform"
+              className="cursor-pointer transform hover:scale-105 active:scale-95 transition-transform"
               title="Click to burst open now!"
             >
               <div className="relative animate-gift-wobble">
-                <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-3xl flex items-center justify-center shadow-2xl relative ${
+                <div className={`w-24 h-24 sm:w-28 sm:h-28 rounded-3xl flex items-center justify-center shadow-2xl relative ${
                   podiumRank === 1
                     ? 'bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-300 border-4 border-amber-200/80 shadow-amber-500/30'
                     : podiumRank === 2
@@ -648,40 +651,40 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
                     : 'bg-gradient-to-tr from-amber-700 via-amber-600 to-amber-800 border-4 border-amber-400/80 shadow-amber-900/30'
                 }`}>
                   {/* Decorative Ribbons */}
-                  <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-6 shadow-sm ${
+                  <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-5 shadow-sm ${
                     podiumRank === 1 ? 'bg-rose-600/90' : podiumRank === 2 ? 'bg-sky-500/90' : 'bg-emerald-600/90'
                   }`} />
-                  <div className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-6 shadow-sm ${
+                  <div className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-5 shadow-sm ${
                     podiumRank === 1 ? 'bg-rose-600/90' : podiumRank === 2 ? 'bg-sky-500/90' : 'bg-emerald-600/90'
                   }`} />
                   
                   {/* Gift Bow */}
-                  <div className="absolute -top-4 text-4xl select-none filter drop-shadow-md">
+                  <div className="absolute -top-3.5 text-3xl select-none filter drop-shadow-md">
                     {podiumRank === 1 ? '🎀' : podiumRank === 2 ? '⚡' : '✨'}
                   </div>
-                  <span className="text-5xl select-none z-10 filter drop-shadow-lg">
+                  <span className="text-4xl select-none z-10 filter drop-shadow-lg">
                     🎁
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <h3 className={`text-xl sm:text-2xl font-black tracking-tight ${
+            <div className="space-y-1">
+              <h3 className={`text-lg sm:text-xl font-black tracking-tight ${
                 podiumRank === 1 ? 'text-amber-300' : podiumRank === 2 ? 'text-slate-100' : 'text-amber-300'
               }`}>
                 {podiumRank === 1 && 'Unwrapping Your 1st Place Gift...'}
                 {podiumRank === 2 && 'Unwrapping Your 2nd Place Silver Award...'}
                 {podiumRank === 3 && 'Unwrapping Your 3rd Place Bronze Award...'}
               </h3>
-              <p className="text-xs text-slate-300 max-w-sm mx-auto">
+              <p className="text-xs text-slate-300 max-w-sm mx-auto line-clamp-2">
                 You competed in <strong className="text-white">{quizTitle}</strong> and secured a prestigious podium finish! Tap the gift box to reveal!
               </p>
             </div>
 
             <button
               onClick={triggerBurst}
-              className={`px-6 py-2.5 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg cursor-pointer transform hover:scale-105 active:scale-95 transition-all ${
+              className={`px-5 py-2 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg cursor-pointer transform hover:scale-105 active:scale-95 transition-all ${
                 podiumRank === 1
                   ? 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 shadow-amber-500/30'
                   : podiumRank === 2
@@ -696,11 +699,11 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
 
         {/* STATE 2: BURSTING FLASH */}
         {burstState === 'BURSTING' && (
-          <div className="py-16 flex flex-col items-center justify-center space-y-4">
-            <div className="animate-gift-burst text-7xl select-none">
+          <div className="py-10 sm:py-14 flex flex-col items-center justify-center space-y-3">
+            <div className="animate-gift-burst text-6xl sm:text-7xl select-none">
               {podiumRank === 1 ? '💥' : podiumRank === 2 ? '⚡' : '✨'}
             </div>
-            <p className={`font-black text-lg animate-pulse tracking-widest uppercase ${
+            <p className={`font-black text-base sm:text-lg animate-pulse tracking-widest uppercase ${
               podiumRank === 1 ? 'text-amber-300' : podiumRank === 2 ? 'text-sky-200' : 'text-amber-300'
             }`}>
               {podiumRank === 1 && 'B U R S T !'}
@@ -712,30 +715,30 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
 
         {/* STATE 3: REVEALED TROPHY & CELEBRATION */}
         {burstState === 'REVEALED' && (
-          <div className="space-y-6 pt-2 animate-trophy-entrance">
+          <div className="space-y-4 pt-1 animate-trophy-entrance">
             
             {/* Top Winner Badge */}
             {podiumRank === 1 && (
-              <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-500/20 via-yellow-400/25 to-amber-500/20 border border-amber-400/60 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider text-amber-300 shimmer-badge">
-                <Crown className="w-4 h-4 text-amber-400 fill-amber-400 animate-bounce" />
+              <div className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-amber-500/20 via-yellow-400/25 to-amber-500/20 border border-amber-400/60 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider text-amber-300 shimmer-badge">
+                <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400 animate-bounce" />
                 <span>Official 1st Place Winner 🥇</span>
               </div>
             )}
             {podiumRank === 2 && (
-              <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-slate-200/20 via-sky-300/25 to-slate-200/20 border border-slate-300/60 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider text-slate-100 shimmer-silver-badge">
-                <Medal className="w-4 h-4 text-slate-200 fill-slate-300 animate-silver-float" />
+              <div className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-slate-200/20 via-sky-300/25 to-slate-200/20 border border-slate-300/60 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-100 shimmer-silver-badge">
+                <Medal className="w-3.5 h-3.5 text-slate-200 fill-slate-300 animate-silver-float" />
                 <span>Official 2nd Place Winner 🥈</span>
               </div>
             )}
             {podiumRank === 3 && (
-              <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-600/20 via-orange-400/25 to-amber-600/20 border border-amber-500/60 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider text-amber-300 shimmer-bronze-badge">
-                <Award className="w-4 h-4 text-amber-400 fill-amber-500 animate-bronze-float" />
+              <div className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-amber-600/20 via-orange-400/25 to-amber-600/20 border border-amber-500/60 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-wider text-amber-300 shimmer-bronze-badge">
+                <Award className="w-3.5 h-3.5 text-amber-400 fill-amber-500 animate-bronze-float" />
                 <span>Official 3rd Place Winner 🥉</span>
               </div>
             )}
 
             {/* Glowing Trophy / Medal Graphic */}
-            <div className="relative mx-auto w-32 h-32 flex items-center justify-center">
+            <div className="relative mx-auto w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center my-0.5">
               {/* Rotating background sparkle halo */}
               <div className={`absolute inset-0 rounded-full pointer-events-none blur-lg animate-sparkle-spin ${
                 podiumRank === 1
@@ -745,42 +748,42 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
                   : 'bg-gradient-to-tr from-amber-600/30 via-orange-400/25 to-transparent'
               }`} />
               
-              <div className={`w-24 h-24 rounded-3xl p-0.5 shadow-2xl flex items-center justify-center border-2 ${
+              <div className={`w-20 h-20 sm:w-22 sm:h-22 rounded-2xl p-0.5 shadow-2xl flex items-center justify-center border-2 ${
                 podiumRank === 1
                   ? 'bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500 shadow-amber-500/50 border-yellow-200'
                   : podiumRank === 2
                   ? 'bg-gradient-to-tr from-slate-300 via-slate-100 to-slate-400 shadow-slate-300/50 border-slate-100'
                   : 'bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-700 shadow-amber-600/50 border-amber-300'
               }`}>
-                <div className="w-full h-full bg-slate-900 rounded-[22px] flex items-center justify-center">
+                <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center">
                   {podiumRank === 1 && (
-                    <Trophy className="w-14 h-14 text-amber-400 fill-amber-400 filter drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]" />
+                    <Trophy className="w-11 h-11 text-amber-400 fill-amber-400 filter drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]" />
                   )}
                   {podiumRank === 2 && (
-                    <Medal className="w-14 h-14 text-slate-200 fill-slate-300 filter drop-shadow-[0_0_12px_rgba(226,232,240,0.9)] animate-silver-float" />
+                    <Medal className="w-11 h-11 text-slate-200 fill-slate-300 filter drop-shadow-[0_0_12px_rgba(226,232,240,0.9)] animate-silver-float" />
                   )}
                   {podiumRank === 3 && (
-                    <Award className="w-14 h-14 text-amber-500 fill-amber-600 filter drop-shadow-[0_0_12px_rgba(245,158,11,0.8)] animate-bronze-float" />
+                    <Award className="w-11 h-11 text-amber-500 fill-amber-600 filter drop-shadow-[0_0_12px_rgba(245,158,11,0.8)] animate-bronze-float" />
                   )}
                 </div>
               </div>
 
               {/* Floating Mini Stars / Medals */}
-              <Sparkles className={`w-6 h-6 absolute -top-1 -right-1 animate-pulse ${
+              <Sparkles className={`w-5 h-5 absolute -top-1 -right-1 animate-pulse ${
                 podiumRank === 1 ? 'text-yellow-300' : podiumRank === 2 ? 'text-sky-200' : 'text-amber-400'
               }`} />
               {podiumRank === 1 ? (
-                <Crown className="w-5 h-5 text-amber-300 absolute -top-3 left-4 animate-bounce" />
+                <Crown className="w-4 h-4 text-amber-300 absolute -top-2.5 left-4 animate-bounce" />
               ) : podiumRank === 2 ? (
-                <Medal className="w-5 h-5 text-slate-200 absolute -top-3 left-4 animate-silver-float" />
+                <Medal className="w-4 h-4 text-slate-200 absolute -top-2.5 left-4 animate-silver-float" />
               ) : (
-                <Award className="w-5 h-5 text-amber-400 absolute -top-3 left-4 animate-bronze-float" />
+                <Award className="w-4 h-4 text-amber-400 absolute -top-2.5 left-4 animate-bronze-float" />
               )}
             </div>
 
             {/* Podium Title */}
             <div>
-              <h2 className={`text-2xl sm:text-3xl font-black tracking-tight text-transparent bg-clip-text ${
+              <h2 className={`text-xl sm:text-2xl font-black tracking-tight text-transparent bg-clip-text ${
                 podiumRank === 1
                   ? 'bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400'
                   : podiumRank === 2
@@ -791,10 +794,10 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
                 {podiumRank === 2 && 'SILVER PODIUM RUNNER-UP! 🥈'}
                 {podiumRank === 3 && 'BRONZE PODIUM STANDOUT! 🥉'}
               </h2>
-              <p className="text-sm font-semibold text-slate-200 mt-1 max-w-sm mx-auto break-words">
+              <p className="text-xs sm:text-sm font-semibold text-slate-200 mt-0.5 max-w-sm mx-auto break-words line-clamp-1">
                 {quizTitle}
               </p>
-              <p className="text-xs text-slate-300 mt-1">
+              <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5 line-clamp-1">
                 {podiumRank === 1 && 'You outperformed all competitors and seized rank #1!'}
                 {podiumRank === 2 && 'Outstanding speed and accuracy earned you a top 2 podium finish!'}
                 {podiumRank === 3 && 'Exceptional subject mastery secured your spot on the winners podium!'}
@@ -802,30 +805,30 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
             </div>
 
             {/* Quick Metrics Grid */}
-            <div className="grid grid-cols-3 gap-2.5 max-w-sm mx-auto pt-1">
+            <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto pt-0.5">
               {score !== undefined && (
-                <div className="bg-white/10 backdrop-blur-md p-2.5 rounded-xl border border-white/15">
-                  <p className={`text-[10px] uppercase font-bold ${
+                <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/15">
+                  <p className={`text-[9px] uppercase font-bold ${
                     podiumRank === 1 ? 'text-amber-300' : podiumRank === 2 ? 'text-sky-300' : 'text-amber-300'
                   }`}>Score</p>
-                  <p className="text-base font-black mt-0.5">{score} {maxScore ? `/ ${maxScore}` : ''}</p>
+                  <p className="text-sm sm:text-base font-black mt-0.5">{score} {maxScore ? `/ ${maxScore}` : ''}</p>
                 </div>
               )}
 
               {accuracy !== undefined && (
-                <div className="bg-white/10 backdrop-blur-md p-2.5 rounded-xl border border-white/15">
-                  <p className={`text-[10px] uppercase font-bold ${
+                <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/15">
+                  <p className={`text-[9px] uppercase font-bold ${
                     podiumRank === 1 ? 'text-amber-300' : podiumRank === 2 ? 'text-sky-300' : 'text-amber-300'
                   }`}>Accuracy</p>
-                  <p className="text-base font-black mt-0.5">{accuracy}%</p>
+                  <p className="text-sm sm:text-base font-black mt-0.5">{accuracy}%</p>
                 </div>
               )}
 
-              <div className="bg-white/10 backdrop-blur-md p-2.5 rounded-xl border border-white/15">
-                <p className={`text-[10px] uppercase font-bold ${
+              <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/15">
+                <p className={`text-[9px] uppercase font-bold ${
                   podiumRank === 1 ? 'text-amber-300' : podiumRank === 2 ? 'text-sky-300' : 'text-amber-300'
                 }`}>Rank</p>
-                <p className={`text-base font-black mt-0.5 ${
+                <p className={`text-sm sm:text-base font-black mt-0.5 ${
                   podiumRank === 1 ? 'text-amber-300' : podiumRank === 2 ? 'text-slate-200' : 'text-amber-400'
                 }`}>
                   {podiumRank === 1 ? '#1 🥇' : podiumRank === 2 ? '#2 🥈' : '#3 🥉'}
@@ -834,14 +837,14 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1 pb-1">
               <button
                 type="button"
                 onClick={() => {
                   playVictoryAudio();
                   triggerConfettiCannons();
                 }}
-                className={`px-4 py-2.5 font-extrabold text-xs rounded-xl border flex items-center space-x-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-95 shadow-md ${
+                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 font-extrabold text-[11px] sm:text-xs rounded-xl border flex items-center space-x-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-95 shadow-md ${
                   podiumRank === 1
                     ? 'bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border-amber-400/40'
                     : podiumRank === 2
@@ -851,18 +854,18 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
               >
                 {podiumRank === 1 ? (
                   <>
-                    <Volume2 className="w-4 h-4 text-amber-300" />
-                    <span>Play Imperial Trumpets 🎺</span>
+                    <Volume2 className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Play Trumpets 🎺</span>
                   </>
                 ) : podiumRank === 2 ? (
                   <>
-                    <Zap className="w-4 h-4 text-sky-300" />
-                    <span>Play Silver Chimes ⚡</span>
+                    <Zap className="w-3.5 h-3.5 text-sky-300" />
+                    <span>Play Chimes ⚡</span>
                   </>
                 ) : (
                   <>
-                    <Music className="w-4 h-4 text-amber-400" />
-                    <span>Play Bronze Marimba 🥁</span>
+                    <Music className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Play Marimba 🥁</span>
                   </>
                 )}
               </button>
@@ -872,9 +875,9 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
                 onClick={() => {
                   triggerConfettiCannons();
                 }}
-                className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs rounded-xl border border-white/20 flex items-center space-x-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-95"
+                className="px-3 py-1.5 sm:px-3.5 sm:py-2 bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-[11px] sm:text-xs rounded-xl border border-white/20 flex items-center space-x-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-95"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3 h-3" />
                 <span>Burst Confetti 🎊</span>
               </button>
 
@@ -885,17 +888,17 @@ export const GiftBurstModal: React.FC<GiftBurstModalProps> = ({
                     onClose();
                     onViewCertificate();
                   }}
-                  className="px-4 py-2.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black text-xs rounded-xl border border-yellow-200 flex items-center space-x-1.5 shadow-md cursor-pointer transition-all transform hover:scale-105 active:scale-95"
+                  className="px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black text-[11px] sm:text-xs rounded-xl border border-yellow-200 flex items-center space-x-1.5 shadow-md cursor-pointer transition-all transform hover:scale-105 active:scale-95"
                   title="Generate Official AGENTIC_AI_A7 Certificate"
                 >
-                  <Award className="w-4 h-4 text-slate-950" />
+                  <Award className="w-3.5 h-3.5 text-slate-950" />
                   <span>View Certificate 📜</span>
                 </button>
               )}
 
               <button
                 onClick={onClose}
-                className={`px-6 py-2.5 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all cursor-pointer transform hover:scale-105 active:scale-95 ${
+                className={`px-4 py-1.5 sm:px-5 sm:py-2 font-black text-[11px] sm:text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all cursor-pointer transform hover:scale-105 active:scale-95 ${
                   podiumRank === 1
                     ? 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 shadow-amber-500/30'
                     : podiumRank === 2
