@@ -151,14 +151,14 @@ export const StudentResults: React.FC = () => {
     <div className="space-y-6 max-w-5xl mx-auto">
       
       {/* Header Banner */}
-      <div className="liquid-glass-card p-6 sm:p-8 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="apple-glass-card p-6 sm:p-8 rounded-[28px] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <div className="inline-flex items-center space-x-2 liquid-glass-pill bg-purple-50/70 border-purple-200/60 text-purple-700 px-3 py-1 text-xs font-bold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center space-x-2 apple-glass-pill bg-indigo-50/70 border-indigo-200/60 text-indigo-700 px-3.5 py-1 text-xs font-bold uppercase tracking-wider mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-violet-500" />
             <span>Academic Performance Dashboard</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2.5">
-            <BarChart2 className="w-7 h-7 text-purple-600" />
+            <BarChart2 className="w-7 h-7 text-indigo-600" />
             <span>My Results & Performance</span>
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-1">
@@ -170,7 +170,7 @@ export const StudentResults: React.FC = () => {
           <button
             onClick={handleDownloadReportCard}
             disabled={downloadingReport}
-            className="px-4 py-2.5 liquid-btn-primary disabled:opacity-60 text-white font-semibold text-xs rounded-full shadow-md transition-all cursor-pointer flex items-center space-x-1.5 shrink-0"
+            className="px-5 py-2.5 apple-btn-primary disabled:opacity-60 text-white font-semibold text-xs rounded-full shadow-md transition-all cursor-pointer flex items-center space-x-1.5 shrink-0"
             title="Download Comprehensive Official Academic Report Card PDF"
           >
             {downloadingReport ? (
@@ -188,18 +188,18 @@ export const StudentResults: React.FC = () => {
 
           <button
             onClick={() => navigate('/quiz-sessions')}
-            className="px-4 py-2.5 liquid-btn-glass text-slate-800 font-semibold text-xs rounded-full shadow-xs transition-colors cursor-pointer flex items-center space-x-1.5 shrink-0"
+            className="px-5 py-2.5 apple-btn-glass text-slate-800 font-semibold text-xs rounded-full shadow-xs transition-colors cursor-pointer flex items-center space-x-1.5 shrink-0"
           >
-            <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+            <Zap className="w-4 h-4 text-indigo-600 fill-indigo-600" />
             <span>Go to Live Quizzes</span>
           </button>
         </div>
       </div>
 
-      {/* Top Overview Liquid Glass Metric Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="liquid-glass-card p-4 rounded-2xl flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl liquid-glass-pill bg-purple-50/70 border-purple-200/60 text-purple-600 flex items-center justify-center shrink-0">
+      {/* Top Overview Apple Liquid Glass Metric Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div className="apple-glass-card p-4 rounded-2xl flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl apple-glass-pill bg-indigo-50/70 border-indigo-200/60 text-indigo-600 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
@@ -208,8 +208,8 @@ export const StudentResults: React.FC = () => {
           </div>
         </div>
 
-        <div className="liquid-glass-card p-4 rounded-2xl flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl liquid-glass-pill bg-emerald-50/70 border-emerald-200/60 text-emerald-600 flex items-center justify-center shrink-0">
+        <div className="apple-glass-card p-4 rounded-2xl flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl apple-glass-pill bg-emerald-50/70 border-emerald-200/60 text-emerald-600 flex items-center justify-center shrink-0">
             <BarChart2 className="w-5 h-5" />
           </div>
           <div>
@@ -218,18 +218,18 @@ export const StudentResults: React.FC = () => {
           </div>
         </div>
 
-        <div className="liquid-glass-card p-4 rounded-2xl flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl liquid-glass-pill bg-amber-50/70 border-amber-200/60 text-amber-600 flex items-center justify-center shrink-0">
-            <Trophy className="w-5 h-5 fill-amber-500 text-amber-600" />
+        <div className="apple-glass-card p-4 rounded-2xl flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl apple-glass-pill bg-violet-50/70 border-violet-200/60 text-violet-600 flex items-center justify-center shrink-0">
+            <Trophy className="w-5 h-5 fill-violet-500 text-violet-600" />
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase text-slate-500">Best Quiz Rank</p>
-            <p className="text-lg font-extrabold text-amber-700 tracking-tight">{bestQuizRank ? `#${bestQuizRank}` : '—'}</p>
+            <p className="text-lg font-extrabold text-violet-700 tracking-tight">{bestQuizRank ? `#${bestQuizRank}` : '—'}</p>
           </div>
         </div>
 
-        <div className="liquid-glass-card p-4 rounded-2xl flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl liquid-glass-pill bg-sky-50/70 border-sky-200/60 text-sky-600 flex items-center justify-center shrink-0">
+        <div className="apple-glass-card p-4 rounded-2xl flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl apple-glass-pill bg-sky-50/70 border-sky-200/60 text-sky-600 flex items-center justify-center shrink-0">
             <Zap className="w-5 h-5 fill-sky-600 text-sky-600" />
           </div>
           <div>
@@ -239,14 +239,14 @@ export const StudentResults: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs Navigation - Responsive Grid on Mobile */}
-      <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 liquid-glass-card p-1.5 rounded-2xl w-full sm:w-fit text-xs font-semibold border border-white/80">
+      {/* Tabs Navigation - Apple Liquid Tab Capsule */}
+      <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 liquid-tab-capsule w-full sm:w-fit text-xs font-semibold">
         <button
           onClick={() => setActiveTab('QUIZZES')}
-          className={`w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1.5 text-center ${
+          className={`w-full sm:w-auto px-5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center space-x-2 text-center ${
             activeTab === 'QUIZZES'
-              ? 'bg-slate-900 text-white shadow-xs font-bold'
-              : 'text-slate-600 hover:text-slate-900'
+              ? 'liquid-tab-active font-bold'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
           }`}
         >
           <Zap className="w-4 h-4 text-amber-400 fill-amber-400 shrink-0" />
@@ -255,13 +255,13 @@ export const StudentResults: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('ASSESSMENTS')}
-          className={`w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1.5 text-center ${
+          className={`w-full sm:w-auto px-5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center space-x-2 text-center ${
             activeTab === 'ASSESSMENTS'
-              ? 'bg-slate-900 text-white shadow-xs font-bold'
-              : 'text-slate-600 hover:text-slate-900'
+              ? 'liquid-tab-active font-bold'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
           }`}
         >
-          <Award className="w-4 h-4 text-purple-400 shrink-0" />
+          <Award className="w-4 h-4 text-violet-400 shrink-0" />
           <span className="truncate">Assessments ({assessmentResults.length})</span>
         </button>
       </div>
@@ -274,15 +274,15 @@ export const StudentResults: React.FC = () => {
         /* TAB 1: LIVE QUIZ SESSION RESULTS                     */
         /* ---------------------------------------------------- */
         quizResults.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-8 sm:p-12 text-center space-y-3">
-            <Zap className="w-10 h-10 text-slate-300 mx-auto" />
+          <div className="liquid-glass-card rounded-3xl border border-dashed border-indigo-200/80 p-8 sm:p-12 text-center space-y-3">
+            <Zap className="w-10 h-10 text-indigo-400 mx-auto" />
             <h3 className="font-extrabold text-slate-800 text-sm">No Live Quiz Results Yet</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
               You have not participated in any live quiz sessions yet. Join an active room using a 6-digit PIN!
             </p>
             <button
               onClick={() => navigate('/quiz-sessions')}
-              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+              className="px-5 py-2.5 liquid-btn-gradient text-white font-bold text-xs rounded-full shadow-md transition-all cursor-pointer"
             >
               Browse Quiz Rooms
             </button>
@@ -297,16 +297,16 @@ export const StudentResults: React.FC = () => {
               return (
                 <div 
                   key={q.id}
-                  className={`rounded-2xl p-4 sm:p-6 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 card-interactive animate-fade-in-up ${
+                  className={`rounded-3xl p-5 sm:p-6 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 card-interactive animate-fade-in-up ${
                     isChampion
-                      ? 'bg-gradient-to-r from-amber-50/70 via-white to-amber-50/50 border-2 border-amber-400/90 shadow-md animate-champion-glow'
+                      ? 'bg-gradient-to-r from-amber-50/80 via-white/90 to-amber-50/60 border-2 border-amber-400/90 shadow-md animate-champion-glow backdrop-blur-xl'
                       : isSilver
-                      ? 'bg-gradient-to-r from-slate-100/80 via-white to-sky-50/40 border-2 border-slate-300 shadow-sm animate-silver-glow'
+                      ? 'bg-gradient-to-r from-slate-100/85 via-white/90 to-sky-50/60 border-2 border-slate-300 shadow-sm animate-silver-glow backdrop-blur-xl'
                       : isBronze
-                      ? 'bg-gradient-to-r from-amber-50/70 via-white to-orange-50/40 border-2 border-amber-400/70 shadow-sm animate-bronze-glow'
+                      ? 'bg-gradient-to-r from-amber-50/80 via-white/90 to-orange-50/60 border-2 border-amber-400/70 shadow-sm animate-bronze-glow backdrop-blur-xl'
                       : isPodium
-                      ? 'bg-white border border-amber-200/80 shadow-xs hover:border-amber-300'
-                      : 'bg-white border border-slate-200 shadow-xs hover:border-slate-300'
+                      ? 'liquid-glass-card liquid-glass-card-hover border border-amber-200/80 shadow-sm'
+                      : 'liquid-glass-card liquid-glass-card-hover border border-white/85 shadow-sm'
                   }`}
                 >
                   <div className="space-y-2 min-w-0 flex-1">
@@ -438,15 +438,15 @@ export const StudentResults: React.FC = () => {
         /* TAB 2: FORMAL ASSESSMENT RESULTS                     */
         /* ---------------------------------------------------- */
         assessmentResults.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-8 sm:p-12 text-center space-y-3">
-            <Award className="w-10 h-10 text-slate-300 mx-auto" />
+          <div className="liquid-glass-card rounded-3xl border border-dashed border-indigo-200/80 p-8 sm:p-12 text-center space-y-3">
+            <Award className="w-10 h-10 text-indigo-400 mx-auto" />
             <h3 className="font-extrabold text-slate-800 text-sm">No Formal Assessment Results</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
               You haven't completed any formal exams or assessments yet.
             </p>
             <button
               onClick={() => navigate('/assessments')}
-              className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+              className="px-5 py-2.5 liquid-btn-gradient text-white font-bold text-xs rounded-full shadow-md transition-all cursor-pointer"
             >
               Browse Assessments
             </button>
@@ -454,22 +454,22 @@ export const StudentResults: React.FC = () => {
         ) : (
           <div className="space-y-4">
             
-            {/* MOBILE VIEW (Card Layout - Visible on Mobile Only) */}
+            {/* MOBILE VIEW (Liquid Glass Card Layout) */}
             <div className="block sm:hidden space-y-3.5">
               {assessmentResults.map((r) => (
                 <div 
                   key={r.id} 
-                  className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3"
+                  className="liquid-glass-card rounded-2xl p-4.5 space-y-3.5 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                      <span className="bg-emerald-500/15 text-emerald-800 border border-emerald-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase backdrop-blur-md">
                         {r.status}
                       </span>
                       <h3 className="font-extrabold text-slate-900 text-sm mt-1.5 leading-snug break-words">
                         {r.assessment_title}
                       </h3>
-                      <p className="text-[11px] text-slate-400 mt-0.5 flex items-center space-x-1">
+                      <p className="text-[11px] text-slate-500 mt-0.5 flex items-center space-x-1">
                         <Calendar className="w-3 h-3 text-slate-400" />
                         <span>Submitted on {new Date(r.submitted_at || r.started_at).toLocaleDateString()}</span>
                       </p>
@@ -477,30 +477,30 @@ export const StudentResults: React.FC = () => {
 
                     <div className="text-right shrink-0">
                       <p className="text-lg font-black text-emerald-600">{r.percentage}%</p>
-                      <p className="text-[10px] text-slate-400 font-semibold">score rate</p>
+                      <p className="text-[10px] text-slate-400 font-semibold">accuracy</p>
                     </div>
                   </div>
 
                   {/* 2x2 Score Grid */}
-                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
-                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100/80 text-center">
+                    <div className="bg-white/60 backdrop-blur-md p-2 rounded-xl border border-white/80">
                       <p className="text-[9px] uppercase font-bold text-slate-400">MCQ</p>
-                      <p className="text-xs font-black text-brand-600 mt-0.5">{r.mcq_score} pts</p>
+                      <p className="text-xs font-black text-blue-600 mt-0.5">{r.mcq_score} pts</p>
                     </div>
-                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <div className="bg-white/60 backdrop-blur-md p-2 rounded-xl border border-white/80">
                       <p className="text-[9px] uppercase font-bold text-slate-400">Writing</p>
-                      <p className="text-xs font-black text-purple-600 mt-0.5">{r.writing_score} pts</p>
+                      <p className="text-xs font-black text-violet-600 mt-0.5">{r.writing_score !== undefined && r.writing_score !== null ? `${r.writing_score} pts` : '—'}</p>
                     </div>
-                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <div className="bg-white/60 backdrop-blur-md p-2 rounded-xl border border-white/80">
                       <p className="text-[9px] uppercase font-bold text-slate-400">Total</p>
                       <p className="text-xs font-black text-slate-900 mt-0.5">{r.total_score} / {r.max_marks || 20} pts</p>
                     </div>
                   </div>
 
-                  {/* Progress bar */}
-                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                  {/* Progress bar with glowing blue-to-violet gradient */}
+                  <div className="w-full bg-slate-200/50 h-2 rounded-full overflow-hidden p-0.5">
                     <div 
-                      className={`h-full rounded-full ${r.percentage >= (r.passing_percentage || 60) ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 shadow-[0_0_8px_rgba(99,102,241,0.35)] transition-all duration-500"
                       style={{ width: `${Math.min(100, r.percentage || 0)}%` }}
                     />
                   </div>
@@ -508,12 +508,12 @@ export const StudentResults: React.FC = () => {
               ))}
             </div>
 
-            {/* DESKTOP VIEW (Table Layout with horizontal overflow protection) */}
-            <div className="hidden sm:block bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+            {/* DESKTOP VIEW (Apple Liquid Glass Table Layout) */}
+            <div className="hidden sm:block liquid-glass-table rounded-3xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[640px]">
                   <thead>
-                    <tr className="bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-200">
+                    <tr>
                       <th className="p-4">Assessment</th>
                       <th className="p-4">MCQ Score</th>
                       <th className="p-4">Writing Score</th>
@@ -523,16 +523,20 @@ export const StudentResults: React.FC = () => {
                       <th className="p-4">Submitted Date</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                  <tbody className="divide-y divide-slate-100/70 text-xs text-slate-700">
                     {assessmentResults.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={r.id} className="transition-all duration-200">
                         <td className="p-4 font-bold text-slate-900">{r.assessment_title}</td>
-                        <td className="p-4 font-semibold text-brand-600">{r.mcq_score} pts</td>
-                        <td className="p-4 font-semibold text-purple-600">{r.writing_score !== undefined && r.writing_score !== null ? `${r.writing_score} pts` : '—'}</td>
+                        <td className="p-4 font-semibold text-blue-600">{r.mcq_score} pts</td>
+                        <td className="p-4 font-semibold text-violet-600">{r.writing_score !== undefined && r.writing_score !== null ? `${r.writing_score} pts` : '—'}</td>
                         <td className="p-4 font-extrabold text-slate-900">{r.total_score} / {r.max_marks || 20} pts</td>
-                        <td className="p-4 font-bold text-emerald-600">{r.percentage}%</td>
+                        <td className="p-4 font-bold">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-800 border border-emerald-500/25 backdrop-blur-sm">
+                            {r.percentage}%
+                          </span>
+                        </td>
                         <td className="p-4">
-                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
+                          <span className="bg-emerald-500/15 text-emerald-900 border border-emerald-500/30 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase backdrop-blur-md">
                             {r.status}
                           </span>
                         </td>

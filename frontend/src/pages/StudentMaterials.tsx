@@ -33,7 +33,7 @@ export const StudentMaterials: React.FC = () => {
     <div className="space-y-6">
       
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 liquid-glass-card p-6 rounded-2xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 apple-glass-card p-6 rounded-[26px]">
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
             <BookOpen className="w-6 h-6 text-indigo-600" />
@@ -72,20 +72,20 @@ export const StudentMaterials: React.FC = () => {
       {/* Material Grid matching §8 */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="h-48 liquid-glass-card rounded-2xl animate-pulse"></div>
-          <div className="h-48 liquid-glass-card rounded-2xl animate-pulse"></div>
+          <div className="h-48 apple-glass-card rounded-2xl animate-pulse"></div>
+          <div className="h-48 apple-glass-card rounded-2xl animate-pulse"></div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredMaterials.map((mat) => (
-            <div key={mat.id} className="liquid-glass-card-hover rounded-2xl p-5 flex flex-col justify-between">
+            <div key={mat.id} className="apple-glass-card rounded-[24px] p-5.5 flex flex-col justify-between">
               
               <div>
                 <div className="flex justify-between items-start mb-3">
                   <div className="w-10 h-10 bg-indigo-50/80 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-xs border border-indigo-100 shadow-sm">
                     {mat.material_type}
                   </div>
-                  <span className="text-[10px] font-semibold text-slate-600 liquid-glass-pill px-2.5 py-1 rounded-full">
+                  <span className="text-[10px] font-semibold text-indigo-700 apple-glass-pill px-2.5 py-1 rounded-full">
                     {mat.page_count ? `${mat.page_count} pages` : 'Web Link'}
                   </span>
                 </div>
@@ -100,7 +100,7 @@ export const StudentMaterials: React.FC = () => {
                   href={getFileUrl(mat.file_url)}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-2 liquid-btn-glass text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
+                  className="px-3 py-2 apple-btn-glass text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>View</span>
@@ -111,7 +111,7 @@ export const StudentMaterials: React.FC = () => {
                   download
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-2 liquid-btn-glass text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
+                  className="px-3 py-2 apple-btn-glass text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Download</span>
@@ -119,7 +119,7 @@ export const StudentMaterials: React.FC = () => {
 
                 <button
                   onClick={() => handleAskDoubt(mat.id)}
-                  className="px-3 py-2 liquid-btn-primary text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
+                  className="px-3 py-2 apple-btn-primary text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
                   <span>Ask AI</span>

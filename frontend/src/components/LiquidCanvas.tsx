@@ -7,11 +7,12 @@ import React from 'react';
 export const LiquidCanvas: React.FC = () => {
   return (
     <div className="liquid-canvas" aria-hidden="true">
-      {/* Drifting fluid liquid orbs */}
-      <div className="liquid-orb liquid-orb-cyan" />
+      {/* Drifting fluid liquid orbs in soft blue & violet spectrum */}
+      <div className="liquid-orb liquid-orb-blue" />
       <div className="liquid-orb liquid-orb-indigo" />
       <div className="liquid-orb liquid-orb-violet" />
-      <div className="liquid-orb liquid-orb-amber" />
+      <div className="liquid-orb liquid-orb-cyan" />
+      <div className="liquid-orb liquid-orb-lavender" />
       
       {/* Chromatic caustic grain / sheen overlay */}
       <div 

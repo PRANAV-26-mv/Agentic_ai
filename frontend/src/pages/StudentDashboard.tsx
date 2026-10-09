@@ -118,15 +118,15 @@ export const StudentDashboard: React.FC = () => {
       
       {/* Apple Product Storytelling Hero Card */}
       {/* Liquid Glass Hero Banner */}
-      <div className="liquid-glass-dark rounded-3xl p-7 sm:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.18)] relative overflow-hidden border border-white/20">
-        {/* Subtle diffuse ambient lighting sheen */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="liquid-glass-dark rounded-[28px] p-7 sm:p-9 shadow-[0_24px_60px_rgba(15,23,42,0.35)] relative overflow-hidden border border-white/20">
+        {/* Soft blue and violet ambient lighting sheen */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/25 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-violet-500/25 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center space-x-2 bg-white/10 text-white/90 text-xs font-semibold px-3.5 py-1 rounded-full border border-white/20 backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <div className="inline-flex items-center space-x-2 bg-white/10 text-white/95 text-xs font-semibold px-3.5 py-1 rounded-full border border-white/25 backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5 text-violet-300" />
               <span>{user?.community || 'Agentic AI Community'}</span>
             </div>
 
@@ -163,7 +163,7 @@ export const StudentDashboard: React.FC = () => {
               to="/ask-doubt"
               className="inline-flex items-center space-x-2 bg-white hover:bg-slate-100 text-[#1d1d1f] font-bold text-xs px-5 py-2.5 rounded-full shadow-lg transition-all cursor-pointer transform hover:scale-102 active:scale-98 border border-white"
             >
-              <MessageSquare className="w-3.5 h-3.5 text-[#1d1d1f]" />
+              <MessageSquare className="w-3.5 h-3.5 text-indigo-600" />
               <span>Ask AI Assistant</span>
             </Link>
           </div>
@@ -242,28 +242,28 @@ export const StudentDashboard: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         
         {/* Total Assessments */}
-        <div className="liquid-glass-card p-5 sm:p-6 rounded-3xl group">
+        <div className="liquid-glass-card liquid-glass-card-hover p-5 sm:p-6 rounded-3xl group">
           <div className="flex justify-between items-center text-slate-500 mb-3">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Assessments</span>
-            <div className="p-2 liquid-glass-pill text-slate-700">
+            <div className="p-2 liquid-glass-pill text-indigo-600 bg-indigo-50/70 border-indigo-200/60">
               <FileText className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{assessments.length}</div>
           <div className="text-[11px] text-slate-500 mt-1">Assigned for cohort</div>
-          <div className="w-full bg-slate-200/60 rounded-full h-1.5 mt-3 overflow-hidden border border-white/80">
+          <div className="w-full bg-slate-200/50 rounded-full h-1.5 mt-3 overflow-hidden border border-white/80 p-0.5">
             <div 
-              className="bg-slate-900 h-full rounded-full transition-all duration-1000"
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(99,102,241,0.35)]"
               style={{ width: `${assessments.length > 0 ? (completedCount / assessments.length) * 100 : 0}%` }}
             />
           </div>
         </div>
 
         {/* Completed / Pending */}
-        <div className="liquid-glass-card p-5 sm:p-6 rounded-3xl group">
+        <div className="liquid-glass-card liquid-glass-card-hover p-5 sm:p-6 rounded-3xl group">
           <div className="flex justify-between items-center text-slate-500 mb-3">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Completed</span>
-            <div className="p-2 liquid-glass-pill text-emerald-600 bg-emerald-50/60 border-emerald-200/60">
+            <div className="p-2 liquid-glass-pill text-emerald-600 bg-emerald-50/70 border-emerald-200/60">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
@@ -271,45 +271,45 @@ export const StudentDashboard: React.FC = () => {
             {completedCount} <span className="text-slate-400 text-sm font-medium">/ {pendingCount} left</span>
           </div>
           <div className="text-[11px] text-emerald-600 font-semibold mt-1">Active pipeline</div>
-          <div className="w-full bg-slate-200/60 rounded-full h-1.5 mt-3 overflow-hidden border border-white/80">
+          <div className="w-full bg-slate-200/50 rounded-full h-1.5 mt-3 overflow-hidden border border-white/80 p-0.5">
             <div 
-              className="bg-emerald-500 h-full rounded-full transition-all duration-1000 shadow-xs"
+              className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(16,185,129,0.35)]"
               style={{ width: `${assessments.length > 0 ? (completedCount / assessments.length) * 100 : 0}%` }}
             />
           </div>
         </div>
 
         {/* Attendance % */}
-        <div className="liquid-glass-card p-5 sm:p-6 rounded-3xl group">
+        <div className="liquid-glass-card liquid-glass-card-hover p-5 sm:p-6 rounded-3xl group">
           <div className="flex justify-between items-center text-slate-500 mb-3">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Attendance</span>
-            <div className="p-2 liquid-glass-pill text-indigo-600 bg-indigo-50/60 border-indigo-200/60">
+            <div className="p-2 liquid-glass-pill text-indigo-600 bg-indigo-50/70 border-indigo-200/60">
               <Calendar className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{attendanceStats.percentage || 100}%</div>
           <div className="text-[11px] text-slate-500 mt-1">{attendanceStats.present || 1} of {attendanceStats.total || 1} present</div>
-          <div className="w-full bg-slate-200/60 rounded-full h-1.5 mt-3 overflow-hidden border border-white/80">
+          <div className="w-full bg-slate-200/50 rounded-full h-1.5 mt-3 overflow-hidden border border-white/80 p-0.5">
             <div 
-              className="bg-indigo-600 h-full rounded-full transition-all duration-1000 shadow-xs"
+              className="bg-gradient-to-r from-indigo-500 to-violet-600 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(99,102,241,0.35)]"
               style={{ width: `${Math.min(100, attendanceStats.percentage || 100)}%` }}
             />
           </div>
         </div>
 
         {/* Average Score */}
-        <div className="liquid-glass-card p-5 sm:p-6 rounded-3xl group">
+        <div className="liquid-glass-card liquid-glass-card-hover p-5 sm:p-6 rounded-3xl group">
           <div className="flex justify-between items-center text-slate-500 mb-3">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Average Mastery</span>
-            <div className="p-2 liquid-glass-pill text-amber-600 bg-amber-50/60 border-amber-200/60">
+            <div className="p-2 liquid-glass-pill text-amber-600 bg-amber-50/70 border-amber-200/60">
               <Award className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{avgScore}%</div>
           <div className="text-[11px] text-amber-700 font-semibold mt-1">Community percentile</div>
-          <div className="w-full bg-slate-200/60 rounded-full h-1.5 mt-3 overflow-hidden border border-white/80">
+          <div className="w-full bg-slate-200/50 rounded-full h-1.5 mt-3 overflow-hidden border border-white/80 p-0.5">
             <div 
-              className="bg-amber-500 h-full rounded-full transition-all duration-1000 shadow-xs"
+              className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(245,158,11,0.35)]"
               style={{ width: `${Math.min(100, avgScore)}%` }}
             />
           </div>

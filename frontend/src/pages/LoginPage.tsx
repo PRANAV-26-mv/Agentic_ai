@@ -93,17 +93,17 @@ export const LoginPage: React.FC = () => {
       <LiquidCanvas />
 
       {/* Main Layered Floating Liquid Glass Card */}
-      <div className="max-w-md w-full liquid-glass-card rounded-3xl p-8 sm:p-10 space-y-6 text-center relative z-10 animate-fade-in shadow-[0_20px_60px_-15px_rgba(31,38,135,0.12)]">
+      <div className="max-w-md w-full liquid-glass-card liquid-glow-border rounded-[32px] p-8 sm:p-10 space-y-6 text-center relative z-10 animate-fade-in shadow-[0_24px_64px_-12px_rgba(99,102,241,0.22)] border border-white/90">
 
         {/* Floating Liquid Glass Brand Emblem */}
-        <div className="mx-auto w-14 h-14 bg-gradient-to-br from-[#1d1d1f] to-[#2c2c2e] text-white rounded-2xl flex items-center justify-center shadow-[0_6px_20px_rgba(0,0,0,0.22)] mb-2 border border-white/25 transition-transform duration-300 hover:scale-105">
+        <div className="mx-auto w-14 h-14 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-white rounded-2xl flex items-center justify-center shadow-[0_8px_24px_rgba(99,102,241,0.4)] mb-2 border border-white/40 transition-transform duration-300 hover:scale-105">
           <BookOpen className="w-7 h-7 text-white" />
         </div>
 
         {/* Title & Product Storytelling */}
         <div className="space-y-1">
-          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[10px] font-semibold liquid-glass-pill text-slate-700 mb-1">
-            <Sparkles className="w-3 h-3 text-amber-500" />
+          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[10px] font-semibold apple-glass-pill text-indigo-700 mb-1">
+            <Sparkles className="w-3.5 h-3.5 text-violet-500" />
             <span>Campus Learning & Assessment Platform</span>
           </div>
           <h1 className="text-2xl font-extrabold text-[#1d1d1f] tracking-tight">
@@ -164,7 +164,7 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 liquid-btn-primary font-semibold text-xs rounded-full shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50 mt-3"
+            className="w-full py-3.5 liquid-btn-gradient font-semibold text-xs rounded-full shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50 mt-3"
           >
             {loading ? (
               <>

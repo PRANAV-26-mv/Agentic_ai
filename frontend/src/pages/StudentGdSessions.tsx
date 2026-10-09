@@ -107,14 +107,14 @@ export const StudentGdSessions: React.FC = () => {
     <div className="space-y-8 animate-fade-in pb-12">
       
       {/* Liquid Glass Hero Card with Quick PIN Access */}
-      <div className="liquid-glass-dark rounded-3xl p-7 sm:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.18)] relative overflow-hidden border border-white/20">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="liquid-glass-dark rounded-[28px] p-7 sm:p-9 shadow-[0_24px_60px_rgba(15,23,42,0.35)] relative overflow-hidden border border-white/20">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/25 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-violet-500/25 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="max-w-xl space-y-2">
-            <div className="inline-flex items-center space-x-2 bg-white/10 text-white/90 text-xs font-semibold px-3.5 py-1 rounded-full border border-white/20 backdrop-blur-md">
-              <MessagesSquare className="w-3.5 h-3.5 text-white" />
+            <div className="inline-flex items-center space-x-2 bg-white/10 text-white/95 text-xs font-semibold px-3.5 py-1 rounded-full border border-white/25 backdrop-blur-md">
+              <MessagesSquare className="w-3.5 h-3.5 text-violet-300" />
               <span>Campus Group Discussion & Peer Ranking</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
@@ -131,7 +131,7 @@ export const StudentGdSessions: React.FC = () => {
             className="w-full lg:w-auto bg-white/10 backdrop-blur-2xl p-4 sm:p-5 rounded-2xl border border-white/25 shadow-xl space-y-3 shrink-0"
           >
             <div className="flex items-center space-x-2 text-xs font-semibold text-white">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <Sparkles className="w-3.5 h-3.5 text-violet-300" />
               <span>Join GD Room with PIN</span>
             </div>
 
@@ -147,7 +147,7 @@ export const StudentGdSessions: React.FC = () => {
               <button
                 type="submit"
                 disabled={joining || pin.length < 4}
-                className="px-5 py-2.5 bg-white hover:bg-slate-100 text-[#1d1d1f] font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 apple-btn-primary font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
               >
                 {joining ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
                 <span>Enter</span>
@@ -166,8 +166,8 @@ export const StudentGdSessions: React.FC = () => {
 
       {/* 4 Layered Floating Liquid Glass Stat Overview Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="liquid-glass-card p-5 rounded-3xl flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-2xl liquid-glass-pill bg-emerald-50/70 border-emerald-200/60 text-emerald-600 flex items-center justify-center shrink-0">
+        <div className="apple-glass-card p-5 rounded-3xl flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-2xl apple-glass-pill bg-emerald-50/70 border-emerald-200/60 text-emerald-600 flex items-center justify-center shrink-0">
             <Users className="w-5 h-5 text-emerald-600" />
           </div>
           <div>

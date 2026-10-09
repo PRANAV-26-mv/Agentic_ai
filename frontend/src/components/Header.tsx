@@ -18,8 +18,8 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
   const notifTargetRoute = role === 'ADMIN' ? '/admin/notifications' : '/notifications';
 
   return (
-    <header className="sticky top-0 z-40 liquid-glass-nav transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+    <header className="sticky top-2 sm:top-3 z-40 mx-2 sm:mx-4 lg:mx-8 apple-glass-nav rounded-2xl sm:rounded-full transition-all duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         
         {/* Brand Title & Mobile Menu Toggle */}
         <div className="flex items-center space-x-2.5 sm:space-x-3.5 shrink-0">
@@ -33,9 +33,9 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
             </button>
           )}
 
-          {/* Liquid Glass Brand Icon & Title */}
+          {/* Apple Liquid Glass Brand Icon & Title */}
           <Link to="/" className="flex items-center space-x-2.5 group cursor-pointer">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1d1d1f] to-[#2c2c2e] text-white flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-all duration-300 group-hover:scale-105 border border-white/20 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-[0_4px_16px_rgba(99,102,241,0.35)] transition-all duration-300 group-hover:scale-105 border border-white/40 shrink-0">
               <BookOpen className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -61,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
               <span className="inline sm:hidden">SUPER</span>
             </span>
           ) : (
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold liquid-glass-pill text-slate-800">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold apple-glass-pill text-slate-800">
               {role === 'ADMIN' ? <Shield className="w-3 h-3 mr-1 text-indigo-600 shrink-0" /> : <UserIcon className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />}
               <span>{role}</span>
             </span>
@@ -90,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
           {/* Notifications Bell */}
           <Link 
             to={notifTargetRoute} 
-            className="relative p-2 text-slate-700 hover:text-slate-900 liquid-glass-pill hover:bg-white/90 rounded-full transition-all duration-200 cursor-pointer"
+            className="relative p-2 text-slate-700 hover:text-slate-900 apple-glass-pill hover:bg-white/90 rounded-full transition-all duration-200 cursor-pointer"
             title={role === 'ADMIN' ? 'Admin Notifications' : 'Student Notifications'}
           >
             <Bell className={`w-4 h-4 ${unreadCount > 0 ? 'animate-bell-ring text-indigo-600' : ''}`} />
@@ -103,8 +103,8 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
 
           {/* User Name Layered Floating Capsule */}
           <div className="hidden md:flex items-center space-x-2 pl-2 border-l border-white/60">
-            <div className="liquid-glass-pill px-2.5 py-1 flex items-center space-x-2 shadow-xs">
-              <div className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-[11px] shadow-xs">
+            <div className="apple-glass-pill px-2.5 py-1 flex items-center space-x-2 shadow-xs">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-[11px] shadow-xs">
                 {user?.name?.charAt(0) || 'U'}
               </div>
               <div className="flex flex-col text-left">
@@ -117,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
           {/* Logout Button */}
           <button
             onClick={() => { logout(); navigate('/login'); }}
-            className="liquid-btn-glass inline-flex items-center space-x-1 px-3.5 py-1 text-xs font-medium text-slate-700 hover:text-rose-600 rounded-full transition-all duration-200 cursor-pointer"
+            className="apple-btn-glass inline-flex items-center space-x-1 px-3.5 py-1 text-xs font-medium text-slate-700 hover:text-rose-600 rounded-full transition-all duration-200 cursor-pointer"
             title="Log out of session"
           >
             <LogOut className="w-3.5 h-3.5 shrink-0" />

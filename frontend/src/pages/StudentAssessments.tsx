@@ -33,10 +33,10 @@ export const StudentAssessments: React.FC = () => {
     <div className="space-y-6">
       
       {/* Banner */}
-      <div className="liquid-glass-card p-6 sm:p-7 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      <div className="apple-glass-card p-6 sm:p-7 rounded-[28px] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2.5">
-            <FileCheck className="w-6 h-6 text-slate-900 shrink-0" />
+            <FileCheck className="w-6 h-6 text-indigo-600 shrink-0" />
             <span>Assigned Assessments</span>
           </h2>
           <p className="text-slate-500 text-xs mt-1">Complete your formal evaluations and track your progress in real time.</p>
@@ -46,11 +46,11 @@ export const StudentAssessments: React.FC = () => {
       {/* Assessment List */}
       {loading ? (
         <div className="space-y-4 animate-pulse">
-          <div className="h-40 liquid-glass-card rounded-3xl"></div>
-          <div className="h-40 liquid-glass-card rounded-3xl"></div>
+          <div className="h-40 apple-glass-card rounded-3xl"></div>
+          <div className="h-40 apple-glass-card rounded-3xl"></div>
         </div>
       ) : assessments.length === 0 ? (
-        <div className="liquid-glass-card rounded-3xl p-8 sm:p-12 text-center space-y-3">
+        <div className="apple-glass-card rounded-3xl p-8 sm:p-12 text-center space-y-3">
           <FileCheck className="w-10 h-10 text-slate-300 mx-auto" />
           <h3 className="font-extrabold text-slate-800 text-sm">No Assessments Assigned</h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
@@ -67,18 +67,18 @@ export const StudentAssessments: React.FC = () => {
             return (
               <div 
                 key={ass.id} 
-                className="liquid-glass-card rounded-3xl p-5 sm:p-6 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                className="apple-glass-card rounded-[26px] p-5 sm:p-6 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
               >
                 <div className="space-y-2.5 max-w-2xl min-w-0 flex-1">
                   <div className="flex flex-wrap gap-1.5 sm:gap-2 items-center">
-                    <span className="liquid-glass-pill bg-sky-50/70 border-sky-200/60 text-sky-800 text-[10px] sm:text-xs font-semibold px-3 py-1">
+                    <span className="apple-glass-pill bg-blue-50/70 border-blue-200/60 text-blue-800 text-[10px] sm:text-xs font-semibold px-3 py-1">
                       {ass.type} Assessment
                     </span>
-                    <span className="liquid-glass-pill text-slate-700 text-[10px] sm:text-xs font-medium px-3 py-1 flex items-center space-x-1">
+                    <span className="apple-glass-pill text-slate-700 text-[10px] sm:text-xs font-medium px-3 py-1 flex items-center space-x-1">
                       <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                       <span>{ass.duration_minutes} Mins</span>
                     </span>
-                    <span className="liquid-glass-pill bg-purple-50/70 border-purple-200/60 text-purple-800 text-[10px] sm:text-xs font-medium px-3 py-1">
+                    <span className="apple-glass-pill bg-violet-50/70 border-violet-200/60 text-violet-800 text-[10px] sm:text-xs font-medium px-3 py-1">
                       {ass.question_selection_mode === 'RANDOMIZED_POOL' ? '🎲 Randomized Pool' : '📌 Fixed Set'}
                     </span>
                   </div>
@@ -115,7 +115,7 @@ export const StudentAssessments: React.FC = () => {
                       className={`w-full md:w-auto px-6 py-3 font-semibold text-xs rounded-full shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer ${
                         isInProgress
                           ? 'bg-amber-500 hover:bg-amber-600 text-white animate-pulse'
-                          : 'liquid-btn-primary'
+                          : 'apple-btn-primary'
                       }`}
                     >
                       <span>{isInProgress ? 'Resume Assessment' : 'Start Assessment'}</span>

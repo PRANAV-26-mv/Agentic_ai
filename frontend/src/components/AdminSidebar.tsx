@@ -83,8 +83,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
               className={({ isActive }) =>
                 `group flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-slate-900/90 text-white shadow-[0_6px_18px_rgba(0,0,0,0.14),inset_0_1px_1px_rgba(255,255,255,0.25)] font-semibold scale-[1.01]'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 hover:shadow-xs'
+                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-[0_8px_22px_rgba(99,102,241,0.35),inset_0_1px_1px_rgba(255,255,255,0.4)] font-semibold scale-[1.01]'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-white/70 hover:shadow-xs'
                 }`
               }
             >
@@ -94,8 +94,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
               </div>
               {item.isLiveBadge ? (
                 <span className="flex h-2 w-2 relative shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
                 </span>
               ) : item.isPulseGreen ? (
                 <span className="flex h-2 w-2 relative shrink-0">
@@ -134,8 +134,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
 
       {/* Admin Identity Layered Floating Card */}
       <div className="pt-3 border-t border-white/60 space-y-2.5">
-        <div className="liquid-glass-card p-2.5 rounded-2xl flex items-center space-x-2.5 shadow-xs">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-900 to-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+        <div className="apple-glass-card p-3 rounded-2xl flex items-center space-x-2.5 shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-violet-700 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs border border-white/40">
             {user?.name?.charAt(0) || 'A'}
           </div>
           <div className="min-w-0 flex-1">
@@ -150,7 +150,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
             logout();
             navigate('/login');
           }}
-          className="liquid-btn-glass w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50/80 transition-all cursor-pointer"
+          className="apple-btn-glass w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50/80 transition-all cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5 shrink-0" />
           <span>Sign Out</span>
@@ -161,8 +161,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
 
   return (
     <>
-      {/* Desktop Translucent Liquid Glass Sidebar */}
-      <aside className="hidden md:flex w-64 liquid-glass-sidebar min-h-[calc(100vh-4rem)] flex-col justify-between shrink-0">
+      {/* Desktop Translucent Floating Liquid Glass Sidebar */}
+      <aside className="hidden md:flex w-64 lg:w-72 liquid-glass-sidebar rounded-3xl my-2 sm:my-3 min-h-[calc(100vh-6.5rem)] flex-col justify-between shrink-0 shadow-lg sticky top-22 self-start liquid-glow-border-hover">
         {sidebarContent}
       </aside>
 

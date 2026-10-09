@@ -47,10 +47,10 @@ export const StudentAttendance: React.FC = () => {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       
-      <div className="liquid-glass-card p-6 rounded-2xl flex justify-between items-center">
+      <div className="apple-glass-card p-6 rounded-[26px] flex justify-between items-center">
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-            <Calendar className="w-6 h-6 text-purple-600" />
+            <Calendar className="w-6 h-6 text-indigo-600" />
             <span>Mark Attendance</span>
           </h2>
           <p className="text-slate-500 text-xs mt-1">
@@ -60,9 +60,9 @@ export const StudentAttendance: React.FC = () => {
       </div>
 
       {/* Numeric OTP Input Card */}
-      <div className="liquid-glass-card rounded-2xl p-8 text-center space-y-6">
+      <div className="apple-glass-card rounded-[28px] p-8 text-center space-y-6">
         
-        <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-purple-100">
+        <div className="w-14 h-14 bg-gradient-to-br from-blue-50 to-violet-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-indigo-100">
           <KeyRound className="w-8 h-8" />
         </div>
 
@@ -83,7 +83,7 @@ export const StudentAttendance: React.FC = () => {
                 setCode(numericOnly);
                 setMessage(null);
               }}
-              className="w-full tracking-widest text-center text-3xl font-mono font-extrabold py-3.5 px-4 liquid-glass-input rounded-xl placeholder:text-slate-400"
+              className="w-full tracking-widest text-center text-3xl font-mono font-extrabold py-3.5 px-4 liquid-glass-input rounded-2xl placeholder:text-slate-400"
             />
             <p className="text-[11px] text-slate-400 mt-1.5">
               Only numbers are accepted. No characters or symbols.
@@ -102,7 +102,7 @@ export const StudentAttendance: React.FC = () => {
           <button
             type="submit"
             disabled={loading || code.length !== 6}
-            className="w-full py-3.5 liquid-btn-primary disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer flex items-center justify-center space-x-2"
+            className="w-full py-3.5 apple-btn-primary disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded-full cursor-pointer flex items-center justify-center space-x-2"
           >
             {loading ? (
               <>
