@@ -117,14 +117,15 @@ export const StudentDashboard: React.FC = () => {
     <div className="space-y-8 animate-fade-in pb-12">
       
       {/* Apple Product Storytelling Hero Card */}
-      <div className="bg-gradient-to-b from-[#1d1d1f] to-[#121214] text-white rounded-3xl p-7 sm:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.14)] relative overflow-hidden border border-white/10 backdrop-blur-2xl">
+      {/* Liquid Glass Hero Banner */}
+      <div className="liquid-glass-dark rounded-3xl p-7 sm:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.18)] relative overflow-hidden border border-white/20">
         {/* Subtle diffuse ambient lighting sheen */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-80 h-80 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center space-x-2 bg-white/10 text-white/90 text-xs font-medium px-3.5 py-1 rounded-full border border-white/15 backdrop-blur-md">
+            <div className="inline-flex items-center space-x-2 bg-white/10 text-white/90 text-xs font-semibold px-3.5 py-1 rounded-full border border-white/20 backdrop-blur-md">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               <span>{user?.community || 'Agentic AI Community'}</span>
             </div>
@@ -134,7 +135,7 @@ export const StudentDashboard: React.FC = () => {
             </h2>
 
             <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed">
-              Department of {user?.department} • Year {user?.year} • Role Focus: <span className="text-white font-medium bg-white/10 px-2 py-0.5 rounded-md border border-white/15">{user?.suggested_role || 'AI Developer'}</span>
+              Department of {user?.department} • Year {user?.year} • Role Focus: <span className="text-white font-semibold bg-white/10 px-2 py-0.5 rounded-md border border-white/20">{user?.suggested_role || 'AI Developer'}</span>
             </p>
           </div>
 
@@ -142,7 +143,7 @@ export const StudentDashboard: React.FC = () => {
             <button
               onClick={handleDownloadReportCard}
               disabled={downloadingReport}
-              className="inline-flex items-center space-x-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs px-4 py-2.5 rounded-full border border-white/20 shadow-xs backdrop-blur-md transition-all cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center space-x-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs px-4 py-2.5 rounded-full border border-white/25 shadow-xs backdrop-blur-md transition-all cursor-pointer disabled:opacity-50"
               title="Download official report card PDF"
             >
               {downloadingReport ? (
@@ -160,7 +161,7 @@ export const StudentDashboard: React.FC = () => {
 
             <Link
               to="/ask-doubt"
-              className="inline-flex items-center space-x-2 bg-white hover:bg-slate-100 text-[#1d1d1f] font-bold text-xs px-5 py-2.5 rounded-full shadow-md transition-all cursor-pointer transform hover:scale-102 active:scale-98"
+              className="inline-flex items-center space-x-2 bg-white hover:bg-slate-100 text-[#1d1d1f] font-bold text-xs px-5 py-2.5 rounded-full shadow-lg transition-all cursor-pointer transform hover:scale-102 active:scale-98 border border-white"
             >
               <MessageSquare className="w-3.5 h-3.5 text-[#1d1d1f]" />
               <span>Ask AI Assistant</span>
@@ -171,16 +172,16 @@ export const StudentDashboard: React.FC = () => {
 
       {/* Podium Victory Banner (If student achieved top 3 in any live quiz) */}
       {podiumQuiz && (
-        <div className={`rounded-3xl p-6 sm:p-7 shadow-lg relative overflow-hidden border backdrop-blur-xl ${
+        <div className={`rounded-3xl p-6 sm:p-7 shadow-xl relative overflow-hidden border backdrop-blur-2xl ${
           podiumQuiz.my_rank === 1
-            ? 'bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 border-amber-400/50 text-white'
+            ? 'bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 border-amber-400/60 text-white'
             : podiumQuiz.my_rank === 2
-            ? 'bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-slate-300/50 text-white'
-            : 'bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/70 border-amber-500/50 text-white'
+            ? 'bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-slate-300/60 text-white'
+            : 'bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/70 border-amber-500/60 text-white'
         }`}>
           <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/25 flex items-center justify-center shrink-0 shadow-md">
                 {podiumQuiz.my_rank === 1 ? (
                   <Trophy className="w-6 h-6 text-amber-300 fill-amber-300" />
                 ) : podiumQuiz.my_rank === 2 ? (
@@ -191,7 +192,7 @@ export const StudentDashboard: React.FC = () => {
               </div>
 
               <div>
-                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white/90 border border-white/15 mb-1">
+                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white/90 border border-white/20 mb-1">
                   {podiumQuiz.my_rank === 1 ? '1st Place Champion Record 🥇' : podiumQuiz.my_rank === 2 ? '2nd Place Silver Record 🥈' : '3rd Place Bronze Record 🥉'}
                 </span>
                 <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
@@ -221,14 +222,14 @@ export const StudentDashboard: React.FC = () => {
                   });
                   setShowCertificate(true);
                 }}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-full border border-white/20 transition-all cursor-pointer"
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-full border border-white/25 transition-all cursor-pointer backdrop-blur-md"
               >
                 Certificate
               </button>
 
               <button
                 onClick={() => setShowGiftBurst(true)}
-                className="px-5 py-2 bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 font-bold text-xs rounded-full shadow-md transition-all cursor-pointer"
+                className="px-5 py-2 bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 font-bold text-xs rounded-full shadow-lg transition-all cursor-pointer hover:scale-102"
               >
                 Open Reward Burst 🎉
               </button>
@@ -237,78 +238,78 @@ export const StudentDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 4 Apple-inspired Metric Cards */}
+      {/* 4 Layered Floating Liquid Glass Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         
         {/* Total Assessments */}
-        <div className="bg-white/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-black/[0.05] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-0.5 group">
-          <div className="flex justify-between items-center text-slate-400 mb-3">
+        <div className="liquid-glass-card p-5 sm:p-6 rounded-3xl group">
+          <div className="flex justify-between items-center text-slate-500 mb-3">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Assessments</span>
-            <div className="p-2 bg-black/[0.03] text-slate-700 rounded-xl">
+            <div className="p-2 liquid-glass-pill text-slate-700">
               <FileText className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#1d1d1f] tracking-tight">{assessments.length}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Assigned for cohort</div>
-          <div className="w-full bg-black/[0.04] rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{assessments.length}</div>
+          <div className="text-[11px] text-slate-500 mt-1">Assigned for cohort</div>
+          <div className="w-full bg-slate-200/60 rounded-full h-1.5 mt-3 overflow-hidden border border-white/80">
             <div 
-              className="bg-[#1d1d1f] h-full rounded-full transition-all duration-1000"
+              className="bg-slate-900 h-full rounded-full transition-all duration-1000"
               style={{ width: `${assessments.length > 0 ? (completedCount / assessments.length) * 100 : 0}%` }}
             />
           </div>
         </div>
 
         {/* Completed / Pending */}
-        <div className="bg-white/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-black/[0.05] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-0.5 group">
-          <div className="flex justify-between items-center text-slate-400 mb-3">
+        <div className="liquid-glass-card p-5 sm:p-6 rounded-3xl group">
+          <div className="flex justify-between items-center text-slate-500 mb-3">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Completed</span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+            <div className="p-2 liquid-glass-pill text-emerald-600 bg-emerald-50/60 border-emerald-200/60">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#1d1d1f] tracking-tight">
+          <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             {completedCount} <span className="text-slate-400 text-sm font-medium">/ {pendingCount} left</span>
           </div>
-          <div className="text-[11px] text-emerald-600 font-medium mt-1">Active pipeline</div>
-          <div className="w-full bg-black/[0.04] rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="text-[11px] text-emerald-600 font-semibold mt-1">Active pipeline</div>
+          <div className="w-full bg-slate-200/60 rounded-full h-1.5 mt-3 overflow-hidden border border-white/80">
             <div 
-              className="bg-emerald-500 h-full rounded-full transition-all duration-1000"
+              className="bg-emerald-500 h-full rounded-full transition-all duration-1000 shadow-xs"
               style={{ width: `${assessments.length > 0 ? (completedCount / assessments.length) * 100 : 0}%` }}
             />
           </div>
         </div>
 
         {/* Attendance % */}
-        <div className="bg-white/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-black/[0.05] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-0.5 group">
-          <div className="flex justify-between items-center text-slate-400 mb-3">
+        <div className="liquid-glass-card p-5 sm:p-6 rounded-3xl group">
+          <div className="flex justify-between items-center text-slate-500 mb-3">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Attendance</span>
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+            <div className="p-2 liquid-glass-pill text-indigo-600 bg-indigo-50/60 border-indigo-200/60">
               <Calendar className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#1d1d1f] tracking-tight">{attendanceStats.percentage || 100}%</div>
-          <div className="text-[11px] text-slate-400 mt-1">{attendanceStats.present || 1} of {attendanceStats.total || 1} present</div>
-          <div className="w-full bg-black/[0.04] rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{attendanceStats.percentage || 100}%</div>
+          <div className="text-[11px] text-slate-500 mt-1">{attendanceStats.present || 1} of {attendanceStats.total || 1} present</div>
+          <div className="w-full bg-slate-200/60 rounded-full h-1.5 mt-3 overflow-hidden border border-white/80">
             <div 
-              className="bg-indigo-600 h-full rounded-full transition-all duration-1000"
+              className="bg-indigo-600 h-full rounded-full transition-all duration-1000 shadow-xs"
               style={{ width: `${Math.min(100, attendanceStats.percentage || 100)}%` }}
             />
           </div>
         </div>
 
         {/* Average Score */}
-        <div className="bg-white/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-black/[0.05] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-0.5 group">
-          <div className="flex justify-between items-center text-slate-400 mb-3">
+        <div className="liquid-glass-card p-5 sm:p-6 rounded-3xl group">
+          <div className="flex justify-between items-center text-slate-500 mb-3">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Average Mastery</span>
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+            <div className="p-2 liquid-glass-pill text-amber-600 bg-amber-50/60 border-amber-200/60">
               <Award className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-[#1d1d1f] tracking-tight">{avgScore}%</div>
-          <div className="text-[11px] text-amber-700 font-medium mt-1">Community percentile</div>
-          <div className="w-full bg-black/[0.04] rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{avgScore}%</div>
+          <div className="text-[11px] text-amber-700 font-semibold mt-1">Community percentile</div>
+          <div className="w-full bg-slate-200/60 rounded-full h-1.5 mt-3 overflow-hidden border border-white/80">
             <div 
-              className="bg-amber-500 h-full rounded-full transition-all duration-1000"
+              className="bg-amber-500 h-full rounded-full transition-all duration-1000 shadow-xs"
               style={{ width: `${Math.min(100, avgScore)}%` }}
             />
           </div>
@@ -316,14 +317,14 @@ export const StudentDashboard: React.FC = () => {
 
       </div>
 
-      {/* Grid: Upcoming Assessments & Learning Materials */}
+      {/* Grid: Upcoming Assessments & Learning Materials with Layered Floating Glass Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Upcoming Assessments */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-black/[0.05] p-6 sm:p-7 shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] space-y-4">
-          <div className="flex justify-between items-center border-b border-black/[0.05] pb-3">
+        <div className="liquid-glass-card rounded-3xl p-6 sm:p-7 space-y-4">
+          <div className="flex justify-between items-center border-b border-white/80 pb-3">
             <div className="flex items-center space-x-2">
-              <div className="p-1.5 rounded-lg bg-black/[0.03] text-slate-800">
+              <div className="p-1.5 rounded-xl liquid-glass-pill text-slate-800">
                 <Clock className="w-4 h-4" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm tracking-tight">Active Assessments</h3>
@@ -338,18 +339,18 @@ export const StudentDashboard: React.FC = () => {
             {assessments.slice(0, 3).map((ass) => (
               <div 
                 key={ass.id} 
-                className="p-4 bg-white rounded-2xl border border-black/[0.05] hover:border-black/[0.1] shadow-2xs hover:shadow-xs transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
+                className="p-4 liquid-glass-card hover:bg-white/95 rounded-2xl transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
               >
                 <div>
-                  <div className="inline-block bg-black/[0.04] text-slate-700 text-[10px] font-semibold px-2 py-0.5 rounded-md mb-1">
+                  <div className="inline-block liquid-glass-pill text-slate-700 text-[10px] font-semibold px-2.5 py-0.5 mb-1.5">
                     {ass.type} • {ass.duration_minutes} Mins
                   </div>
                   <h4 className="font-bold text-slate-900 text-sm tracking-tight">{ass.title}</h4>
-                  <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{ass.description}</p>
+                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{ass.description}</p>
                 </div>
                 <Link
                   to={`/assessments`}
-                  className="px-4 py-2 bg-[#1d1d1f] hover:bg-black text-white font-semibold text-xs rounded-full shadow-xs transition-all shrink-0 cursor-pointer"
+                  className="px-4 py-2 liquid-btn-primary text-xs font-semibold rounded-full shadow-xs transition-all shrink-0 cursor-pointer"
                 >
                   Start Assessment
                 </Link>
@@ -359,10 +360,10 @@ export const StudentDashboard: React.FC = () => {
         </div>
 
         {/* Study Materials */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-black/[0.05] p-6 sm:p-7 shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] space-y-4">
-          <div className="flex justify-between items-center border-b border-black/[0.05] pb-3">
+        <div className="liquid-glass-card rounded-3xl p-6 sm:p-7 space-y-4">
+          <div className="flex justify-between items-center border-b border-white/80 pb-3">
             <div className="flex items-center space-x-2">
-              <div className="p-1.5 rounded-lg bg-black/[0.03] text-slate-800">
+              <div className="p-1.5 rounded-xl liquid-glass-pill text-slate-800">
                 <BookOpen className="w-4 h-4" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm tracking-tight">Curated Study Materials</h3>
@@ -377,20 +378,20 @@ export const StudentDashboard: React.FC = () => {
             {materials.slice(0, 3).map((mat) => (
               <div 
                 key={mat.id} 
-                className="p-4 bg-white rounded-2xl border border-black/[0.05] hover:border-black/[0.1] shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-3"
+                className="p-4 liquid-glass-card hover:bg-white/95 rounded-2xl transition-all flex items-center justify-between gap-3"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-xl bg-black/[0.04] text-slate-800 flex items-center justify-center font-bold text-xs shrink-0">
+                  <div className="w-10 h-10 rounded-xl liquid-glass-pill text-slate-800 flex items-center justify-center font-bold text-xs shrink-0">
                     {mat.material_type}
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-900 text-sm line-clamp-1 tracking-tight">{mat.title}</h4>
-                    <p className="text-xs text-slate-400">{mat.page_count ? `${mat.page_count} pages` : 'Digital Resource'}</p>
+                    <p className="text-xs text-slate-500">{mat.page_count ? `${mat.page_count} pages` : 'Digital Resource'}</p>
                   </div>
                 </div>
                 <Link
                   to="/materials"
-                  className="px-3.5 py-1.5 bg-black/[0.04] hover:bg-black/[0.08] text-slate-800 font-semibold text-xs rounded-full transition-all shrink-0 cursor-pointer"
+                  className="px-4 py-1.5 liquid-btn-glass font-semibold text-xs rounded-full transition-all shrink-0 cursor-pointer"
                 >
                   Access
                 </Link>

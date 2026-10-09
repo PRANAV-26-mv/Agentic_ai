@@ -333,7 +333,7 @@ export const StudentAssessmentTake: React.FC = () => {
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
       
       {/* Top Header Bar matching §17 */}
-      <header className="bg-slate-900 text-white px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-md">
+      <header className="liquid-glass-dark text-white px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sticky top-0 z-30 border-b border-white/20">
         <div>
           <h1 className="font-bold text-sm sm:text-lg">{assessment?.title}</h1>
           <p className="text-[11px] text-slate-400">Distraction-Free Evaluation Mode</p>
@@ -360,7 +360,7 @@ export const StudentAssessmentTake: React.FC = () => {
       <div className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         
         {/* Left Column: Question Card matching §17 & §18 */}
-        <div className="lg:col-span-3 bg-white rounded-3xl border border-slate-200 p-4 sm:p-8 shadow-xs flex flex-col justify-between space-y-5 sm:space-y-6">
+        <div className="lg:col-span-3 liquid-glass-card rounded-3xl p-4 sm:p-8 flex flex-col justify-between space-y-5 sm:space-y-6">
           
           {/* Mobile Question Quick Navigator Rail (Visible on Mobile/Tablet only) */}
           <div className="block lg:hidden border-b border-slate-100 pb-3">
@@ -512,7 +512,7 @@ export const StudentAssessmentTake: React.FC = () => {
         </div>
 
         {/* Right Column: Question Status Grid Palette matching §17 */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between space-y-6">
+        <div className="liquid-glass-card rounded-2xl p-6 flex flex-col justify-between space-y-6">
           <div>
             <h3 className="font-bold text-slate-900 text-sm mb-4">Question Overview Palette</h3>
             

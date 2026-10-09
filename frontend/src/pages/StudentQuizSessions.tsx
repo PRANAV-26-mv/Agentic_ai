@@ -116,9 +116,9 @@ export const StudentQuizSessions: React.FC = () => {
     <div className="space-y-8 max-w-5xl mx-auto">
       
       {/* Hero PIN Join Card */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-amber-950 to-slate-900 text-white rounded-3xl p-6 sm:p-10 shadow-xl border border-amber-500/20">
+      <div className="relative overflow-hidden liquid-glass-dark text-white rounded-3xl p-6 sm:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/20">
         <div className="relative z-10 max-w-2xl space-y-4">
-          <div className="inline-flex items-center space-x-2 bg-amber-500/20 border border-amber-500/40 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider text-amber-300">
+          <div className="inline-flex items-center space-x-2 liquid-glass-pill px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider text-amber-300">
             <Zap className="w-4 h-4 fill-amber-300 text-amber-300 animate-pulse" />
             <span>Interactive Live Quizzes</span>
           </div>
@@ -142,14 +142,14 @@ export const StudentQuizSessions: React.FC = () => {
                     setPin(e.target.value.replace(/\D/g, ''));
                     setErrorMsg(null);
                   }}
-                  className="w-full px-5 py-4 bg-white/10 backdrop-blur-md text-white font-mono font-black text-2xl tracking-[0.3em] text-center rounded-2xl border border-white/20 shadow-inner focus:outline-none focus:ring-4 focus:ring-amber-400/50 focus:border-amber-400 transition-all placeholder:text-slate-500 placeholder:text-sm placeholder:tracking-normal"
+                  className="w-full px-5 py-4 bg-white/10 backdrop-blur-md text-white font-mono font-black text-2xl tracking-[0.3em] text-center rounded-2xl border border-white/25 shadow-inner focus:outline-none focus:ring-4 focus:ring-amber-400/50 focus:border-amber-400 transition-all placeholder:text-slate-400 placeholder:text-sm placeholder:tracking-normal"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={joining || pin.length !== 6}
-                className="px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 disabled:opacity-40 text-slate-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-2 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
+                className="px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 disabled:opacity-40 text-slate-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-2 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 border border-white/20"
               >
                 {joining ? (
                   <>
@@ -182,8 +182,8 @@ export const StudentQuizSessions: React.FC = () => {
 
       {/* Quick Performance & Status Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+        <div className="liquid-glass-card-hover p-4 rounded-2xl flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 shadow-sm">
             <Zap className="w-5 h-5 fill-emerald-600" />
           </div>
           <div>
@@ -192,8 +192,8 @@ export const StudentQuizSessions: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+        <div className="liquid-glass-card-hover p-4 rounded-2xl flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 border border-sky-100 shadow-sm">
             <Calendar className="w-5 h-5 text-sky-600" />
           </div>
           <div>
@@ -202,8 +202,8 @@ export const StudentQuizSessions: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+        <div className="liquid-glass-card-hover p-4 rounded-2xl flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100 shadow-sm">
             <CheckCircle2 className="w-5 h-5 text-purple-600" />
           </div>
           <div>
@@ -212,8 +212,8 @@ export const StudentQuizSessions: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+        <div className="liquid-glass-card-hover p-4 rounded-2xl flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100 shadow-sm">
             <Trophy className="w-5 h-5 text-amber-600 fill-amber-600" />
           </div>
           <div>
@@ -226,12 +226,12 @@ export const StudentQuizSessions: React.FC = () => {
       {/* Filter Tabs & Search Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
         {/* Filter Tabs */}
-        <div className="flex items-center space-x-1.5 bg-slate-100 p-1.5 rounded-2xl overflow-x-auto text-xs font-bold">
+        <div className="flex items-center space-x-1.5 liquid-glass-pill p-1.5 rounded-2xl overflow-x-auto text-xs font-bold">
           <button
             onClick={() => setActiveTab('ALL')}
             className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'ALL'
-                ? 'bg-white text-slate-900 shadow-xs font-extrabold'
+                ? 'liquid-glass text-slate-900 shadow-sm font-extrabold'
                 : 'text-slate-500 hover:text-slate-900'
             }`}
           >
@@ -242,7 +242,7 @@ export const StudentQuizSessions: React.FC = () => {
             onClick={() => setActiveTab('LIVE')}
             className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center space-x-1.5 whitespace-nowrap ${
               activeTab === 'LIVE'
-                ? 'bg-white text-emerald-800 shadow-xs font-extrabold'
+                ? 'liquid-glass text-emerald-800 shadow-sm font-extrabold'
                 : 'text-slate-500 hover:text-slate-900'
             }`}
           >
@@ -254,7 +254,7 @@ export const StudentQuizSessions: React.FC = () => {
             onClick={() => setActiveTab('SCHEDULED')}
             className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'SCHEDULED'
-                ? 'bg-white text-sky-800 shadow-xs font-extrabold'
+                ? 'liquid-glass text-sky-800 shadow-sm font-extrabold'
                 : 'text-slate-500 hover:text-slate-900'
             }`}
           >
@@ -265,7 +265,7 @@ export const StudentQuizSessions: React.FC = () => {
             onClick={() => setActiveTab('COMPLETED')}
             className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'COMPLETED'
-                ? 'bg-white text-purple-800 shadow-xs font-extrabold'
+                ? 'liquid-glass text-purple-800 shadow-sm font-extrabold'
                 : 'text-slate-500 hover:text-slate-900'
             }`}
           >
@@ -281,7 +281,7 @@ export const StudentQuizSessions: React.FC = () => {
             placeholder="Search by title or PIN..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all shadow-xs placeholder:text-slate-400"
+            className="w-full pl-9 pr-4 py-2 liquid-glass-input text-xs"
           />
         </div>
       </div>
@@ -316,12 +316,12 @@ export const StudentQuizSessions: React.FC = () => {
             return (
               <div 
                 key={session.id}
-                className={`bg-white rounded-3xl p-6 shadow-xs flex flex-col justify-between space-y-4 transition-all ${
+                className={`liquid-glass-card-hover rounded-3xl p-6 flex flex-col justify-between space-y-4 transition-all ${
                   isLive && !isSubmitted
-                    ? 'border-2 border-emerald-400 ring-4 ring-emerald-500/10 shadow-emerald-500/5'
+                    ? 'border-2 border-emerald-400/80 ring-4 ring-emerald-500/10 shadow-[0_12px_36px_rgba(16,185,129,0.15)]'
                     : isSubmitted
-                    ? 'border-2 border-purple-200 hover:border-purple-300'
-                    : 'border border-slate-200 hover:border-slate-300'
+                    ? 'border border-purple-200/80 hover:border-purple-300'
+                    : 'border border-white/70'
                 }`}
               >
                 <div className="space-y-3">

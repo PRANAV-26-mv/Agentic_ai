@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, ShieldAlert, Lock, User, Loader2, Sparkles } from 'lucide-react';
 import { api } from '../services/api';
+import { LiquidCanvas } from '../components/LiquidCanvas';
 
 export const LoginPage: React.FC = () => {
   const { loginWithDevEmail, loginWithGoogleToken, loginWithRegNumber, role, user } = useAuth();
@@ -86,37 +87,36 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fbfbfd] flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden bg-slate-50/60">
       
-      {/* Apple Studio Lighting Background Sheen */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
+      {/* Luminous Liquid Canvas with drifting fluid orbs */}
+      <LiquidCanvas />
 
-      {/* Main Glass Card */}
-      <div className="max-w-md w-full bg-white/80 backdrop-blur-2xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.06)] border border-black/[0.06] p-8 sm:p-10 space-y-6 text-center relative z-10 animate-fade-in">
+      {/* Main Layered Floating Liquid Glass Card */}
+      <div className="max-w-md w-full liquid-glass-card rounded-3xl p-8 sm:p-10 space-y-6 text-center relative z-10 animate-fade-in shadow-[0_20px_60px_-15px_rgba(31,38,135,0.12)]">
 
-        {/* Minimalist Apple-inspired Brand Icon */}
-        <div className="mx-auto w-14 h-14 bg-gradient-to-b from-[#1d1d1f] to-[#2c2c2e] text-white rounded-2xl flex items-center justify-center shadow-md mb-2 border border-white/10 transition-transform duration-300 hover:scale-105">
+        {/* Floating Liquid Glass Brand Emblem */}
+        <div className="mx-auto w-14 h-14 bg-gradient-to-br from-[#1d1d1f] to-[#2c2c2e] text-white rounded-2xl flex items-center justify-center shadow-[0_6px_20px_rgba(0,0,0,0.22)] mb-2 border border-white/25 transition-transform duration-300 hover:scale-105">
           <BookOpen className="w-7 h-7 text-white" />
         </div>
 
         {/* Title & Product Storytelling */}
         <div className="space-y-1">
-          <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full text-[10px] font-semibold bg-black/[0.04] text-slate-700 border border-black/[0.05] mb-1">
+          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[10px] font-semibold liquid-glass-pill text-slate-700 mb-1">
             <Sparkles className="w-3 h-3 text-amber-500" />
             <span>Campus Learning & Assessment Platform</span>
           </div>
           <h1 className="text-2xl font-extrabold text-[#1d1d1f] tracking-tight">
             Sign In to Portal
           </h1>
-          <p className="text-xs text-slate-400 font-normal">
+          <p className="text-xs text-slate-500 font-medium">
             Precision Assessments • Group Discussion • Cohort Analytics
           </p>
         </div>
 
         {/* Access Denied Alert */}
         {errorMsg && (
-          <div className="bg-rose-50 border border-rose-200/80 rounded-2xl p-4 text-left flex items-start space-x-3 animate-fade-in">
+          <div className="bg-rose-50/90 backdrop-blur-md border border-rose-200/90 rounded-2xl p-4 text-left flex items-start space-x-3 animate-fade-in shadow-xs">
             <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
             <div>
               <h4 className="text-xs font-bold text-rose-900">Access Denied</h4>
@@ -127,7 +127,7 @@ export const LoginPage: React.FC = () => {
 
         {/* Credentials Form */}
         <form onSubmit={handleLoginSubmit} className="space-y-4 text-left pt-1">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide">
               Email or Registration Number
             </label>
@@ -139,12 +139,12 @@ export const LoginPage: React.FC = () => {
                 placeholder="e.g. 717822P101 or email@domain.com"
                 value={loginId}
                 onChange={e => setLoginId(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-2.5 bg-black/[0.02] border border-black/[0.08] focus:border-black/[0.2] focus:bg-white rounded-xl text-xs font-medium text-slate-900 focus:outline-hidden transition-all shadow-2xs"
+                className="w-full pl-9 pr-3.5 py-2.5 liquid-glass-input rounded-xl text-xs font-medium text-slate-900 focus:outline-hidden"
               />
             </div>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide">
               Password
             </label>
@@ -156,7 +156,7 @@ export const LoginPage: React.FC = () => {
                 placeholder="Registration Number / Password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-2.5 bg-black/[0.02] border border-black/[0.08] focus:border-black/[0.2] focus:bg-white rounded-xl text-xs font-medium text-slate-900 focus:outline-hidden transition-all shadow-2xs"
+                className="w-full pl-9 pr-3.5 py-2.5 liquid-glass-input rounded-xl text-xs font-medium text-slate-900 focus:outline-hidden"
               />
             </div>
           </div>
@@ -164,7 +164,7 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#1d1d1f] hover:bg-black text-white font-semibold text-xs rounded-full shadow-xs transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50 mt-2 transform hover:scale-[1.01] active:scale-[0.99]"
+            className="w-full py-3 liquid-btn-primary font-semibold text-xs rounded-full shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50 mt-3"
           >
             {loading ? (
               <>
@@ -181,8 +181,10 @@ export const LoginPage: React.FC = () => {
         {!!googleClientId && (
           <div className="space-y-3 pt-2">
             <div className="relative">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-black/[0.06]"></div></div>
-              <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-white/80 px-2 text-slate-400 font-semibold">Or continue with</span></div>
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/60"></div></div>
+              <div className="relative flex justify-center text-[10px] uppercase">
+                <span className="liquid-glass-pill px-2.5 py-0.5 text-slate-500 font-semibold text-[10px]">Or continue with</span>
+              </div>
             </div>
 
             <div className="flex justify-center min-h-[44px]">

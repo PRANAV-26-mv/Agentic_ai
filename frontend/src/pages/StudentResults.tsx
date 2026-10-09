@@ -151,13 +151,13 @@ export const StudentResults: React.FC = () => {
     <div className="space-y-6 max-w-5xl mx-auto">
       
       {/* Header Banner */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="liquid-glass-card p-6 sm:p-8 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <div className="inline-flex items-center space-x-2 bg-purple-50 text-purple-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-2">
+          <div className="inline-flex items-center space-x-2 liquid-glass-pill bg-purple-50/70 border-purple-200/60 text-purple-700 px-3 py-1 text-xs font-bold uppercase tracking-wider mb-2">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Academic Performance Dashboard</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-2.5">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2.5">
             <BarChart2 className="w-7 h-7 text-purple-600" />
             <span>My Results & Performance</span>
           </h1>
@@ -170,7 +170,7 @@ export const StudentResults: React.FC = () => {
           <button
             onClick={handleDownloadReportCard}
             disabled={downloadingReport}
-            className="px-4 py-2.5 bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 disabled:opacity-60 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center space-x-1.5 shrink-0"
+            className="px-4 py-2.5 liquid-btn-primary disabled:opacity-60 text-white font-semibold text-xs rounded-full shadow-md transition-all cursor-pointer flex items-center space-x-1.5 shrink-0"
             title="Download Comprehensive Official Academic Report Card PDF"
           >
             {downloadingReport ? (
@@ -188,80 +188,80 @@ export const StudentResults: React.FC = () => {
 
           <button
             onClick={() => navigate('/quiz-sessions')}
-            className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center space-x-1.5 shrink-0"
+            className="px-4 py-2.5 liquid-btn-glass text-slate-800 font-semibold text-xs rounded-full shadow-xs transition-colors cursor-pointer flex items-center space-x-1.5 shrink-0"
           >
-            <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+            <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
             <span>Go to Live Quizzes</span>
           </button>
         </div>
       </div>
 
-      {/* Top Overview Metric Cards */}
+      {/* Top Overview Liquid Glass Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+        <div className="liquid-glass-card p-4 rounded-2xl flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl liquid-glass-pill bg-purple-50/70 border-purple-200/60 text-purple-600 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase text-slate-400">Total Completed</p>
-            <p className="text-lg font-black text-slate-900">{totalCompleted} Tests</p>
+            <p className="text-[10px] font-semibold uppercase text-slate-500">Total Completed</p>
+            <p className="text-lg font-extrabold text-slate-900 tracking-tight">{totalCompleted} Tests</p>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+        <div className="liquid-glass-card p-4 rounded-2xl flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl liquid-glass-pill bg-emerald-50/70 border-emerald-200/60 text-emerald-600 flex items-center justify-center shrink-0">
             <BarChart2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase text-slate-400">Avg Accuracy</p>
-            <p className="text-lg font-black text-emerald-600">{averagePercentage}%</p>
+            <p className="text-[10px] font-semibold uppercase text-slate-500">Avg Accuracy</p>
+            <p className="text-lg font-extrabold text-emerald-600 tracking-tight">{averagePercentage}%</p>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-            <Trophy className="w-5 h-5 fill-amber-500" />
+        <div className="liquid-glass-card p-4 rounded-2xl flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl liquid-glass-pill bg-amber-50/70 border-amber-200/60 text-amber-600 flex items-center justify-center shrink-0">
+            <Trophy className="w-5 h-5 fill-amber-500 text-amber-600" />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase text-slate-400">Best Quiz Rank</p>
-            <p className="text-lg font-black text-amber-700">{bestQuizRank ? `#${bestQuizRank}` : '—'}</p>
+            <p className="text-[10px] font-semibold uppercase text-slate-500">Best Quiz Rank</p>
+            <p className="text-lg font-extrabold text-amber-700 tracking-tight">{bestQuizRank ? `#${bestQuizRank}` : '—'}</p>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-            <Zap className="w-5 h-5 fill-sky-600" />
+        <div className="liquid-glass-card p-4 rounded-2xl flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl liquid-glass-pill bg-sky-50/70 border-sky-200/60 text-sky-600 flex items-center justify-center shrink-0">
+            <Zap className="w-5 h-5 fill-sky-600 text-sky-600" />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase text-slate-400">Live Quizzes</p>
-            <p className="text-lg font-black text-sky-700">{quizResults.length} Submissions</p>
+            <p className="text-[10px] font-semibold uppercase text-slate-500">Live Quizzes</p>
+            <p className="text-lg font-extrabold text-sky-700 tracking-tight">{quizResults.length} Submissions</p>
           </div>
         </div>
       </div>
 
       {/* Tabs Navigation - Responsive Grid on Mobile */}
-      <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl w-full sm:w-fit text-xs font-extrabold">
+      <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 liquid-glass-card p-1.5 rounded-2xl w-full sm:w-fit text-xs font-semibold border border-white/80">
         <button
           onClick={() => setActiveTab('QUIZZES')}
-          className={`w-full sm:w-auto px-3 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1.5 text-center ${
+          className={`w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1.5 text-center ${
             activeTab === 'QUIZZES'
-              ? 'bg-white text-slate-900 shadow-xs'
-              : 'text-slate-500 hover:text-slate-900'
+              ? 'bg-slate-900 text-white shadow-xs font-bold'
+              : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
+          <Zap className="w-4 h-4 text-amber-400 fill-amber-400 shrink-0" />
           <span className="truncate">Live Quizzes ({quizResults.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('ASSESSMENTS')}
-          className={`w-full sm:w-auto px-3 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1.5 text-center ${
+          className={`w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1.5 text-center ${
             activeTab === 'ASSESSMENTS'
-              ? 'bg-white text-slate-900 shadow-xs'
-              : 'text-slate-500 hover:text-slate-900'
+              ? 'bg-slate-900 text-white shadow-xs font-bold'
+              : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <Award className="w-4 h-4 text-purple-600 shrink-0" />
+          <Award className="w-4 h-4 text-purple-400 shrink-0" />
           <span className="truncate">Assessments ({assessmentResults.length})</span>
         </button>
       </div>

@@ -33,27 +33,27 @@ export const StudentAssessments: React.FC = () => {
     <div className="space-y-6">
       
       {/* Banner */}
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      <div className="liquid-glass-card p-6 sm:p-7 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center space-x-2.5">
-            <FileCheck className="w-6 h-6 text-brand-600 shrink-0" />
+          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2.5">
+            <FileCheck className="w-6 h-6 text-slate-900 shrink-0" />
             <span>Assigned Assessments</span>
           </h2>
-          <p className="text-slate-500 text-xs mt-1">Complete your formal MCQ and Writing evaluations before the deadline.</p>
+          <p className="text-slate-500 text-xs mt-1">Complete your formal evaluations and track your progress in real time.</p>
         </div>
       </div>
 
       {/* Assessment List */}
       {loading ? (
         <div className="space-y-4 animate-pulse">
-          <div className="h-40 bg-slate-100 rounded-3xl"></div>
-          <div className="h-40 bg-slate-100 rounded-3xl"></div>
+          <div className="h-40 liquid-glass-card rounded-3xl"></div>
+          <div className="h-40 liquid-glass-card rounded-3xl"></div>
         </div>
       ) : assessments.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-8 sm:p-12 text-center space-y-3">
+        <div className="liquid-glass-card rounded-3xl p-8 sm:p-12 text-center space-y-3">
           <FileCheck className="w-10 h-10 text-slate-300 mx-auto" />
           <h3 className="font-extrabold text-slate-800 text-sm">No Assessments Assigned</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
             You currently have no pending assessments assigned to your cohort.
           </p>
         </div>
@@ -67,23 +67,23 @@ export const StudentAssessments: React.FC = () => {
             return (
               <div 
                 key={ass.id} 
-                className="bg-white border border-slate-200 hover:border-slate-300 rounded-3xl p-5 sm:p-6 shadow-xs transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                className="liquid-glass-card rounded-3xl p-5 sm:p-6 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
               >
                 <div className="space-y-2.5 max-w-2xl min-w-0 flex-1">
                   <div className="flex flex-wrap gap-1.5 sm:gap-2 items-center">
-                    <span className="bg-brand-50 text-brand-700 border border-brand-100 text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-full">
+                    <span className="liquid-glass-pill bg-sky-50/70 border-sky-200/60 text-sky-800 text-[10px] sm:text-xs font-semibold px-3 py-1">
                       {ass.type} Assessment
                     </span>
-                    <span className="bg-slate-100 text-slate-700 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center space-x-1">
+                    <span className="liquid-glass-pill text-slate-700 text-[10px] sm:text-xs font-medium px-3 py-1 flex items-center space-x-1">
                       <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                       <span>{ass.duration_minutes} Mins</span>
                     </span>
-                    <span className="bg-purple-50 text-purple-700 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full">
+                    <span className="liquid-glass-pill bg-purple-50/70 border-purple-200/60 text-purple-800 text-[10px] sm:text-xs font-medium px-3 py-1">
                       {ass.question_selection_mode === 'RANDOMIZED_POOL' ? '🎲 Randomized Pool' : '📌 Fixed Set'}
                     </span>
                   </div>
 
-                  <h3 className="font-black text-slate-900 text-base sm:text-lg leading-snug break-words">
+                  <h3 className="font-extrabold text-slate-900 text-base sm:text-lg leading-snug break-words tracking-tight">
                     {ass.title}
                   </h3>
                   <p className="text-xs text-slate-500 line-clamp-2 break-words">
@@ -97,25 +97,25 @@ export const StudentAssessments: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Status Badge / Action Button with clean mobile alignment */}
-                <div className="w-full md:w-auto shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
+                {/* Status Badge / Action Button */}
+                <div className="w-full md:w-auto shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-white/60">
                   {isCompleted ? (
                     <div className="flex flex-row md:flex-col items-center md:items-end justify-between gap-2">
-                      <span className="inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                        <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                      <span className="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-900 border border-emerald-500/30 backdrop-blur-md">
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0 text-emerald-600" />
                         <span>COMPLETED ({attempt.percentage}%)</span>
                       </span>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-slate-400 font-medium">
                         {new Date(attempt.submitted_at!).toLocaleDateString()}
                       </span>
                     </div>
                   ) : (
                     <button
                       onClick={() => handleStart(ass.id)}
-                      className={`w-full md:w-auto px-6 py-3 font-black text-xs rounded-xl shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                      className={`w-full md:w-auto px-6 py-3 font-semibold text-xs rounded-full shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer ${
                         isInProgress
                           ? 'bg-amber-500 hover:bg-amber-600 text-white animate-pulse'
-                          : 'bg-brand-600 hover:bg-brand-700 text-white'
+                          : 'liquid-btn-primary'
                       }`}
                     >
                       <span>{isInProgress ? 'Resume Assessment' : 'Start Assessment'}</span>

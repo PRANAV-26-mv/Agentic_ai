@@ -33,10 +33,10 @@ export const StudentMaterials: React.FC = () => {
     <div className="space-y-6">
       
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 liquid-glass-card p-6 rounded-2xl">
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-            <BookOpen className="w-6 h-6 text-brand-600" />
+            <BookOpen className="w-6 h-6 text-indigo-600" />
             <span>Study Materials & Courseware</span>
           </h2>
           <p className="text-slate-500 text-xs mt-1">Access curated lecture notes, research papers, and interactive AI study guides.</p>
@@ -51,14 +51,14 @@ export const StudentMaterials: React.FC = () => {
               placeholder="Search materials..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"
+              className="w-full pl-9 pr-4 py-2 liquid-glass-input text-xs"
             />
           </div>
 
           <select
             value={typeFilter}
             onChange={e => setTypeFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700"
+            className="px-3 py-2 liquid-glass-input text-xs font-semibold text-slate-700 cursor-pointer"
           >
             <option value="ALL">All Types</option>
             <option value="PDF">PDF</option>
@@ -72,20 +72,20 @@ export const StudentMaterials: React.FC = () => {
       {/* Material Grid matching §8 */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="h-48 bg-slate-200 rounded-2xl animate-pulse"></div>
-          <div className="h-48 bg-slate-200 rounded-2xl animate-pulse"></div>
+          <div className="h-48 liquid-glass-card rounded-2xl animate-pulse"></div>
+          <div className="h-48 liquid-glass-card rounded-2xl animate-pulse"></div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredMaterials.map((mat) => (
-            <div key={mat.id} className="bg-white border border-slate-200 hover:border-brand-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+            <div key={mat.id} className="liquid-glass-card-hover rounded-2xl p-5 flex flex-col justify-between">
               
               <div>
                 <div className="flex justify-between items-start mb-3">
-                  <div className="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center font-bold text-xs">
+                  <div className="w-10 h-10 bg-indigo-50/80 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-xs border border-indigo-100 shadow-sm">
                     {mat.material_type}
                   </div>
-                  <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                  <span className="text-[10px] font-semibold text-slate-600 liquid-glass-pill px-2.5 py-1 rounded-full">
                     {mat.page_count ? `${mat.page_count} pages` : 'Web Link'}
                   </span>
                 </div>
@@ -94,13 +94,13 @@ export const StudentMaterials: React.FC = () => {
                 <p className="text-xs text-slate-500 mb-4 line-clamp-3">{mat.description || 'No description provided.'}</p>
               </div>
 
-              {/* Action Buttons matching §8 */}
-              <div className="pt-4 border-t border-slate-100 grid grid-cols-3 gap-2">
+              {/* Action Buttons */}
+              <div className="pt-4 border-t border-white/60 grid grid-cols-3 gap-2">
                 <a
                   href={getFileUrl(mat.file_url)}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1 transition-colors"
+                  className="px-3 py-2 liquid-btn-glass text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>View</span>
@@ -111,7 +111,7 @@ export const StudentMaterials: React.FC = () => {
                   download
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1 transition-colors"
+                  className="px-3 py-2 liquid-btn-glass text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Download</span>
@@ -119,7 +119,7 @@ export const StudentMaterials: React.FC = () => {
 
                 <button
                   onClick={() => handleAskDoubt(mat.id)}
-                  className="px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl flex items-center justify-center space-x-1 shadow-sm transition-colors"
+                  className="px-3 py-2 liquid-btn-primary text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
                   <span>Ask AI</span>

@@ -47,7 +47,7 @@ export const StudentAttendance: React.FC = () => {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
+      <div className="liquid-glass-card p-6 rounded-2xl flex justify-between items-center">
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
             <Calendar className="w-6 h-6 text-purple-600" />
@@ -60,9 +60,9 @@ export const StudentAttendance: React.FC = () => {
       </div>
 
       {/* Numeric OTP Input Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm text-center space-y-6">
+      <div className="liquid-glass-card rounded-2xl p-8 text-center space-y-6">
         
-        <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+        <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-purple-100">
           <KeyRound className="w-8 h-8" />
         </div>
 
@@ -83,7 +83,7 @@ export const StudentAttendance: React.FC = () => {
                 setCode(numericOnly);
                 setMessage(null);
               }}
-              className="w-full tracking-widest text-center text-3xl font-mono font-extrabold py-3.5 px-4 bg-slate-50 border-2 border-slate-300 rounded-xl focus:ring-4 focus:ring-purple-200 focus:border-purple-600 focus:outline-none transition-all placeholder:text-slate-300"
+              className="w-full tracking-widest text-center text-3xl font-mono font-extrabold py-3.5 px-4 liquid-glass-input rounded-xl placeholder:text-slate-400"
             />
             <p className="text-[11px] text-slate-400 mt-1.5">
               Only numbers are accepted. No characters or symbols.
@@ -102,7 +102,7 @@ export const StudentAttendance: React.FC = () => {
           <button
             type="submit"
             disabled={loading || code.length !== 6}
-            className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center space-x-2"
+            className="w-full py-3.5 liquid-btn-primary disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer flex items-center justify-center space-x-2"
           >
             {loading ? (
               <>
@@ -117,18 +117,18 @@ export const StudentAttendance: React.FC = () => {
       </div>
 
       {/* Attendance Stats & Log */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+      <div className="liquid-glass-card rounded-2xl p-6 space-y-4">
         <h3 className="font-bold text-slate-900 text-sm">My Attendance Summary</h3>
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
+          <div className="liquid-glass-card-hover p-4 rounded-xl text-center">
             <div className="text-2xl font-black text-slate-900">{stats.total || 0}</div>
             <div className="text-[11px] text-slate-500 font-semibold">Total Sessions</div>
           </div>
-          <div className="bg-emerald-50 p-4 rounded-xl text-center border border-emerald-100">
+          <div className="liquid-glass-card-hover p-4 rounded-xl text-center">
             <div className="text-2xl font-black text-emerald-700">{stats.present || 0}</div>
             <div className="text-[11px] text-emerald-600 font-semibold">Sessions Attended</div>
           </div>
-          <div className="bg-purple-50 p-4 rounded-xl text-center border border-purple-100">
+          <div className="liquid-glass-card-hover p-4 rounded-xl text-center">
             <div className="text-2xl font-black text-purple-700">{stats.percentage || 100}%</div>
             <div className="text-[11px] text-purple-600 font-semibold">Overall Attendance</div>
           </div>

@@ -229,7 +229,7 @@ export const StudentGdRoom: React.FC = () => {
 
         <div className="flex items-center space-x-2">
           {/* PIN badge */}
-          <div className="inline-flex items-center space-x-2 bg-black/[0.03] border border-black/[0.06] px-3 py-1 rounded-full text-slate-800 text-xs font-mono font-bold shadow-2xs">
+          <div className="inline-flex items-center space-x-2 liquid-glass-pill px-3 py-1 text-slate-800 text-xs font-mono font-bold shadow-2xs">
             <span>PIN: {session.pin}</span>
             <button
               onClick={handleCopyPin}
@@ -242,22 +242,22 @@ export const StudentGdRoom: React.FC = () => {
 
           {/* Status badge */}
           {isPublished ? (
-            <span className="bg-purple-50 text-purple-800 border border-purple-200/60 text-xs font-semibold px-3 py-1 rounded-full flex items-center space-x-1.5">
+            <span className="bg-purple-50 text-purple-800 border border-purple-200/60 text-xs font-semibold px-3 py-1 rounded-full flex items-center space-x-1.5 shadow-2xs">
               <Trophy className="w-3.5 h-3.5 text-purple-600" />
               <span>Results Revealed</span>
             </span>
           ) : (
-            <span className="bg-emerald-50 text-emerald-800 border border-emerald-200/60 text-xs font-semibold px-3 py-1 rounded-full flex items-center space-x-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="bg-emerald-50 text-emerald-800 border border-emerald-200/60 text-xs font-semibold px-3 py-1 rounded-full flex items-center space-x-1.5 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Live Session</span>
             </span>
           )}
         </div>
       </div>
 
-      {/* Hero Session Apple Glass Banner */}
-      <div className="bg-gradient-to-b from-[#1d1d1f] to-[#121214] text-white rounded-3xl p-7 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.14)] relative overflow-hidden border border-white/10 backdrop-blur-2xl">
-        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Hero Session Liquid Glass Banner */}
+      <div className="liquid-glass-dark rounded-3xl p-7 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.18)] relative overflow-hidden border border-white/20">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 space-y-3">
           <div className="flex flex-wrap items-center gap-2">

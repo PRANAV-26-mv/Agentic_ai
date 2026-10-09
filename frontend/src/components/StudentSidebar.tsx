@@ -68,10 +68,10 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({ mobileOpen, onCl
             to={item.to}
             onClick={() => onCloseMobile && onCloseMobile()}
             className={({ isActive }) =>
-              `group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${
+              `group flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer ${
                 isActive
-                  ? 'bg-[#1d1d1f] text-white shadow-xs font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-black/[0.04]'
+                  ? 'bg-slate-900/90 text-white shadow-[0_6px_18px_rgba(0,0,0,0.14),inset_0_1px_1px_rgba(255,255,255,0.25)] font-semibold scale-[1.01]'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 hover:shadow-xs'
               }`
             }
           >
@@ -100,7 +100,7 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({ mobileOpen, onCl
           {onCloseMobile && (
             <button
               onClick={onCloseMobile}
-              className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-black/[0.05]"
+              className="p-1.5 text-slate-500 hover:text-slate-800 rounded-xl hover:bg-white/60"
               title="Close Navigation"
             >
               <X className="w-4 h-4" />
@@ -113,15 +113,15 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({ mobileOpen, onCl
         {renderNavGroup(profileNav, 'Account & Progress')}
       </div>
 
-      {/* User Identity Footer */}
-      <div className="pt-3 border-t border-black/[0.06] space-y-2.5">
-        <div className="flex items-center space-x-2.5 px-2.5 py-1.5 bg-black/[0.02] rounded-xl border border-black/[0.04]">
-          <div className="w-8 h-8 rounded-full bg-[#1d1d1f] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+      {/* User Identity Layered Floating Card */}
+      <div className="pt-3 border-t border-white/60 space-y-2.5">
+        <div className="liquid-glass-card p-2.5 rounded-2xl flex items-center space-x-2.5 shadow-xs">
+          <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
             {user?.name?.charAt(0) || 'S'}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-slate-900 truncate">{user?.name}</p>
-            <p className="text-[10px] text-slate-400 font-mono truncate">{user?.student_id || user?.email}</p>
+            <p className="text-[10px] text-slate-500 font-mono truncate">{user?.student_id || user?.email}</p>
           </div>
         </div>
 
@@ -131,7 +131,7 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({ mobileOpen, onCl
             logout();
             navigate('/login');
           }}
-          className="w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all cursor-pointer"
+          className="liquid-btn-glass w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50/80 transition-all cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5 shrink-0" />
           <span>Sign Out</span>
@@ -142,19 +142,19 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({ mobileOpen, onCl
 
   return (
     <>
-      {/* Desktop Frosted Glass Sidebar */}
-      <aside className="hidden md:flex w-64 bg-white/70 backdrop-blur-2xl border-r border-black/[0.06] min-h-[calc(100vh-4rem)] flex-col justify-between shrink-0 shadow-[1px_0_12px_rgba(0,0,0,0.02)]">
+      {/* Desktop Translucent Liquid Glass Sidebar */}
+      <aside className="hidden md:flex w-64 liquid-glass-sidebar min-h-[calc(100vh-4rem)] flex-col justify-between shrink-0">
         {sidebarContent}
       </aside>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer with Liquid Glass Backdrop */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex animate-fade-in">
           <div
-            className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-slate-950/30 backdrop-blur-sm transition-opacity"
             onClick={onCloseMobile}
           />
-          <aside className="relative w-72 max-w-[85vw] bg-white/95 backdrop-blur-2xl h-full flex flex-col justify-between shadow-2xl z-10 border-r border-black/[0.08] overflow-y-auto">
+          <aside className="relative w-72 max-w-[85vw] liquid-glass-card h-full flex flex-col justify-between shadow-2xl z-10 border-r border-white/80 overflow-y-auto">
             {sidebarContent}
           </aside>
         </div>
