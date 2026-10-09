@@ -142,10 +142,10 @@ export const StudentManagement: React.FC = () => {
     <div className="space-y-6">
       
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 apple-glass-card p-6 rounded-[26px]">
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-            <Users className="w-6 h-6 text-purple-600" />
+            <Users className="w-6 h-6 text-indigo-600" />
             <span>Student Roster Management</span>
           </h2>
           <p className="text-slate-500 text-xs mt-1">Manage college student accounts, roles, and cohort assignments.</p>
@@ -154,15 +154,15 @@ export const StudentManagement: React.FC = () => {
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setShowBulkImport(true)}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-2 transition-colors border border-slate-200"
+            className="px-4 py-2.5 apple-btn-glass text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-2 transition-all cursor-pointer"
           >
-            <FileSpreadsheet className="w-4 h-4 text-purple-600" />
+            <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
             <span>Bulk Import</span>
           </button>
 
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-colors"
+            className="px-4 py-2.5 apple-btn-primary text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-all cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             <span>Add Student</span>
@@ -171,7 +171,7 @@ export const StudentManagement: React.FC = () => {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3 text-xs">
+      <div className="apple-glass-card p-4 sm:p-5 rounded-[26px] space-y-3 text-xs">
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
@@ -268,10 +268,10 @@ export const StudentManagement: React.FC = () => {
       {loading ? (
         <div className="h-64 bg-slate-200 rounded-2xl animate-pulse"></div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-sm">
+        <div className="apple-glass-card rounded-[26px] overflow-x-auto custom-scrollbar shadow-sm">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200">
+              <tr className="bg-slate-50/70 backdrop-blur-md text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-white/80">
                 <th className="p-4">Student ID</th>
                 <th className="p-4">Name & Email</th>
                 <th className="p-4">Dept / Year</th>

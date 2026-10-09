@@ -204,10 +204,10 @@ export const QuestionBank: React.FC = () => {
     <div className="space-y-6">
       
       {/* Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 apple-glass-card p-6 rounded-[26px]">
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-            <HelpCircle className="w-6 h-6 text-purple-600" />
+            <HelpCircle className="w-6 h-6 text-indigo-600" />
             <span>Question Repository & Pools</span>
           </h2>
           <p className="text-slate-500 text-xs mt-1">Manage MCQ & Writing questions, approve AI-generated items, and build pools for Live Quiz Sessions.</p>
@@ -217,7 +217,7 @@ export const QuestionBank: React.FC = () => {
           {questions.length > 0 && (
             <button
               onClick={handleDeleteAllQuestions}
-              className="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors border border-rose-200 cursor-pointer"
+              className="px-3.5 py-2.5 bg-rose-50/90 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors border border-rose-200 cursor-pointer"
             >
               <Trash2 className="w-4 h-4 text-rose-600" />
               <span>Delete All ({questions.length})</span>
@@ -226,9 +226,9 @@ export const QuestionBank: React.FC = () => {
 
           <button
             onClick={() => setShowPoolModal(true)}
-            className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors border border-slate-200 cursor-pointer"
+            className="px-3.5 py-2.5 apple-btn-glass text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all cursor-pointer"
           >
-            <Layers className="w-4 h-4 text-purple-600" />
+            <Layers className="w-4 h-4 text-indigo-600" />
             <span>Pools ({pools.length})</span>
           </button>
 
@@ -237,7 +237,7 @@ export const QuestionBank: React.FC = () => {
               setAddError(null);
               setShowAddModal(true);
             }}
-            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-colors cursor-pointer"
+            className="px-4 py-2.5 apple-btn-primary text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Question</span>
@@ -249,7 +249,7 @@ export const QuestionBank: React.FC = () => {
               setExportSuccess(null);
               setShowExportModal(true);
             }}
-            className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-all cursor-pointer"
+            className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-all cursor-pointer"
             title="Export question bank to official PDF paper (Admin Only)"
           >
             <FileDown className="w-4 h-4" />
@@ -261,7 +261,7 @@ export const QuestionBank: React.FC = () => {
               setWizardInitialMode('EXTRACT');
               setShowPdfWizard(true);
             }}
-            className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-all cursor-pointer"
+            className="px-4 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-all cursor-pointer"
             title="Upload and extract questions & options from an existing question paper PDF (Admin Only)"
           >
             <FileCheck2 className="w-4 h-4" />
@@ -273,7 +273,7 @@ export const QuestionBank: React.FC = () => {
               setWizardInitialMode('GENERATE');
               setShowPdfWizard(true);
             }}
-            className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-colors cursor-pointer"
+            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-1.5 transition-colors cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />
             <span>PDF AI Generator</span>
@@ -282,7 +282,7 @@ export const QuestionBank: React.FC = () => {
       </div>
 
       {/* Filters Toolbar matching §16 */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+      <div className="apple-glass-card p-4 sm:p-5 rounded-[26px] grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
           <option value="">All Question Types</option>
           <option value="MCQ">MCQ</option>
@@ -310,14 +310,14 @@ export const QuestionBank: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {questions.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
+            <div className="apple-glass-card rounded-3xl p-12 text-center space-y-3">
               <HelpCircle className="w-12 h-12 text-slate-300 mx-auto" />
               <h3 className="font-bold text-slate-800 text-sm">No Questions Found</h3>
               <p className="text-slate-500 text-xs">Your question repository is currently empty. Use the PDF AI Question Generator to create questions.</p>
             </div>
           ) : (
             questions.map((q) => (
-              <div key={q.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+              <div key={q.id} className="apple-glass-card rounded-[22px] p-5.5 space-y-3">
                 <div className="flex justify-between items-center text-xs">
                   <div className="space-x-2">
                     <span className="bg-purple-100 text-purple-800 font-bold px-2.5 py-0.5 rounded-full">{q.question_type}</span>

@@ -131,10 +131,10 @@ export const StudyMaterialManagement: React.FC = () => {
     <div className="space-y-6">
       
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 apple-glass-card p-6 rounded-[26px]">
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-            <BookOpen className="w-6 h-6 text-purple-600" />
+            <BookOpen className="w-6 h-6 text-indigo-600" />
             <span>Study Materials Publishing</span>
           </h2>
           <p className="text-slate-500 text-xs mt-1">
@@ -144,7 +144,7 @@ export const StudyMaterialManagement: React.FC = () => {
 
         <button
           onClick={openModal}
-          className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center space-x-2 transition-colors cursor-pointer"
+          className="px-5 py-2.5 apple-btn-primary text-white font-bold text-xs rounded-full shadow-md flex items-center space-x-2 transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Upload Material</span>
@@ -153,7 +153,7 @@ export const StudyMaterialManagement: React.FC = () => {
 
       {/* Success Notification Alert */}
       {successMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center space-x-2 text-emerald-800 text-xs font-semibold animate-in fade-in">
+        <div className="p-4 bg-emerald-500/15 border border-emerald-500/30 backdrop-blur-md rounded-2xl flex items-center space-x-2 text-emerald-900 text-xs font-semibold animate-in fade-in">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
           <span>{successMsg}</span>
         </div>
@@ -162,12 +162,12 @@ export const StudyMaterialManagement: React.FC = () => {
       {/* Materials List */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="h-56 bg-slate-100 rounded-2xl animate-pulse"></div>
-          <div className="h-56 bg-slate-100 rounded-2xl animate-pulse"></div>
-          <div className="h-56 bg-slate-100 rounded-2xl animate-pulse"></div>
+          <div className="h-56 apple-glass-card rounded-2xl animate-pulse"></div>
+          <div className="h-56 apple-glass-card rounded-2xl animate-pulse"></div>
+          <div className="h-56 apple-glass-card rounded-2xl animate-pulse"></div>
         </div>
       ) : materials.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
+        <div className="apple-glass-card rounded-3xl p-12 text-center">
           <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="text-sm font-bold text-slate-700">No study materials published yet</h3>
           <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
@@ -175,7 +175,7 @@ export const StudyMaterialManagement: React.FC = () => {
           </p>
           <button
             onClick={openModal}
-            className="mt-4 px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs rounded-xl transition-colors inline-flex items-center space-x-2"
+            className="mt-4 px-4 py-2 apple-btn-glass text-indigo-700 font-bold text-xs rounded-full transition-all inline-flex items-center space-x-2 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Upload First Material</span>
@@ -186,7 +186,7 @@ export const StudyMaterialManagement: React.FC = () => {
           {materials.map((mat) => {
             const resolvedUrl = getFileUrl(mat.file_url);
             return (
-              <div key={mat.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4 flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div key={mat.id} className="apple-glass-card rounded-[24px] p-5.5 space-y-4 flex flex-col justify-between transition-all">
                 <div>
                   <div className="flex justify-between items-start mb-2">
                     <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center space-x-1">

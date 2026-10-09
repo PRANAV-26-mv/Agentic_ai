@@ -194,10 +194,10 @@ export const AttendanceManagement: React.FC = () => {
     <div className="space-y-6">
       
       {/* Top Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 apple-glass-card p-6 rounded-[26px]">
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-            <CalendarCheck className="w-6 h-6 text-purple-600" />
+            <CalendarCheck className="w-6 h-6 text-indigo-600" />
             <span>Attendance OTP Generator & Reporting</span>
           </h2>
           <p className="text-slate-500 text-xs mt-1">
@@ -209,7 +209,7 @@ export const AttendanceManagement: React.FC = () => {
           <button
             onClick={handleDownloadMasterReport}
             disabled={exportingMaster || sessions.length === 0}
-            className="flex-1 sm:flex-initial px-4 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 font-bold text-xs rounded-xl flex items-center justify-center space-x-2 transition-colors cursor-pointer"
+            className="flex-1 sm:flex-initial px-4 py-2.5 apple-btn-glass disabled:opacity-50 text-slate-700 font-bold text-xs rounded-full flex items-center justify-center space-x-2 transition-all cursor-pointer"
             title="Download complete attendance history across all sessions"
           >
             {exportingMaster ? (
@@ -222,7 +222,7 @@ export const AttendanceManagement: React.FC = () => {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex-1 sm:flex-initial px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-2 transition-colors cursor-pointer"
+            className="flex-1 sm:flex-initial px-5 py-2.5 apple-btn-primary text-white font-bold text-xs rounded-full shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>New Numeric OTP</span>
@@ -302,8 +302,8 @@ export const AttendanceManagement: React.FC = () => {
       )}
 
       {/* Sessions History Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+      <div className="apple-glass-card rounded-[26px] shadow-sm overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-white/80 flex items-center justify-between">
           <div>
             <h3 className="font-bold text-slate-900 text-sm flex items-center space-x-2">
               <KeyRound className="w-4 h-4 text-purple-600" />

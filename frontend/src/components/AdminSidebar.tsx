@@ -111,8 +111,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
   };
 
   const sidebarContent = (
-    <div className="flex flex-col h-full justify-between p-3.5 space-y-4">
-      <div className="space-y-3">
+    <div className="flex flex-col h-full justify-between p-3.5 space-y-3 min-h-0">
+      <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1.5 custom-scrollbar">
         {/* Mobile Header Title */}
         <div className="flex items-center justify-between px-3 py-1 md:hidden">
           <span className="text-xs font-bold text-slate-900 tracking-tight">Admin Console</span>
@@ -132,9 +132,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
         {renderNavGroup(academicNav, 'Academic Data & System')}
       </div>
 
-      {/* Admin Identity Layered Floating Card */}
-      <div className="pt-3 border-t border-white/60 space-y-2.5">
-        <div className="apple-glass-card p-3 rounded-2xl flex items-center space-x-2.5 shadow-sm">
+      {/* Admin Identity Layered Floating Card - pinned and always visible at bottom */}
+      <div className="pt-2.5 border-t border-white/60 space-y-2 shrink-0">
+        <div className="apple-glass-card p-2.5 rounded-2xl flex items-center space-x-2.5 shadow-xs">
           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-violet-700 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs border border-white/40">
             {user?.name?.charAt(0) || 'A'}
           </div>
@@ -161,8 +161,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
 
   return (
     <>
-      {/* Desktop Translucent Floating Liquid Glass Sidebar */}
-      <aside className="hidden md:flex w-64 lg:w-72 liquid-glass-sidebar rounded-3xl my-2 sm:my-3 min-h-[calc(100vh-6.5rem)] flex-col justify-between shrink-0 shadow-lg sticky top-22 self-start liquid-glow-border-hover">
+      {/* Desktop Translucent Floating Liquid Glass Sidebar with Independent Smooth Scroll */}
+      <aside className="hidden md:flex w-64 lg:w-72 liquid-glass-sidebar rounded-3xl my-2 sm:my-3 h-[calc(100vh-6.5rem)] max-h-[calc(100vh-6.5rem)] flex-col justify-between shrink-0 shadow-lg sticky top-22 self-start liquid-glow-border-hover overflow-hidden">
         {sidebarContent}
       </aside>
 
@@ -173,7 +173,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
             className="fixed inset-0 bg-slate-950/30 backdrop-blur-sm transition-opacity"
             onClick={onCloseMobile}
           />
-          <aside className="relative w-72 max-w-[85vw] liquid-glass-card h-full flex flex-col justify-between shadow-2xl z-10 border-r border-white/80 overflow-y-auto">
+          <aside className="relative w-72 max-w-[85vw] liquid-glass-card h-full flex flex-col justify-between shadow-2xl z-10 border-r border-white/80 overflow-hidden">
             {sidebarContent}
           </aside>
         </div>

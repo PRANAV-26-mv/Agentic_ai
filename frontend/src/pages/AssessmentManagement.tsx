@@ -77,10 +77,10 @@ export const AssessmentManagement: React.FC = () => {
     <div className="space-y-6">
       
       {/* Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 apple-glass-card p-6 rounded-[26px]">
         <div>
           <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-            <FileCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 shrink-0" />
+            <FileCheck className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 shrink-0" />
             <span>Assessment Management & Duplication</span>
           </h2>
           <p className="text-slate-500 text-xs mt-1">Create fixed question or randomized pool assessments with timer constraints.</p>
@@ -88,7 +88,7 @@ export const AssessmentManagement: React.FC = () => {
 
         <button
           onClick={() => setShowCreateModal(true)}
-          className="w-full sm:w-auto px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-2 transition-colors shrink-0"
+          className="w-full sm:w-auto px-5 py-2.5 apple-btn-primary text-white font-bold text-xs rounded-full shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Create Assessment</span>
@@ -97,12 +97,12 @@ export const AssessmentManagement: React.FC = () => {
 
       {/* Assessment Table matching §11 & §49 */}
       {loading ? (
-        <div className="h-64 bg-slate-200 rounded-2xl animate-pulse"></div>
+        <div className="h-64 apple-glass-card rounded-2xl animate-pulse"></div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-sm">
+        <div className="apple-glass-card rounded-[26px] overflow-x-auto custom-scrollbar shadow-sm">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200">
+              <tr className="bg-slate-50/70 backdrop-blur-md text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-white/80">
                 <th className="p-4">Title</th>
                 <th className="p-4">Mode / Type</th>
                 <th className="p-4">Target Audience</th>

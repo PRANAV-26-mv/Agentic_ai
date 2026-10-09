@@ -1,6 +1,4 @@
 {
-  "restricted_emails": [],
-  "email_logs": [],
   "admins": [
     {
       "id": "adm-002",
@@ -1315,5 +1313,49 @@
       "answers_json": "{\"q-001\":\"A\",\"q-002\":\"B\",\"q-003\":\"A\"}",
       "time_taken_seconds": 1
     }
-  ]
+  ],
+  "restricted_emails": [],
+  "email_logs": [],
+  "certificate_settings": [],
+  "meetings": [
+    {
+      "id": "meet-1791570854126-ai001",
+      "code": "abc-defg-hij",
+      "title": "Agentic AI & Neural Systems Workshop (Live Meet)",
+      "description": "Interactive live video & audio discussion, Q&A on neural architectures, and model evaluations.",
+      "host_id": "adm-002",
+      "host_name": "Pranav (Super Admin)",
+      "host_email": "pranavannur9659@gmail.com",
+      "meeting_type": "VIDEO_VOICE",
+      "audience_type": "ALL_STUDENTS",
+      "status": "ACTIVE",
+      "scheduled_start_time": "2026-10-09T18:34:14.126Z",
+      "actual_start_time": "2026-10-09T18:34:14.126Z",
+      "allow_screen_share": true,
+      "allow_student_chat": true,
+      "mute_on_entry": false,
+      "created_at": "2026-10-09T18:34:14.126Z",
+      "updated_at": "2026-10-09T18:34:14.126Z"
+    }
+  ],
+  "meeting_participants": [],
+  "meeting_settings": [
+    {
+      "id": "global-meeting-settings",
+      "is_enabled": true,
+      "allow_all_admins": true,
+      "permitted_admin_ids": [],
+      "allowed_audience_types": [
+        "ALL_STUDENTS",
+        "SPECIFIC_STUDENTS",
+        "ADMINS_ONLY",
+        "ALL"
+      ],
+      "max_participants": 100,
+      "updated_at": "2026-10-09T18:34:14.126Z"
+    }
+  ],
+  "gd_sessions": [],
+  "gd_participants": [],
+  "gd_peer_evaluations": []
 }

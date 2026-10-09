@@ -662,16 +662,6 @@
       "created_by": "adm-001",
       "id": "sess-1788430884250",
       "start_time": "2026-09-03T10:21:24.250Z"
-    },
-    {
-      "community": "Agentic AI & LLM Optimization",
-      "department": "ALL",
-      "date": "2026-09-15",
-      "code": "716407",
-      "expires_at": "2026-09-15T19:14:17.916Z",
-      "created_by": "adm-002",
-      "id": "sess-1789496057916",
-      "start_time": "2026-09-15T18:14:17.916Z"
     }
   ],
   "attendance_records": [
@@ -687,13 +677,6 @@
       "session_id": "sess-001",
       "student_id": "std-002",
       "marked_at": "2026-09-03T10:16:21.455Z",
-      "status": "PRESENT"
-    },
-    {
-      "id": "attrec-1789496483983",
-      "session_id": "sess-1789496057916",
-      "student_id": "std-001",
-      "marked_at": "2026-09-15T18:21:23.983Z",
       "status": "PRESENT"
     }
   ],
@@ -945,254 +928,6 @@
     }
   ],
   "audit_logs": [
-    {
-      "id": "audit-1790185379338-219",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-23T17:42:59.338Z"
-    },
-    {
-      "id": "audit-1790013882216-795",
-      "actor_id": "std-001",
-      "actor_role": "STUDENT",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "std-001",
-      "timestamp": "2026-09-21T18:04:42.216Z"
-    },
-    {
-      "id": "audit-1790013682787-727",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "CREATE_QUIZ_SESSION",
-      "entity_type": "QUIZ_SESSION",
-      "entity_id": "qs-1790013682782",
-      "metadata": "{\"title\":\"AI Cohort Speed Championship\",\"pin\":\"553466\"}",
-      "timestamp": "2026-09-21T18:01:22.787Z"
-    },
-    {
-      "id": "audit-1790013197272-551",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-21T17:53:17.273Z"
-    },
-    {
-      "id": "audit-1790012784356-411",
-      "actor_id": "std-001",
-      "actor_role": "STUDENT",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "std-001",
-      "timestamp": "2026-09-21T17:46:24.356Z"
-    },
-    {
-      "id": "audit-1790011069945-216",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-21T17:17:49.945Z"
-    },
-    {
-      "id": "audit-1790010916433-334",
-      "actor_id": "std-001",
-      "actor_role": "STUDENT",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "std-001",
-      "timestamp": "2026-09-21T17:15:16.433Z"
-    },
-    {
-      "id": "audit-1789530460133-903",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "SEND_EMAIL_BROADCAST",
-      "entity_type": "COMMUNICATION",
-      "entity_id": "elog-1789530460131-peqx",
-      "metadata": "{\"subject\":\"Automated Test: Assessment Schedule Update\",\"recipients_count\":3,\"status\":\"SIMULATED\"}",
-      "timestamp": "2026-09-16T03:47:40.133Z"
-    },
-    {
-      "id": "audit-1789530460111-677",
-      "actor_id": "std-001",
-      "actor_role": "STUDENT",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "std-001",
-      "timestamp": "2026-09-16T03:47:40.111Z"
-    },
-    {
-      "id": "audit-1789530460103-917",
-      "actor_id": "adm-1788626901288",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-1788626901288",
-      "timestamp": "2026-09-16T03:47:40.103Z"
-    },
-    {
-      "id": "audit-1789530460092-220",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-16T03:47:40.092Z"
-    },
-    {
-      "id": "audit-1789529147580-434",
-      "actor_id": "std-001",
-      "actor_role": "STUDENT",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "std-001",
-      "timestamp": "2026-09-16T03:25:47.580Z"
-    },
-    {
-      "id": "audit-1789529147574-191",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "UNRESTRICT_USER_EMAIL",
-      "entity_type": "USER",
-      "entity_id": "restr-1789529147558-iy6u",
-      "metadata": "{\"email\":\"deepikaj.ad24@bitsathy.ac.in\"}",
-      "timestamp": "2026-09-16T03:25:47.574Z"
-    },
-    {
-      "id": "audit-1789529147560-536",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "RESTRICT_USER_EMAIL",
-      "entity_type": "USER",
-      "entity_id": "restr-1789529147558-iy6u",
-      "metadata": "{\"email\":\"deepikaj.ad24@bitsathy.ac.in\",\"reason\":\"Automated test restriction\",\"restricted_by\":\"pranavannur9659@gmail.com\"}",
-      "timestamp": "2026-09-16T03:25:47.560Z"
-    },
-    {
-      "id": "audit-1789529147531-908",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-16T03:25:47.531Z"
-    },
-    {
-      "id": "audit-1789496721921-774",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-15T18:25:21.921Z"
-    },
-    {
-      "id": "audit-1789496702035-699",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-15T18:25:02.035Z"
-    },
-    {
-      "id": "audit-1789496445739-850",
-      "actor_id": "std-001",
-      "actor_role": "STUDENT",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "std-001",
-      "timestamp": "2026-09-15T18:20:45.739Z"
-    },
-    {
-      "id": "audit-1789496390150-713",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-15T18:19:50.150Z"
-    },
-    {
-      "id": "audit-1789496057927-267",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "CREATE_ATTENDANCE_SESSION",
-      "entity_type": "ATTENDANCE_SESSION",
-      "entity_id": "sess-1789496057916",
-      "metadata": "{\"code\":\"716407\"}",
-      "timestamp": "2026-09-15T18:14:17.927Z"
-    },
-    {
-      "id": "audit-1789494353091-26",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-15T17:45:53.091Z"
-    },
-    {
-      "id": "audit-1789494298957-525",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-15T17:44:58.957Z"
-    },
-    {
-      "id": "audit-1789494243930-575",
-      "actor_id": "std-001",
-      "actor_role": "STUDENT",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "std-001",
-      "timestamp": "2026-09-15T17:44:03.930Z"
-    },
-    {
-      "id": "audit-1789494235230-983",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-15T17:43:55.230Z"
-    },
-    {
-      "id": "audit-1789494213955-794",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-15T17:43:33.955Z"
-    },
-    {
-      "id": "audit-1789490786363-93",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-15T16:46:26.363Z"
-    },
-    {
-      "id": "audit-1789489833879-395",
-      "actor_id": "adm-002",
-      "actor_role": "ADMIN",
-      "action": "LOGIN",
-      "entity_type": "USER",
-      "entity_id": "adm-002",
-      "timestamp": "2026-09-15T16:30:33.879Z"
-    },
     {
       "id": "audit-1789326302286-464",
       "actor_id": "std-001",
@@ -1541,24 +1276,6 @@
   "doubt_messages": [],
   "quiz_sessions": [
     {
-      "title": "AI Cohort Speed Championship",
-      "description": "Synchronized live speed test for AI Cohort",
-      "pin": "553466",
-      "question_ids": [
-        "q-001",
-        "q-002",
-        "q-003"
-      ],
-      "target_type": "ALL",
-      "duration_minutes": 10,
-      "start_time": "2026-09-21T12:27:00.000Z",
-      "end_time": "2026-09-21T16:27:00.000Z",
-      "status": "ACTIVE",
-      "created_by": "adm-002",
-      "id": "qs-1790013682782",
-      "created_at": "2026-09-21T18:01:22.782Z"
-    },
-    {
       "title": "AI Agent Architecture & Reasoning Sprint",
       "description": "Synchronized live quiz. Answer accurately and quickly for top leaderboard ranking.",
       "pin": "882201",
@@ -1595,26 +1312,6 @@
       "percentage": 33,
       "answers_json": "{\"q-001\":\"A\",\"q-002\":\"B\",\"q-003\":\"A\"}",
       "time_taken_seconds": 1
-    },
-    {
-      "id": "qsp-1790014071562-788",
-      "session_id": "qs-1790013682782",
-      "student_id": "std-001",
-      "student_name": "DEEPIKA J",
-      "student_reg": "7376242AD138",
-      "student_department": "AD",
-      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
-      "joined_at": "2026-09-21T18:07:51.562Z",
-      "status": "SUBMITTED",
-      "tab_switches_count": 0,
-      "started_at": "2026-09-21T18:09:24.848Z",
-      "submitted_at": "2026-09-21T18:19:24.882Z",
-      "score": 2,
-      "max_score": 6,
-      "percentage": 33,
-      "answers_json": "{\"q-003\":\"B\"}",
-      "time_taken_seconds": 600,
-      "rank": 1
     }
   ],
   "restricted_emails": [],
@@ -1622,7 +1319,7 @@
   "certificate_settings": [],
   "meetings": [
     {
-      "id": "meet-1790185229311-ai001",
+      "id": "meet-1791570854126-ai001",
       "code": "abc-defg-hij",
       "title": "Agentic AI & Neural Systems Workshop (Live Meet)",
       "description": "Interactive live video & audio discussion, Q&A on neural architectures, and model evaluations.",
@@ -1631,115 +1328,17 @@
       "host_email": "pranavannur9659@gmail.com",
       "meeting_type": "VIDEO_VOICE",
       "audience_type": "ALL_STUDENTS",
-      "status": "ENDED",
-      "scheduled_start_time": "2026-09-23T17:40:29.311Z",
-      "actual_start_time": "2026-09-23T17:40:29.311Z",
+      "status": "ACTIVE",
+      "scheduled_start_time": "2026-10-09T18:34:14.126Z",
+      "actual_start_time": "2026-10-09T18:34:14.126Z",
       "allow_screen_share": true,
       "allow_student_chat": true,
       "mute_on_entry": false,
-      "created_at": "2026-09-23T17:40:29.311Z",
-      "updated_at": "2026-09-23T18:48:48.041Z",
-      "actual_end_time": "2026-09-23T18:48:48.041Z"
+      "created_at": "2026-10-09T18:34:14.126Z",
+      "updated_at": "2026-10-09T18:34:14.126Z"
     }
   ],
-  "meeting_participants": [
-    {
-      "meeting_id": "meet-1790185229311-ai001",
-      "user_id": "adm-002",
-      "user_name": "Pranav (Admin)",
-      "user_email": "pranavannur9659@gmail.com",
-      "user_role": "ADMIN",
-      "joined_at": "2026-09-23T18:25:45.694Z",
-      "is_host": true,
-      "id": "mp-1790187945694-35c526",
-      "left_at": "2026-09-23T18:25:45.776Z",
-      "duration_seconds": 0
-    },
-    {
-      "meeting_id": "meet-1790185229311-ai001",
-      "user_id": "adm-002",
-      "user_name": "Pranav (Admin)",
-      "user_email": "pranavannur9659@gmail.com",
-      "user_role": "ADMIN",
-      "joined_at": "2026-09-23T18:27:09.377Z",
-      "is_host": true,
-      "id": "mp-1790188029377-cd46a5",
-      "left_at": "2026-09-23T18:27:09.398Z",
-      "duration_seconds": 0
-    },
-    {
-      "meeting_id": "meet-1790185229311-ai001",
-      "user_id": "adm-002",
-      "user_name": "Pranav (Admin)",
-      "user_email": "pranavannur9659@gmail.com",
-      "user_role": "ADMIN",
-      "joined_at": "2026-09-23T18:29:23.481Z",
-      "is_host": true,
-      "id": "mp-1790188163481-ab846b",
-      "left_at": "2026-09-23T18:29:23.498Z",
-      "duration_seconds": 0
-    },
-    {
-      "meeting_id": "meet-1790185229311-ai001",
-      "user_id": "adm-002",
-      "user_name": "Pranav (Admin)",
-      "user_email": "pranavannur9659@gmail.com",
-      "user_role": "ADMIN",
-      "joined_at": "2026-09-23T18:29:50.673Z",
-      "is_host": true,
-      "id": "mp-1790188190673-21f9c3",
-      "left_at": "2026-09-23T18:29:50.685Z",
-      "duration_seconds": 0
-    },
-    {
-      "meeting_id": "meet-1790185229311-ai001",
-      "user_id": "adm-002",
-      "user_name": "Pranav (Admin)",
-      "user_email": "pranavannur9659@gmail.com",
-      "user_role": "ADMIN",
-      "joined_at": "2026-09-23T18:30:24.762Z",
-      "is_host": true,
-      "id": "mp-1790188224762-e70412",
-      "left_at": "2026-09-23T18:30:24.791Z",
-      "duration_seconds": 0
-    },
-    {
-      "meeting_id": "meet-1790185229311-ai001",
-      "user_id": "adm-002",
-      "user_name": "Pranav (Admin)",
-      "user_email": "pranavannur9659@gmail.com",
-      "user_role": "ADMIN",
-      "joined_at": "2026-09-23T18:31:02.973Z",
-      "is_host": true,
-      "id": "mp-1790188262973-2a003e",
-      "left_at": "2026-09-23T18:31:02.983Z",
-      "duration_seconds": 0
-    },
-    {
-      "meeting_id": "meet-1790185229311-ai001",
-      "user_id": "adm-002",
-      "user_name": "Pranav (Admin)",
-      "user_email": "pranavannur9659@gmail.com",
-      "user_role": "ADMIN",
-      "joined_at": "2026-09-23T18:32:56.091Z",
-      "is_host": true,
-      "id": "mp-1790188376091-aa7009",
-      "left_at": "2026-09-23T18:32:56.107Z",
-      "duration_seconds": 0
-    },
-    {
-      "meeting_id": "meet-1790185229311-ai001",
-      "user_id": "adm-002",
-      "user_name": "Pranav (Admin)",
-      "user_email": "pranavannur9659@gmail.com",
-      "user_role": "ADMIN",
-      "joined_at": "2026-09-23T18:39:17.927Z",
-      "is_host": true,
-      "id": "mp-1790188757927-3fb48e",
-      "left_at": "2026-09-23T18:48:48.089Z",
-      "duration_seconds": 570
-    }
-  ],
+  "meeting_participants": [],
   "meeting_settings": [
     {
       "id": "global-meeting-settings",
@@ -1753,7 +1352,10 @@
         "ALL"
       ],
       "max_participants": 100,
-      "updated_at": "2026-09-23T17:40:29.311Z"
+      "updated_at": "2026-10-09T18:34:14.126Z"
     }
-  ]
+  ],
+  "gd_sessions": [],
+  "gd_participants": [],
+  "gd_peer_evaluations": []
 }

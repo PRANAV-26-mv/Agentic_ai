@@ -209,7 +209,7 @@ export const AdminDashboard: React.FC = () => {
                     fontSize: '12px'
                   }}
                 />
-                <Bar dataKey="avgScore" fill="#1e293b" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="avgScore" fill="#6366f1" radius={[8, 8, 0, 0]} />
               </ReBarChart>
             </ResponsiveContainer>
           </div>
