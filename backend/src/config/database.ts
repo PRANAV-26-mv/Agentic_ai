@@ -85,6 +85,9 @@ export interface DbData {
   meetings?: any[];
   meeting_participants?: any[];
   meeting_settings?: any[];
+  gd_sessions: any[];
+  gd_participants: any[];
+  gd_peer_evaluations: any[];
 }
 
 const initialData: DbData = {
@@ -116,7 +119,10 @@ const initialData: DbData = {
   certificate_settings: [],
   meetings: [],
   meeting_participants: [],
-  meeting_settings: []
+  meeting_settings: [],
+  gd_sessions: [],
+  gd_participants: [],
+  gd_peer_evaluations: []
 };
 
 export type StorageMode = 'postgres' | 'cloud_sync' | 'persistent_disk' | 'ephemeral_local';

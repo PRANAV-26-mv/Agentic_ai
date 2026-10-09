@@ -18,6 +18,7 @@ import {
   Mail,
   Award,
   Video,
+  MessagesSquare,
   LogOut,
   X 
 } from 'lucide-react';
@@ -43,6 +44,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
     { to: '/admin/students', label: 'Students', icon: Users },
     { to: '/admin/assessments', label: 'Assessments', icon: FileCheck },
     { to: '/admin/quiz-sessions', label: 'Live Quiz Sessions', icon: Zap },
+    { to: '/admin/gd-sessions', label: 'GD Sessions', icon: MessagesSquare },
     { to: '/admin/certificate-settings', label: 'Certificate Settings', icon: Award },
     { to: '/admin/question-bank', label: 'Question Bank', icon: HelpCircle },
     { to: '/admin/study-materials', label: 'Study Materials', icon: BookOpen },

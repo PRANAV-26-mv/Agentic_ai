@@ -410,3 +410,95 @@ export interface AdminMeetingPermission {
   can_create_meetings: boolean;
 }
 
+// Group Discussion (GD) Session Types
+export interface GdQuestion {
+  id: string;
+  question_text: string;
+  order: number;
+}
+
+export interface GdSession {
+  id: string;
+  title: string;
+  topic: string;
+  description?: string;
+  pin: string;
+  max_participants: number;
+  target_type: 'ALL' | 'DEPARTMENT' | 'COMMUNITY';
+  target_department?: string;
+  target_community?: string;
+  duration_minutes: number;
+  questions: GdQuestion[];
+  status: 'SCHEDULED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  created_by: string;
+  created_at: string;
+  participant_count?: number;
+  submitted_evaluations_count?: number;
+  all_students_ranked?: boolean;
+  is_results_published?: boolean;
+  is_full?: boolean;
+  my_status?: 'JOINED' | 'EVALUATION_SUBMITTED' | null;
+  my_rank?: number | null;
+  my_average_rank?: number | null;
+  participants?: GdParticipant[];
+  leaderboard?: GdLeaderboardEntry[];
+  my_participant?: GdParticipant;
+  my_evaluations?: { [questionId: string]: Array<{ target_student_id: string; target_student_name: string; rank: number }> };
+}
+
+export interface GdParticipant {
+  id: string;
+  session_id: string;
+  student_id: string;
+  student_name: string;
+  student_reg: string;
+  student_department: string;
+  student_community: string;
+  joined_at: string;
+  status: 'JOINED' | 'EVALUATION_SUBMITTED';
+  submitted_at?: string;
+  rank?: number | null;
+  average_rank?: number | null;
+  total_points?: number | null;
+  question_ranks?: {
+    [questionId: string]: {
+      average_rank: number;
+      rank_position: number;
+      total_points: number;
+    };
+  };
+}
+
+export interface GdPeerEvaluation {
+  id: string;
+  session_id: string;
+  evaluator_student_id: string;
+  evaluator_student_name: string;
+  question_id: string;
+  rankings: Array<{
+    target_student_id: string;
+    target_student_name: string;
+    rank: number;
+  }>;
+  submitted_at: string;
+}
+
+export interface GdLeaderboardEntry {
+  rank: number;
+  student_id: string;
+  student_name: string;
+  student_reg: string;
+  student_department: string;
+  student_community: string;
+  average_rank: number;
+  total_points: number;
+  question_ranks: {
+    [questionId: string]: {
+      average_rank: number;
+      rank_position: number;
+      total_points: number;
+    };
+  };
+}
+
+

@@ -2036,4 +2036,394 @@ export const MeetingSettingsModel = {
   }
 };
 
+// ============================================================================
+// GROUP DISCUSSION (GD) SESSIONS & PEER EVALUATION SYSTEM
+// ============================================================================
+
+export interface GdQuestion {
+  id: string;
+  question_text: string;
+  order: number;
+}
+
+export interface GdSession {
+  id: string;
+  title: string;
+  topic: string;
+  description?: string;
+  pin: string;
+  max_participants: number; // Configured by admin: how many should participate
+  target_type: 'ALL' | 'DEPARTMENT' | 'COMMUNITY';
+  target_department?: string;
+  target_community?: string;
+  duration_minutes: number;
+  questions: GdQuestion[];
+  status: 'SCHEDULED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  created_by: string;
+  created_at: string;
+  is_results_published?: boolean;
+}
+
+export interface GdParticipant {
+  id: string;
+  session_id: string;
+  student_id: string;
+  student_name: string;
+  student_reg: string;
+  student_department: string;
+  student_community: string;
+  joined_at: string;
+  status: 'JOINED' | 'EVALUATION_SUBMITTED';
+  submitted_at?: string;
+  rank?: number | null;
+  average_rank?: number | null;
+  total_points?: number | null;
+  question_ranks?: {
+    [questionId: string]: {
+      average_rank: number;
+      rank_position: number;
+      total_points: number;
+    };
+  };
+}
+
+export interface GdPeerEvaluation {
+  id: string;
+  session_id: string;
+  evaluator_student_id: string;
+  evaluator_student_name: string;
+  question_id: string;
+  rankings: Array<{
+    target_student_id: string;
+    target_student_name: string;
+    rank: number; // 1 (best) to M
+  }>;
+  submitted_at: string;
+}
+
+export interface GdLeaderboardEntry {
+  rank: number;
+  student_id: string;
+  student_name: string;
+  student_reg: string;
+  student_department: string;
+  student_community: string;
+  average_rank: number;
+  total_points: number;
+  question_ranks: {
+    [questionId: string]: {
+      average_rank: number;
+      rank_position: number;
+      total_points: number;
+    };
+  };
+}
+
+export const GdSessionsModel = {
+  findAll(filter?: { status?: string; student?: Student }): GdSession[] {
+    let list = memoryDb.table('gd_sessions') as GdSession[];
+    if (filter?.status) {
+      list = list.filter(s => s.status === filter.status);
+    }
+    if (filter?.student) {
+      const std = filter.student;
+      list = list.filter(s => {
+        if (s.target_type === 'ALL') return true;
+        if (s.target_type === 'DEPARTMENT' && s.target_department === std.department) return true;
+        if (s.target_type === 'COMMUNITY' && s.target_community === std.community) return true;
+        return false;
+      });
+    }
+    return [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  },
+
+  findById(id: string): GdSession | undefined {
+    return (memoryDb.table('gd_sessions') as GdSession[]).find(s => s.id === id);
+  },
+
+  findByPin(pin: string): GdSession | undefined {
+    const cleanPin = pin.trim();
+    return (memoryDb.table('gd_sessions') as GdSession[]).find(s => s.pin === cleanPin);
+  },
+
+  create(data: Omit<GdSession, 'id' | 'created_at' | 'pin'> & { pin?: string }): GdSession {
+    let pin = data.pin?.trim();
+    if (!pin) {
+      do {
+        pin = Math.floor(100000 + Math.random() * 900000).toString();
+      } while (this.findByPin(pin));
+    }
+    const newSession: GdSession = {
+      ...data,
+      id: `gd-${Date.now()}`,
+      pin,
+      created_at: new Date().toISOString(),
+      is_results_published: false
+    };
+    memoryDb.table('gd_sessions').unshift(newSession);
+    db.save();
+    return newSession;
+  },
+
+  update(id: string, updates: Partial<GdSession>): GdSession | undefined {
+    const list = memoryDb.table('gd_sessions') as GdSession[];
+    const index = list.findIndex(s => s.id === id);
+    if (index === -1) return undefined;
+    const updated = { ...list[index], ...updates };
+    list[index] = updated;
+    db.save();
+    return updated;
+  },
+
+  delete(id: string): boolean {
+    const list = memoryDb.table('gd_sessions') as GdSession[];
+    const index = list.findIndex(s => s.id === id);
+    if (index !== -1) {
+      list.splice(index, 1);
+      const pList = memoryDb.table('gd_participants') as GdParticipant[];
+      for (let i = pList.length - 1; i >= 0; i--) {
+        if (pList[i].session_id === id) pList.splice(i, 1);
+      }
+      const eList = memoryDb.table('gd_peer_evaluations') as GdPeerEvaluation[];
+      for (let i = eList.length - 1; i >= 0; i--) {
+        if (eList[i].session_id === id) eList.splice(i, 1);
+      }
+      db.save();
+      return true;
+    }
+    return false;
+  }
+};
+
+export const GdParticipantsModel = {
+  getParticipants(sessionId: string): GdParticipant[] {
+    const list = memoryDb.table('gd_participants') as GdParticipant[];
+    return list.filter(p => p.session_id === sessionId);
+  },
+
+  findBySessionAndStudent(sessionId: string, studentId: string): GdParticipant | undefined {
+    const list = memoryDb.table('gd_participants') as GdParticipant[];
+    return list.find(p => p.session_id === sessionId && p.student_id === studentId);
+  },
+
+  join(sessionId: string, student: Student): { participant?: GdParticipant; error?: string } {
+    const session = GdSessionsModel.findById(sessionId);
+    if (!session) {
+      return { error: 'GD session not found.' };
+    }
+
+    if (session.status === 'COMPLETED' || session.status === 'CANCELLED') {
+      return { error: 'This GD session is no longer active.' };
+    }
+
+    const currentParticipants = this.getParticipants(sessionId);
+    const existing = currentParticipants.find(p => p.student_id === student.id);
+    if (existing) {
+      return { participant: existing };
+    }
+
+    if (session.max_participants && currentParticipants.length >= session.max_participants) {
+      return {
+        error: `This GD session has reached its full participant capacity (${session.max_participants} students limit).`
+      };
+    }
+
+    const newParticipant: GdParticipant = {
+      id: `gdp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      session_id: sessionId,
+      student_id: student.id,
+      student_name: student.name,
+      student_reg: student.student_id,
+      student_department: student.department,
+      student_community: student.community,
+      joined_at: new Date().toISOString(),
+      status: 'JOINED'
+    };
+
+    memoryDb.table('gd_participants').push(newParticipant);
+    db.save();
+    return { participant: newParticipant };
+  },
+
+  submitEvaluations(
+    sessionId: string,
+    studentId: string,
+    studentName: string,
+    evaluationsByQuestion: {
+      [questionId: string]: Array<{
+        target_student_id: string;
+        target_student_name: string;
+        rank: number;
+      }>;
+    }
+  ): boolean {
+    const participant = this.findBySessionAndStudent(sessionId, studentId);
+    if (!participant) return false;
+
+    const evaluationsTable = memoryDb.table('gd_peer_evaluations') as GdPeerEvaluation[];
+
+    for (let i = evaluationsTable.length - 1; i >= 0; i--) {
+      if (evaluationsTable[i].session_id === sessionId && evaluationsTable[i].evaluator_student_id === studentId) {
+        evaluationsTable.splice(i, 1);
+      }
+    }
+
+    const now = new Date().toISOString();
+    for (const [qId, rankings] of Object.entries(evaluationsByQuestion)) {
+      evaluationsTable.push({
+        id: `gde-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        session_id: sessionId,
+        evaluator_student_id: studentId,
+        evaluator_student_name: studentName,
+        question_id: qId,
+        rankings,
+        submitted_at: now
+      });
+    }
+
+    participant.status = 'EVALUATION_SUBMITTED';
+    participant.submitted_at = now;
+    db.save();
+    return true;
+  },
+
+  calculateLeaderboard(sessionId: string): GdLeaderboardEntry[] {
+    const session = GdSessionsModel.findById(sessionId);
+    if (!session) return [];
+
+    const participants = this.getParticipants(sessionId);
+    if (participants.length === 0) return [];
+
+    const evaluations = (memoryDb.table('gd_peer_evaluations') as GdPeerEvaluation[])
+      .filter(e => e.session_id === sessionId);
+
+    const questions = session.questions || [];
+    const N = participants.length;
+
+    interface ParticipantStats {
+      student_id: string;
+      student_name: string;
+      student_reg: string;
+      student_department: string;
+      student_community: string;
+      question_ranks: {
+        [qId: string]: {
+          average_rank: number;
+          rank_position: number;
+          total_points: number;
+          votes_count: number;
+        };
+      };
+      overall_avg_rank: number;
+      overall_points: number;
+    }
+
+    const statsMap: { [studentId: string]: ParticipantStats } = {};
+    for (const p of participants) {
+      statsMap[p.student_id] = {
+        student_id: p.student_id,
+        student_name: p.student_name,
+        student_reg: p.student_reg,
+        student_department: p.student_department,
+        student_community: p.student_community,
+        question_ranks: {},
+        overall_avg_rank: 0,
+        overall_points: 0
+      };
+    }
+
+    for (const q of questions) {
+      const qEvals = evaluations.filter(e => e.question_id === q.id);
+
+      const ranksReceived: { [studentId: string]: number[] } = {};
+      for (const p of participants) {
+        ranksReceived[p.student_id] = [];
+      }
+
+      for (const ev of qEvals) {
+        for (const r of ev.rankings) {
+          if (ranksReceived[r.target_student_id]) {
+            ranksReceived[r.target_student_id].push(r.rank);
+          }
+        }
+      }
+
+      const questionScores: Array<{ student_id: string; avg_rank: number; points: number }> = [];
+
+      for (const p of participants) {
+        const votes = ranksReceived[p.student_id] || [];
+        const avg = votes.length > 0 ? (votes.reduce((a, b) => a + b, 0) / votes.length) : (N / 2);
+        const totalPoints = votes.reduce((sum, r) => sum + Math.max(1, (N - r + 1)), 0);
+
+        questionScores.push({
+          student_id: p.student_id,
+          avg_rank: Number(avg.toFixed(2)),
+          points: totalPoints
+        });
+      }
+
+      // Sort by lowest average rank first, then highest points
+      questionScores.sort((a, b) => a.avg_rank - b.avg_rank || b.points - a.points);
+
+      questionScores.forEach((qs, idx) => {
+        const rankPos = idx + 1;
+        statsMap[qs.student_id].question_ranks[q.id] = {
+          average_rank: qs.avg_rank,
+          rank_position: rankPos,
+          total_points: qs.points,
+          votes_count: (ranksReceived[qs.student_id] || []).length
+        };
+      });
+    }
+
+    const overallList: Array<ParticipantStats> = Object.values(statsMap);
+
+    for (const item of overallList) {
+      let sumAvgRanks = 0;
+      let totalPts = 0;
+      const qCount = questions.length || 1;
+
+      for (const q of questions) {
+        const qr = item.question_ranks[q.id];
+        if (qr) {
+          sumAvgRanks += qr.rank_position;
+          totalPts += qr.total_points;
+        }
+      }
+
+      item.overall_avg_rank = Number((sumAvgRanks / qCount).toFixed(2));
+      item.overall_points = totalPts;
+    }
+
+    // Sort overall: lowest average rank position across questions
+    overallList.sort((a, b) => a.overall_avg_rank - b.overall_avg_rank || b.overall_points - a.overall_points);
+
+    const leaderboard: GdLeaderboardEntry[] = overallList.map((st, idx) => ({
+      rank: idx + 1,
+      student_id: st.student_id,
+      student_name: st.student_name,
+      student_reg: st.student_reg,
+      student_department: st.student_department,
+      student_community: st.student_community,
+      average_rank: st.overall_avg_rank,
+      total_points: st.overall_points,
+      question_ranks: st.question_ranks
+    }));
+
+    leaderboard.forEach(entry => {
+      const p = this.findBySessionAndStudent(sessionId, entry.student_id);
+      if (p) {
+        p.rank = entry.rank;
+        p.average_rank = entry.average_rank;
+        p.total_points = entry.total_points;
+        p.question_ranks = entry.question_ranks;
+      }
+    });
+
+    db.save();
+    return leaderboard;
+  }
+};
+
+
 

@@ -19,9 +19,12 @@ import { StudentProfile } from './pages/StudentProfile';
 import { StudentQuizSessions } from './pages/StudentQuizSessions';
 import { StudentQuizLobby } from './pages/StudentQuizLobby';
 import { StudentMeetings } from './pages/StudentMeetings';
+import { StudentGdSessions } from './pages/StudentGdSessions';
+import { StudentGdRoom } from './pages/StudentGdRoom';
 
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminQuizSessions } from './pages/AdminQuizSessions';
+import { AdminGdSessions } from './pages/AdminGdSessions';
 import { AdminMeetings } from './pages/AdminMeetings';
 import { MeetingRoom } from './pages/MeetingRoom';
 import { StudentManagement } from './pages/StudentManagement';
@@ -126,6 +129,8 @@ export function App() {
               <Route path="/meetings" element={<StudentMeetings />} />
               <Route path="/quiz-sessions" element={<StudentQuizSessions />} />
               <Route path="/quiz-sessions/:id" element={<StudentQuizLobby />} />
+              <Route path="/gd-sessions" element={<StudentGdSessions />} />
+              <Route path="/gd-sessions/:id" element={<StudentGdRoom />} />
               <Route path="/results" element={<StudentResults />} />
               <Route path="/attendance" element={<StudentAttendance />} />
               <Route path="/notifications" element={<StudentNotifications />} />
@@ -147,6 +152,7 @@ export function App() {
               <Route path="/admin/assessments" element={<AssessmentManagement />} />
               <Route path="/admin/meetings" element={<AdminMeetings />} />
               <Route path="/admin/quiz-sessions" element={<AdminQuizSessions />} />
+              <Route path="/admin/gd-sessions" element={<AdminGdSessions />} />
               <Route path="/admin/certificate-settings" element={<CertificateSettingsPage />} />
               <Route path="/admin/question-bank" element={<QuestionBank />} />
               <Route path="/admin/study-materials" element={<StudyMaterialManagement />} />

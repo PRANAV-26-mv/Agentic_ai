@@ -12,7 +12,8 @@ import {
   Zap,
   Video,
   LogOut,
-  X 
+  X,
+  Users
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -31,6 +32,7 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({ mobileOpen, onCl
     { to: '/assessments', label: 'Assessments', icon: FileText },
     { to: '/meetings', label: 'Live Meetings', icon: Video },
     { to: '/quiz-sessions', label: 'Live Quiz Sessions', icon: Zap },
+    { to: '/gd-sessions', label: 'GD Sessions', icon: Users },
     { to: '/results', label: 'My Results', icon: BarChart2 },
     { to: '/attendance', label: 'Attendance', icon: Calendar },
     { to: '/notifications', label: 'Notifications', icon: Bell },
