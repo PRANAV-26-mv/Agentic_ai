@@ -92,12 +92,10 @@ export const StudentDashboard: React.FC = () => {
   const pendingCount = Math.max(0, assessments.length - completedCount);
   const avgScore = completedResults.length > 0
     ? Math.round(completedResults.reduce((acc, curr) => acc + (curr.percentage || 0), 0) / completedResults.length)
-    : 85;
+    : 0;
 
-  // Check if student attended and secured a podium spot (1st, 2nd, or 3rd) in any live quiz
-  const podiumQuiz = quizSessions.find(q => q.my_rank === 1) ||
-                     quizSessions.find(q => q.my_rank === 2) ||
-                     quizSessions.find(q => q.my_rank === 3);
+  // Check if student attended and secured a podium spot (1st, 2nd, or 3rd) in any published live quiz
+  const podiumQuiz = quizSessions.find(q => q.is_results_published && (q.my_rank === 1 || q.my_rank === 2 || q.my_rank === 3));
 
   if (loading) {
     return (

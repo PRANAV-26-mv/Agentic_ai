@@ -20,7 +20,8 @@ import {
   Flame,
   Medal,
   ChevronRight,
-  BookOpen
+  BookOpen,
+  Lock
 } from 'lucide-react';
 
 export const StudentQuizSessions: React.FC = () => {
@@ -328,9 +329,9 @@ export const StudentQuizSessions: React.FC = () => {
                   <div className="flex justify-between items-center gap-2">
                     <div>
                       {isSubmitted ? (
-                        <span className="bg-purple-100 text-purple-800 font-black text-[10px] px-2.5 py-1 rounded-full flex items-center space-x-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-purple-600" />
-                          <span>COMPLETED</span>
+                        <span className={`${session.is_results_published ? 'bg-purple-100 text-purple-800' : 'bg-amber-100 text-amber-800'} font-black text-[10px] px-2.5 py-1 rounded-full flex items-center space-x-1`}>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>{session.is_results_published ? 'RESULTS PUBLISHED' : 'SUBMITTED (WAITING)'}</span>
                         </span>
                       ) : isLive ? (
                         <span className="bg-emerald-100 text-emerald-800 font-black text-[10px] px-2.5 py-1 rounded-full flex items-center space-x-1.5 shadow-xs">
@@ -395,10 +396,10 @@ export const StudentQuizSessions: React.FC = () => {
                   </div>
 
                   {/* Submitted Performance Score Strip */}
-                  {isSubmitted && session.my_score !== null && session.my_score !== undefined && (
+                  {isSubmitted && session.is_results_published && session.my_score !== null && session.my_score !== undefined && (
                     <div className="p-3 bg-purple-50 rounded-2xl border border-purple-100 flex items-center justify-between text-xs">
                       <div>
-                        <p className="text-[10px] font-bold uppercase text-purple-700">Your Performance</p>
+                        <p className="text-[10px] font-bold uppercase text-purple-700">Official Result</p>
                         <p className="font-black text-slate-900 text-sm">
                           {session.my_score} pts {session.my_percentage !== null && session.my_percentage !== undefined ? `(${session.my_percentage}%)` : ''}
                         </p>
@@ -411,6 +412,15 @@ export const StudentQuizSessions: React.FC = () => {
                       )}
                     </div>
                   )}
+
+                  {isSubmitted && !session.is_results_published && (
+                    <div className="p-2.5 bg-amber-50 rounded-2xl border border-amber-200/80 flex items-center space-x-2 text-xs">
+                      <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <p className="text-[11px] font-bold text-amber-900">
+                        Submitted • Marks & Ranks will be revealed when admin publishes
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
@@ -418,11 +428,24 @@ export const StudentQuizSessions: React.FC = () => {
                   {isSubmitted ? (
                     <button
                       onClick={() => navigate(`/quiz-sessions/${session.id}`)}
-                      className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-2xl flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-xs"
+                      className={`w-full py-3 text-white font-extrabold text-xs rounded-2xl flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-xs ${
+                        session.is_results_published
+                          ? 'bg-slate-900 hover:bg-slate-800'
+                          : 'bg-amber-600 hover:bg-amber-700'
+                      }`}
                     >
-                      <BookOpen className="w-4 h-4 text-amber-400" />
-                      <span>View Results & Detailed Solutions</span>
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                      {session.is_results_published ? (
+                        <>
+                          <BookOpen className="w-4 h-4 text-amber-400" />
+                          <span>View Results & Solutions</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-4 h-4 text-amber-200" />
+                          <span>Enter Waiting Room</span>
+                        </>
+                      )}
+                      <ChevronRight className="w-4 h-4 text-white/60" />
                     </button>
                   ) : isLive ? (
                     <button

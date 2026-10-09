@@ -31,59 +31,68 @@ import {
   ShieldCheck,
   Maximize2,
   Volume2,
-  RefreshCw
+  RefreshCw,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { CertificateModal } from '../components/CertificateModal';
 import { GiftBurstModal, playFirstPrizeFanfare, playSecondPrizeFanfare, playThirdPrizeFanfare, playPodiumFanfare } from '../components/GiftBurstModal';
 
+// Helper to resolve normalized letter ('A' | 'B' | 'C' | 'D')
+const normalizeOptionLetter = (q: Question, val?: string): 'A' | 'B' | 'C' | 'D' | null => {
+  if (!val) return null;
+  const trimmed = val.trim().toUpperCase();
+
+  // Direct single letter
+  if (['A', 'B', 'C', 'D'].includes(trimmed)) {
+    return trimmed as 'A' | 'B' | 'C' | 'D';
+  }
+
+  // Match OPTION_A, OPTION A, OPTION-A, OPTIONA
+  const optMatch = trimmed.match(/^OPTION[_\s-]?([A-D])$/);
+  if (optMatch) {
+    return optMatch[1] as 'A' | 'B' | 'C' | 'D';
+  }
+
+  // Match (A), A., A), A:
+  const prefixMatch = trimmed.match(/^\(?([A-D])[\.\)\:\s]/);
+  if (prefixMatch) {
+    return prefixMatch[1] as 'A' | 'B' | 'C' | 'D';
+  }
+
+  // Match full option text against q.option_a, b, c, d
+  const clean = (s?: string) => s ? s.trim().toLowerCase().replace(/\s+/g, ' ') : '';
+  const cleanVal = clean(val);
+  if (cleanVal) {
+    if (q.option_a && clean(q.option_a) === cleanVal) return 'A';
+    if (q.option_b && clean(q.option_b) === cleanVal) return 'B';
+    if (q.option_c && clean(q.option_c) === cleanVal) return 'C';
+    if (q.option_d && clean(q.option_d) === cleanVal) return 'D';
+  }
+
+  return null;
+};
+
 // Helper to determine if an answer matches the question's correct answer
 const checkIsCorrect = (q: Question, userAns?: string): boolean => {
   if (!userAns || !q.correct_answer) return false;
-  const sel = userAns.trim().toUpperCase();
-  const corr = q.correct_answer.trim().toUpperCase();
 
-  if (sel === corr) return true;
+  const corrLetter = normalizeOptionLetter(q, q.correct_answer);
+  const selLetter = normalizeOptionLetter(q, userAns);
 
-  const letterMap: Record<string, string | undefined> = {
-    'A': q.option_a?.trim().toUpperCase(),
-    'B': q.option_b?.trim().toUpperCase(),
-    'C': q.option_c?.trim().toUpperCase(),
-    'D': q.option_d?.trim().toUpperCase(),
-  };
+  if (corrLetter && selLetter) {
+    return corrLetter === selLetter;
+  }
 
-  if (corr === 'OPTION_A' && sel === 'A') return true;
-  if (corr === 'OPTION_B' && sel === 'B') return true;
-  if (corr === 'OPTION_C' && sel === 'C') return true;
-  if (corr === 'OPTION_D' && sel === 'D') return true;
-
-  if (sel === 'OPTION_A' && corr === 'A') return true;
-  if (sel === 'OPTION_B' && corr === 'B') return true;
-  if (sel === 'OPTION_C' && corr === 'C') return true;
-  if (sel === 'OPTION_D' && corr === 'D') return true;
-
-  if (letterMap[sel] && letterMap[sel] === corr) return true;
-
-  const corrLetter = ['A', 'B', 'C', 'D'].find(l => letterMap[l] && letterMap[l] === corr);
-  if (corrLetter && corrLetter === sel) return true;
-
-  return false;
+  const clean = (s?: string) => s ? s.trim().toLowerCase().replace(/\s+/g, ' ') : '';
+  return clean(userAns) === clean(q.correct_answer);
 };
 
 // Helper to get normalized correct letter ('A' | 'B' | 'C' | 'D')
 const getCorrectLetter = (q: Question): string => {
   if (!q.correct_answer) return '';
-  const corr = q.correct_answer.trim().toUpperCase();
-  if (['A', 'B', 'C', 'D'].includes(corr)) return corr;
-  if (corr === 'OPTION_A') return 'A';
-  if (corr === 'OPTION_B') return 'B';
-  if (corr === 'OPTION_C') return 'C';
-  if (corr === 'OPTION_D') return 'D';
-  if (q.option_a && q.option_a.trim().toUpperCase() === corr) return 'A';
-  if (q.option_b && q.option_b.trim().toUpperCase() === corr) return 'B';
-  if (q.option_c && q.option_c.trim().toUpperCase() === corr) return 'C';
-  if (q.option_d && q.option_d.trim().toUpperCase() === corr) return 'D';
-  return corr;
+  const letter = normalizeOptionLetter(q, q.correct_answer);
+  return letter || q.correct_answer;
 };
 
 export const StudentQuizLobby: React.FC = () => {
@@ -119,6 +128,7 @@ export const StudentQuizLobby: React.FC = () => {
   const hasAutoSubmittedRef = useRef<boolean>(false);
   const answersRef = useRef<{ [qId: string]: string }>({});
   const submittingRef = useRef<boolean>(false);
+  const isFetchingRef = useRef<boolean>(false);
   const navContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Helper to check actual browser fullscreen
@@ -350,7 +360,8 @@ export const StudentQuizLobby: React.FC = () => {
   };
 
   const fetchSessionDetails = () => {
-    if (!id) return;
+    if (!id || isFetchingRef.current) return;
+    isFetchingRef.current = true;
     api.get(`/quiz-sessions/${id}`)
       .then(res => {
         const data: QuizSession = res.data;
@@ -382,7 +393,8 @@ export const StudentQuizLobby: React.FC = () => {
           if (isPublished) {
             setStage('RESULTS');
             const myParticipant = data.my_participant;
-            const myRank = data.leaderboard?.find(l => l.student_id === myParticipant.student_id)?.rank || myParticipant.rank || 1;
+            const rawRank = data.leaderboard?.find(l => l.student_id === myParticipant?.student_id)?.rank || myParticipant?.rank;
+            const myRank = typeof rawRank === 'number' ? rawRank : 0;
             setResultData({
               participant: myParticipant,
               rank: myRank,
@@ -423,13 +435,20 @@ export const StudentQuizLobby: React.FC = () => {
       .catch(err => {
         setErrorMsg(err.response?.data?.message || 'Failed to load session details.');
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        isFetchingRef.current = false;
+      });
   };
 
   useEffect(() => {
     fetchSessionDetails();
-    const pollInterval = stage === 'WAITING_FOR_ADMIN' ? 3000 : 8000;
-    const interval = setInterval(fetchSessionDetails, pollInterval);
+    const pollInterval = stage === 'WAITING_FOR_ADMIN' ? 4000 : stage === 'LOBBY' ? 6000 : 10000;
+    const interval = setInterval(() => {
+      if (!isFetchingRef.current) {
+        fetchSessionDetails();
+      }
+    }, pollInterval);
     return () => clearInterval(interval);
   }, [id, stage]);
 
@@ -442,16 +461,17 @@ export const StudentQuizLobby: React.FC = () => {
   // Resolve participant & leaderboard records safely at component scope
   const pRecord: QuizSessionParticipant | undefined = resultData?.participant || session?.my_participant;
   const leaderboard: QuizLeaderboardEntry[] = resultData?.leaderboard || session?.leaderboard || [];
-  const myRank: number = resultData?.rank || (pRecord?.student_id ? leaderboard.find(l => l.student_id === pRecord?.student_id)?.rank : undefined) || pRecord?.rank || 1;
+  const rawRank = resultData?.rank || (pRecord?.student_id ? leaderboard.find(l => l.student_id === pRecord?.student_id)?.rank : undefined) || pRecord?.rank;
+  const myRank: number = typeof rawRank === 'number' ? rawRank : 0;
+  const isResultsPublished: boolean = session?.status === 'COMPLETED' || Boolean(resultData?.leaderboard?.length);
 
-  // Automatically trigger celebration burst and victory sound for podium ranks (1st, 2nd, 3rd)
+  // Automatically trigger celebration burst for podium ranks (1st, 2nd, 3rd) ONLY when results are officially published
   useEffect(() => {
-    if (stage === 'RESULTS' && (myRank === 1 || myRank === 2 || myRank === 3) && !hasBurstTriggeredRef.current) {
+    if (stage === 'RESULTS' && isResultsPublished && (myRank === 1 || myRank === 2 || myRank === 3) && !hasBurstTriggeredRef.current) {
       hasBurstTriggeredRef.current = true;
       setShowGiftBurst(true);
-      playPodiumFanfare(myRank);
     }
-  }, [stage, myRank]);
+  }, [stage, isResultsPublished, myRank]);
 
   const handleStartQuiz = async () => {
     // 1. Immediately request fullscreen synchronously within direct user click
@@ -470,10 +490,14 @@ export const StudentQuizLobby: React.FC = () => {
   };
 
   const handleSelectOption = (questionId: string, option: string) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: option
-    }));
+    setAnswers(prev => {
+      const next = {
+        ...prev,
+        [questionId]: option
+      };
+      answersRef.current = next;
+      return next;
+    });
   };
 
   const handleAutoSubmit = () => {
@@ -957,8 +981,9 @@ export const StudentQuizLobby: React.FC = () => {
   // STAGE 2.5: WAITING ROOM (STUDENT FINISHED TEST, WAITING FOR ADMIN PUBLISH)
   // =========================================================================
   if (stage === 'WAITING_FOR_ADMIN') {
+    const questionsMaxMarks = questions.reduce((sum, q) => sum + (q.marks || 1), 0);
     const studentScore = resultData?.score ?? pRecord?.score ?? 0;
-    const studentMaxScore = resultData?.max_score ?? pRecord?.max_score ?? questions.length;
+    const studentMaxScore = resultData?.max_score ?? pRecord?.max_score ?? (questionsMaxMarks > 0 ? questionsMaxMarks : (questions.length || 20));
     const studentPercentage = resultData?.percentage ?? pRecord?.percentage ?? (studentMaxScore > 0 ? Math.round((studentScore / studentMaxScore) * 100) : 0);
     const studentTimeSec = resultData?.time_taken_seconds ?? pRecord?.time_taken_seconds ?? 0;
     const answeredCount = Object.keys(answers).length;
@@ -1003,9 +1028,12 @@ export const StudentQuizLobby: React.FC = () => {
           {/* Recorded Performance Summary Card */}
           <div className="grid grid-cols-3 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/80 text-left">
             <div className="p-3 bg-white rounded-xl border border-slate-100 shadow-2xs">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Noted Marks</span>
-              <span className="text-lg font-black text-slate-900">{studentScore} <span className="text-xs text-slate-400 font-normal">/ {studentMaxScore}</span></span>
-              <span className="text-[10px] font-extrabold text-emerald-600 block mt-0.5">{studentPercentage}% score</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Marks & Score</span>
+              <span className="text-base font-black text-amber-600 flex items-center space-x-1.5 mt-1">
+                <Lock className="w-3.5 h-3.5 text-amber-500" />
+                <span>Locked</span>
+              </span>
+              <span className="text-[10px] font-bold text-slate-500 block mt-0.5">Revealed on admin publish</span>
             </div>
 
             <div className="p-3 bg-white rounded-xl border border-slate-100 shadow-2xs">
@@ -1027,13 +1055,13 @@ export const StudentQuizLobby: React.FC = () => {
           <div className="p-5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-purple-500/10 border-2 border-amber-300/70 rounded-2xl text-center space-y-3 relative">
             <div className="flex items-center justify-center space-x-2 text-amber-800 text-xs font-black uppercase tracking-wider">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500 beacon-ping" />
-              <span>Waiting for Admin to Publish Final Ranks</span>
+              <span>Waiting for Admin to Publish Final Marks & Ranks</span>
             </div>
             
             <p className="text-xs font-bold text-slate-700 max-w-md mx-auto leading-relaxed">
               {allFinished 
-                ? 'All students in this cohort have completed their tests! The administrator is now reviewing and giving the final publish option to reveal the leaderboard.'
-                : `Students are currently finishing the quiz session (${submittedCount} of ${participantCount} finished). Once the administrator publishes the final results, your official rank will unlock automatically!`}
+                ? 'All students in this cohort have completed their tests! The administrator is now reviewing and giving the final publish option to reveal both the official marks and cohort leaderboard.'
+                : `Students are currently finishing the quiz session (${submittedCount} of ${participantCount} finished). Once the administrator publishes the final results, both your marks and official rank will unlock automatically!`}
             </p>
 
             {/* Cohort Progress Bar */}
@@ -1089,9 +1117,10 @@ export const StudentQuizLobby: React.FC = () => {
   });
 
   const totalQuestions = questions.length;
-  const maxScore = pRecord?.max_score || totalQuestions;
+  const questionsMaxMarks = questions.reduce((sum, q) => sum + (q.marks || 1), 0);
+  const maxScore = pRecord?.max_score ?? (questionsMaxMarks > 0 ? questionsMaxMarks : (totalQuestions || 20));
   const earnedScore = pRecord?.score ?? 0;
-  const accuracyPercentage = pRecord?.percentage ?? (totalQuestions > 0 ? Math.round((earnedScore / maxScore) * 100) : 0);
+  const accuracyPercentage = pRecord?.percentage ?? (maxScore > 0 ? Math.round((earnedScore / maxScore) * 100) : 0);
 
   // Filtered review questions
   const filteredQuestions = questions.filter(q => {
@@ -1103,7 +1132,7 @@ export const StudentQuizLobby: React.FC = () => {
   });
 
   // Rank badge graphic
-  const isPodium = myRank <= 3;
+  const isPodium = myRank > 0 && myRank <= 3;
   const rankColor = myRank === 1 
     ? 'from-amber-500 via-amber-600 to-yellow-600' 
     : myRank === 2 
@@ -1236,7 +1265,7 @@ export const StudentQuizLobby: React.FC = () => {
 
             <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-2xl border border-white/20">
               <p className="text-[10px] uppercase font-bold text-amber-200">Your Rank</p>
-              <p className="text-xl font-black mt-0.5">#{myRank}</p>
+              <p className="text-xl font-black mt-0.5">{myRank > 0 ? `#${myRank}` : 'Recorded'}</p>
               <p className="text-[10px] text-white/70">of {leaderboard.length || 1} peers</p>
             </div>
 

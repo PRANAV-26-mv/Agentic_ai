@@ -22,11 +22,16 @@ router.get('/', requireAuth, (req: AuthRequest, res: Response) => {
     const studentAttempts = attempts.filter(a => a.student_id === req.user!.id);
     const enriched = studentAttempts.map(att => {
       const assessment = AssessmentsModel.findById(att.assessment_id);
+      const questions = AssessmentAttemptsModel.getAttemptQuestions(att);
+      const totalQuestionMarks = questions.reduce((acc, q) => {
+        const m = typeof q.marks === 'number' && !isNaN(q.marks) && q.marks > 0 ? q.marks : 1;
+        return acc + m;
+      }, 0);
       return {
         ...att,
         assessment_title: assessment ? assessment.title : 'Assessment',
         passing_percentage: assessment ? assessment.passing_percentage : 60,
-        max_marks: assessment ? assessment.max_marks : 20
+        max_marks: att.max_score || (totalQuestionMarks > 0 ? totalQuestionMarks : (assessment ? assessment.max_marks : 20))
       };
     });
     res.json(enriched);
@@ -37,13 +42,19 @@ router.get('/', requireAuth, (req: AuthRequest, res: Response) => {
   const enriched = attempts.map(att => {
     const student = StudentsModel.findById(att.student_id);
     const assessment = AssessmentsModel.findById(att.assessment_id);
+    const questions = AssessmentAttemptsModel.getAttemptQuestions(att);
+    const totalQuestionMarks = questions.reduce((acc, q) => {
+      const m = typeof q.marks === 'number' && !isNaN(q.marks) && q.marks > 0 ? q.marks : 1;
+      return acc + m;
+    }, 0);
     return {
       ...att,
       student_name: student ? student.name : 'Unknown Student',
       student_email: student ? student.email : '',
       student_id_code: student ? student.student_id : '',
       department: student ? student.department : '',
-      assessment_title: assessment ? assessment.title : 'Assessment'
+      assessment_title: assessment ? assessment.title : 'Assessment',
+      max_marks: att.max_score || (totalQuestionMarks > 0 ? totalQuestionMarks : (assessment ? assessment.max_marks : 20))
     };
   });
 
@@ -211,9 +222,14 @@ router.post('/:attemptId/evaluate-writing', requireAdmin, (req: AuthRequest, res
 
     attempt.writing_score = totalWriting;
     attempt.total_score = attempt.mcq_score + totalWriting;
+    const totalQuestionMarks = questions.reduce((acc, q) => {
+      const m = typeof q.marks === 'number' && !isNaN(q.marks) && q.marks > 0 ? q.marks : 1;
+      return acc + m;
+    }, 0);
     const assessment = AssessmentsModel.findById(attempt.assessment_id);
-    const maxMarks = assessment?.max_marks || 20;
-    attempt.percentage = Math.min(100, Math.round((attempt.total_score / maxMarks) * 100));
+    const maxMarks = totalQuestionMarks > 0 ? totalQuestionMarks : (assessment?.max_marks || 20);
+    attempt.max_score = maxMarks;
+    attempt.percentage = maxMarks > 0 ? Math.min(100, Math.round((attempt.total_score / maxMarks) * 100)) : 0;
 
     memoryDb.save();
 

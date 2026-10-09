@@ -231,11 +231,11 @@ export const AdminQuizSessions: React.FC = () => {
   };
 
   const handlePublishResults = async (sessionId: string) => {
-    if (!window.confirm('Are you ready to calculate final ranks and reveal official results to all students? This will lock in cohort standings and broadcast final ranks to all waiting participants.')) return;
+    if (!window.confirm('Are you ready to calculate final ranks and reveal official marks and results to all students? This will lock in cohort standings and broadcast both marks and ranks to all waiting participants.')) return;
     setPublishingSessionId(sessionId);
     try {
       const res = await api.put(`/quiz-sessions/${sessionId}/publish-results`);
-      setSuccessMsg(res.data.message || 'Results published and cohort ranks calculated successfully!');
+      setSuccessMsg(res.data.message || 'Marks and cohort ranks published successfully!');
       setTimeout(() => setSuccessMsg(null), 4000);
       fetchSessions();
       if (selectedSessionForRoster && selectedSessionForRoster.id === sessionId) {
@@ -748,7 +748,7 @@ export const AdminQuizSessions: React.FC = () => {
                       ) : (
                         <Award className="w-4 h-4 text-amber-200" />
                       )}
-                      <span>{publishingSessionId === session.id ? 'Publishing Ranks...' : 'Publish Results & Calculate Final Ranks'}</span>
+                      <span>{publishingSessionId === session.id ? 'Publishing Marks & Ranks...' : 'Publish Results (Marks & Leaderboard)'}</span>
                     </button>
                   )}
 
@@ -1488,7 +1488,7 @@ export const AdminQuizSessions: React.FC = () => {
                     ) : (
                       <Award className="w-4 h-4 text-emerald-200" />
                     )}
-                    <span>Publish Results & Calculate Final Ranks</span>
+                    <span>{publishingSessionId === selectedSessionForRoster.id ? 'Publishing Marks & Ranks...' : 'Publish Results (Marks & Leaderboard)'}</span>
                   </button>
                 )}
               </div>

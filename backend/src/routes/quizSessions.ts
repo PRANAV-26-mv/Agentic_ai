@@ -46,9 +46,9 @@ router.get('/', requireAuth, (req: AuthRequest, res: Response): void => {
         is_results_published: isCompleted,
         all_students_finished: participantCount > 0 && submittedCount >= participantCount,
         my_status: studentParticipant?.status || null,
-        my_score: studentParticipant?.score ?? null,
-        my_max_score: studentParticipant?.max_score ?? null,
-        my_percentage: studentParticipant?.percentage ?? null,
+        my_score: isCompleted ? (studentParticipant?.score ?? null) : null,
+        my_max_score: isCompleted ? (studentParticipant?.max_score ?? null) : null,
+        my_percentage: isCompleted ? (studentParticipant?.percentage ?? null) : null,
         my_time_taken_seconds: studentParticipant?.time_taken_seconds ?? null,
         my_rank: myRank,
         my_assigned_count: studentParticipant?.assigned_questions_json
@@ -265,6 +265,9 @@ router.get('/:id', requireAuth, (req: AuthRequest, res: Response): void => {
       all_students_finished: participantCount > 0 && submittedCount >= participantCount,
       my_participant: myParticipant ? {
         ...myParticipant,
+        score: (isAdmin || isCompleted) ? myParticipant.score : undefined,
+        max_score: (isAdmin || isCompleted) ? myParticipant.max_score : undefined,
+        percentage: (isAdmin || isCompleted) ? myParticipant.percentage : undefined,
         rank: myRank
       } : undefined,
       questions: sanitizedQuestions
@@ -357,16 +360,19 @@ router.post('/:id/submit', requireAuth, (req: AuthRequest, res: Response): void 
     const participantCount = allParticipants.length;
 
     res.json({
-      message: 'Quiz finished! Your marks and completion time have been recorded.',
+      message: 'Quiz submitted! Your responses and completion time have been recorded safely.',
       participant: {
         ...participant,
+        score: isCompleted ? participant.score : undefined,
+        max_score: isCompleted ? participant.max_score : undefined,
+        percentage: isCompleted ? participant.percentage : undefined,
         rank: myRank
       },
       is_results_published: isCompleted,
       waiting_for_admin: !isCompleted,
-      score: participant.score,
-      max_score: participant.max_score,
-      percentage: participant.percentage,
+      score: isCompleted ? participant.score : undefined,
+      max_score: isCompleted ? participant.max_score : undefined,
+      percentage: isCompleted ? participant.percentage : undefined,
       time_taken_seconds: participant.time_taken_seconds,
       rank: myRank,
       total_participants: participantCount,
@@ -426,7 +432,7 @@ router.put('/:id/publish-results', requireAdmin, (req: AuthRequest, res: Respons
     });
 
     res.json({
-      message: 'Quiz session finalized! Official cohort ranks have been calculated and revealed to students.',
+      message: 'Quiz session finalized! Official cohort marks and ranks have been calculated and revealed to students.',
       session: updated,
       leaderboard
     });

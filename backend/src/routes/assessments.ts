@@ -139,7 +139,7 @@ router.post('/:id/start', requireStudent, (req: AuthRequest, res: Response) => {
     let existingAttempt = AssessmentAttemptsModel.findAttempt(studentId, assessmentId);
     if (existingAttempt) {
       if (existingAttempt.status === 'COMPLETED' || existingAttempt.status === 'AUTO_SUBMITTED') {
-        res.status(400).json({ message: 'You have already completed this assessment.' });
+        res.json({ attempt: existingAttempt, questions: [], expired: true });
         return;
       }
 

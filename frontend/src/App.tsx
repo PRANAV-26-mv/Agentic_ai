@@ -40,6 +40,7 @@ import { UserRestrictionsPage } from './pages/UserRestrictionsPage';
 import { CertificateSettingsPage } from './pages/CertificateSettingsPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { EmailBroadcastPage } from './pages/EmailBroadcastPage';
+import { NetworkStatusBar } from './components/NetworkStatusBar';
 
 const ProtectedMeetingRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -83,6 +84,7 @@ export function App() {
     <AuthProvider>
       <NotificationProvider>
         <BrowserRouter>
+          <NetworkStatusBar />
           <ErrorBoundary>
             <Routes>
             <Route path="/login" element={<LoginPage />} />

@@ -195,6 +195,9 @@ export const StudentAssessmentTake: React.FC = () => {
           localStorage.setItem('portal_submitted_attempts', JSON.stringify(updatedList));
         } catch (e) {}
       })
+      .catch(err => {
+        alert(err.response?.data?.message || 'Submission request error or network timeout. Please ensure you are connected and retry submitting.');
+      })
       .finally(() => setSubmitting(false));
   };
 
@@ -242,6 +245,9 @@ export const StudentAssessmentTake: React.FC = () => {
 
   // Submission Summary View matching §20
   if (submittedSummary) {
+    const hasWriting = questions.some(q => q.question_type === 'WRITING');
+    const maxScore = submittedSummary.max_score || assessment?.max_marks || (questions.length > 0 ? questions.reduce((s, q) => s + (q.marks || 1), 0) : 20);
+
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl p-8 text-center space-y-6 shadow-2xl animate-in zoom-in-95">
@@ -254,20 +260,32 @@ export const StudentAssessmentTake: React.FC = () => {
             <p className="text-xs text-slate-500 mt-1">{assessment?.title || 'Agentic AI Level 1'}</p>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left space-y-2 text-xs">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left space-y-2.5 text-xs">
             <div className="flex justify-between">
               <span className="text-slate-500">Submitted:</span>
               <span className="font-bold text-slate-800">{new Date(submittedSummary.submitted_at || Date.now()).toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">MCQ Score:</span>
-              <span className="font-bold text-brand-600">{submittedSummary.mcq_score} Marks</span>
+              <span className="font-bold text-brand-600">{submittedSummary.mcq_score ?? 0} Marks</span>
+            </div>
+            {hasWriting && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Writing Score:</span>
+                <span className="font-bold text-purple-600">
+                  {submittedSummary.writing_score !== undefined && submittedSummary.writing_score > 0
+                    ? `${submittedSummary.writing_score} Marks`
+                    : 'Pending Evaluation'}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between border-t border-slate-200 pt-2 font-black">
+              <span className="text-slate-700">Total Score:</span>
+              <span className="text-emerald-700 text-sm">
+                {submittedSummary.total_score ?? 0} / {maxScore} Marks ({submittedSummary.percentage ?? 0}%)
+              </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Writing Score:</span>
-              <span className="font-bold text-purple-600">Pending Evaluation</span>
-            </div>
-            <div className="flex justify-between border-t pt-2">
               <span className="text-slate-500">Status:</span>
               <span className="font-extrabold text-emerald-600 uppercase">{submittedSummary.status}</span>
             </div>

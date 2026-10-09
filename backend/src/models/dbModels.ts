@@ -270,6 +270,8 @@ export interface AssessmentAttempt {
   mcq_score: number;
   writing_score: number;
   total_score: number;
+  max_score?: number;
+  writing_pending?: boolean;
   percentage: number;
   tab_switches_count: number;
   assigned_questions_json?: string;
@@ -605,50 +607,51 @@ export const StudyMaterialsModel = {
 
 export function isQuestionAnswerCorrect(q: Question, selected?: string): boolean {
   if (!selected || !q.correct_answer) return false;
-  const sel = selected.trim().toUpperCase();
-  const corr = q.correct_answer.trim().toUpperCase();
 
-  // 1. Direct equality match (e.g. 'A' === 'A', 'B' === 'B')
-  if (sel === corr) return true;
+  const normalizeToLetter = (val?: string): 'A' | 'B' | 'C' | 'D' | null => {
+    if (!val) return null;
+    const trimmed = val.trim().toUpperCase();
 
-  // 2. Clean single-letter comparison (handles 'A.', '(A)', 'OPTION_A', 'A - ...')
-  const cleanSel = sel.replace(/[^A-D]/g, '');
-  const cleanCorr = corr.replace(/[^A-D]/g, '');
-  if (cleanSel && cleanCorr && cleanSel === cleanCorr) return true;
+    // Direct single letter
+    if (['A', 'B', 'C', 'D'].includes(trimmed)) {
+      return trimmed as 'A' | 'B' | 'C' | 'D';
+    }
 
-  // 3. Option letter to text mapping
-  const letterMap: Record<string, string | undefined> = {
-    'A': q.option_a ? q.option_a.trim().toUpperCase() : undefined,
-    'B': q.option_b ? q.option_b.trim().toUpperCase() : undefined,
-    'C': q.option_c ? q.option_c.trim().toUpperCase() : undefined,
-    'D': q.option_d ? q.option_d.trim().toUpperCase() : undefined,
+    // Match OPTION_A, OPTION A, OPTION-A, OPTIONA
+    const optMatch = trimmed.match(/^OPTION[_\s-]?([A-D])$/);
+    if (optMatch) {
+      return optMatch[1] as 'A' | 'B' | 'C' | 'D';
+    }
+
+    // Match (A), A., A), A:
+    const prefixMatch = trimmed.match(/^\(?([A-D])[\.\)\:\s]/);
+    if (prefixMatch) {
+      return prefixMatch[1] as 'A' | 'B' | 'C' | 'D';
+    }
+
+    // Match full option text against q.option_a, b, c, d
+    const clean = (s?: string) => s ? s.trim().toLowerCase().replace(/\s+/g, ' ') : '';
+    const cleanVal = clean(val);
+    if (cleanVal) {
+      if (q.option_a && clean(q.option_a) === cleanVal) return 'A';
+      if (q.option_b && clean(q.option_b) === cleanVal) return 'B';
+      if (q.option_c && clean(q.option_c) === cleanVal) return 'C';
+      if (q.option_d && clean(q.option_d) === cleanVal) return 'D';
+    }
+
+    return null;
   };
 
-  // Check if correct_answer was saved as 'OPTION_A', 'OPTION_B', etc.
-  if (corr === 'OPTION_A' && (sel === 'A' || cleanSel === 'A')) return true;
-  if (corr === 'OPTION_B' && (sel === 'B' || cleanSel === 'B')) return true;
-  if (corr === 'OPTION_C' && (sel === 'C' || cleanSel === 'C')) return true;
-  if (corr === 'OPTION_D' && (sel === 'D' || cleanSel === 'D')) return true;
+  const corrLetter = normalizeToLetter(q.correct_answer);
+  const selLetter = normalizeToLetter(selected);
 
-  if (sel === 'OPTION_A' && (corr === 'A' || cleanCorr === 'A')) return true;
-  if (sel === 'OPTION_B' && (corr === 'B' || cleanCorr === 'B')) return true;
-  if (sel === 'OPTION_C' && (corr === 'C' || cleanCorr === 'C')) return true;
-  if (sel === 'OPTION_D' && (corr === 'D' || cleanCorr === 'D')) return true;
-
-  // 4. If student selected full option text and matches question option text
-  if (cleanCorr && letterMap[cleanCorr] && (letterMap[cleanCorr] === sel || sel.includes(letterMap[cleanCorr]!) || letterMap[cleanCorr]!.includes(sel))) {
-    return true;
+  if (corrLetter && selLetter) {
+    return corrLetter === selLetter;
   }
 
-  // 5. If correct_answer was stored as the option text and student selected letter
-  if (cleanSel && letterMap[cleanSel] && (letterMap[cleanSel] === corr || corr.includes(letterMap[cleanSel]!) || letterMap[cleanSel]!.includes(corr))) {
-    return true;
-  }
-
-  // 6. Direct comparison of option text
-  if (letterMap[sel] && letterMap[sel] === corr) return true;
-
-  return false;
+  // Exact cleaned text match fallback
+  const clean = (s?: string) => s ? s.trim().toLowerCase().replace(/\s+/g, ' ') : '';
+  return clean(selected) === clean(q.correct_answer);
 }
 
 export const QuestionsModel = {
@@ -1062,13 +1065,19 @@ export const AssessmentAttemptsModel = {
       }
     }
 
+    const totalQuestionMarks = questions.reduce((acc, q) => {
+      const m = typeof q.marks === 'number' && !isNaN(q.marks) && q.marks > 0 ? q.marks : 1;
+      return acc + m;
+    }, 0);
     const assessment = AssessmentsModel.findById(attempt.assessment_id);
-    const maxMarks = assessment?.max_marks || 20;
+    const maxMarks = totalQuestionMarks > 0 ? totalQuestionMarks : (assessment?.max_marks || 20);
 
     attempt.mcq_score = mcqScore;
     attempt.writing_score = writingScore;
     attempt.total_score = mcqScore + writingScore;
-    attempt.percentage = Math.min(100, Math.round(((attempt.total_score) / maxMarks) * 100));
+    attempt.max_score = maxMarks;
+    attempt.writing_pending = writingPending;
+    attempt.percentage = maxMarks > 0 ? Math.min(100, Math.round(((attempt.total_score) / maxMarks) * 100)) : 0;
     attempt.submitted_at = new Date().toISOString();
     attempt.status = autoSubmitted ? 'AUTO_SUBMITTED' : 'COMPLETED';
 

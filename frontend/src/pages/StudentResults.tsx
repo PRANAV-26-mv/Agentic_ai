@@ -493,7 +493,7 @@ export const StudentResults: React.FC = () => {
                     </div>
                     <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
                       <p className="text-[9px] uppercase font-bold text-slate-400">Total</p>
-                      <p className="text-xs font-black text-slate-900 mt-0.5">{r.total_score} pts</p>
+                      <p className="text-xs font-black text-slate-900 mt-0.5">{r.total_score} / {r.max_marks || 20} pts</p>
                     </div>
                   </div>
 
@@ -528,8 +528,8 @@ export const StudentResults: React.FC = () => {
                       <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="p-4 font-bold text-slate-900">{r.assessment_title}</td>
                         <td className="p-4 font-semibold text-brand-600">{r.mcq_score} pts</td>
-                        <td className="p-4 font-semibold text-purple-600">{r.writing_score} pts</td>
-                        <td className="p-4 font-extrabold text-slate-900">{r.total_score} pts</td>
+                        <td className="p-4 font-semibold text-purple-600">{r.writing_score !== undefined && r.writing_score !== null ? `${r.writing_score} pts` : '—'}</td>
+                        <td className="p-4 font-extrabold text-slate-900">{r.total_score} / {r.max_marks || 20} pts</td>
                         <td className="p-4 font-bold text-emerald-600">{r.percentage}%</td>
                         <td className="p-4">
                           <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
