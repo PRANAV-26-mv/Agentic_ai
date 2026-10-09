@@ -19,7 +19,8 @@ import {
   Download,
   Loader2,
   Users,
-  ChevronRight
+  ChevronRight,
+  Globe
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GiftBurstModal } from '../components/GiftBurstModal';
@@ -381,12 +382,12 @@ export const StudentDashboard: React.FC = () => {
                 className="p-4 liquid-glass-card hover:bg-white/95 rounded-2xl transition-all flex items-center justify-between gap-3"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-xl liquid-glass-pill text-slate-800 flex items-center justify-center font-bold text-xs shrink-0">
-                    {mat.material_type}
+                  <div className="w-10 h-10 rounded-xl liquid-glass-pill text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0">
+                    {mat.material_type === 'URL' ? <Globe className="w-5 h-5 text-indigo-600" /> : mat.material_type}
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-900 text-sm line-clamp-1 tracking-tight">{mat.title}</h4>
-                    <p className="text-xs text-slate-500">{mat.page_count ? `${mat.page_count} pages` : 'Digital Resource'}</p>
+                    <p className="text-xs text-slate-500">{mat.material_type === 'URL' ? 'Official Web Resource' : mat.page_count ? `${mat.page_count} pages` : 'Digital Resource'}</p>
                   </div>
                 </div>
                 <Link

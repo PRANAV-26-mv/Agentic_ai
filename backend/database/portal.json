@@ -2,12 +2,13 @@
   "admins": [
     {
       "id": "adm-002",
-      "name": "Pranav (Admin)",
+      "name": "Pranav (Super Admin)",
       "email": "pranavannur9659@gmail.com",
       "password": "9488529035",
       "role": "ADMIN",
       "department": "Computer Science & Engineering",
-      "created_at": "2026-09-05T14:20:00.000Z"
+      "created_at": "2026-09-05T14:20:00.000Z",
+      "is_super_admin": true
     },
     {
       "email": "yamunaranir.al25@bitsathy.ac.in",
@@ -599,17 +600,6 @@
       "created_by": "adm-002"
     },
     {
-      "title": "Test PDF Upload",
-      "description": "Test Description",
-      "material_type": "PDF",
-      "file_url": "/uploads/1789325178200-224547774.pdf",
-      "page_count": 19,
-      "target_type": "ALL",
-      "created_by": "adm-002",
-      "id": "mat-1789325178203",
-      "published_date": "2026-09-13T18:46:18.203Z"
-    },
-    {
       "title": "Advanced Agentic Workflows & Multi-Agent Systems",
       "description": "Comprehensive guide covering tool use, memory architectures, and delegation patterns.",
       "material_type": "PDF",
@@ -630,6 +620,58 @@
       "created_by": "adm-002",
       "id": "mat-1789325343336",
       "published_date": "2026-09-13T18:49:03.336Z"
+    },
+    {
+      "id": "mat-url-001",
+      "title": "Hugging Face Hub & Transformers Documentation",
+      "description": "Explore open-source models, pipelines, fine-tuning datasets, tokenizers, and active community spaces.",
+      "material_type": "URL",
+      "file_url": "https://huggingface.co/docs",
+      "target_type": "ALL",
+      "published_date": "2026-10-09T19:09:44.795Z",
+      "created_by": "adm-002"
+    },
+    {
+      "id": "mat-url-002",
+      "title": "DeepLearning.AI Agentic Systems & Short Courses",
+      "description": "Comprehensive video tutorials and code labs on ReAct, Function Calling, and Multi-Agent Orchestration.",
+      "material_type": "URL",
+      "file_url": "https://www.deeplearning.ai/short-courses/",
+      "target_type": "COMMUNITY",
+      "target_community": "Agentic AI & LLM Optimization",
+      "published_date": "2026-10-09T19:09:44.795Z",
+      "created_by": "adm-002"
+    },
+    {
+      "id": "mat-url-003",
+      "title": "Anthropic Claude Documentation & Workbench",
+      "description": "Official developer guidance on prompt evaluation, structured JSON outputs, and agentic workflows.",
+      "material_type": "URL",
+      "file_url": "https://docs.anthropic.com/",
+      "target_type": "ALL",
+      "published_date": "2026-10-09T19:09:44.795Z",
+      "created_by": "adm-002"
+    },
+    {
+      "id": "mat-url-004",
+      "title": "Fast.ai Practical Deep Learning for Coders",
+      "description": "Hands-on top-down curriculum covering PyTorch fundamentals, computer vision, NLP, and model training.",
+      "material_type": "URL",
+      "file_url": "https://course.fast.ai/",
+      "target_type": "ALL",
+      "published_date": "2026-10-09T19:09:44.795Z",
+      "created_by": "adm-002"
+    },
+    {
+      "id": "mat-url-005",
+      "title": "OpenAI Developer Platform & Function Calling Guide",
+      "description": "Production guides for tool calling, assistants API, structured reasoning, and multi-agent systems.",
+      "material_type": "URL",
+      "file_url": "https://platform.openai.com/docs/guides/function-calling",
+      "target_type": "COMMUNITY",
+      "target_community": "Agentic AI & LLM Optimization",
+      "published_date": "2026-10-09T19:09:44.795Z",
+      "created_by": "adm-002"
     }
   ],
   "attendance_sessions": [
@@ -928,6 +970,60 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "audit-1791573860281-514",
+      "actor_id": "std-001",
+      "actor_role": "STUDENT",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "std-001",
+      "timestamp": "2026-10-09T19:24:20.281Z"
+    },
+    {
+      "id": "audit-1791573702492-195",
+      "actor_id": "std-001",
+      "actor_role": "STUDENT",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "std-001",
+      "timestamp": "2026-10-09T19:21:42.492Z"
+    },
+    {
+      "id": "audit-1791573609677-943",
+      "actor_id": "std-001",
+      "actor_role": "STUDENT",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "std-001",
+      "timestamp": "2026-10-09T19:20:09.677Z"
+    },
+    {
+      "id": "audit-1791573534029-961",
+      "actor_id": "std-001",
+      "actor_role": "STUDENT",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "std-001",
+      "timestamp": "2026-10-09T19:18:54.029Z"
+    },
+    {
+      "id": "audit-1791573484333-636",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-10-09T19:18:04.333Z"
+    },
+    {
+      "id": "audit-1791571812093-409",
+      "actor_id": "adm-002",
+      "actor_role": "ADMIN",
+      "action": "LOGIN",
+      "entity_type": "USER",
+      "entity_id": "adm-002",
+      "timestamp": "2026-10-09T18:50:12.093Z"
+    },
     {
       "id": "audit-1789326302286-464",
       "actor_id": "std-001",
@@ -1335,7 +1431,8 @@
       "allow_student_chat": true,
       "mute_on_entry": false,
       "created_at": "2026-10-09T18:34:14.126Z",
-      "updated_at": "2026-10-09T18:34:14.126Z"
+      "updated_at": "2026-10-09T18:34:14.126Z",
+      "external_link": "https://meet.google.com/abc-defg-hij"
     }
   ],
   "meeting_participants": [],

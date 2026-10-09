@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api, getFileUrl } from '../services/api';
 import { StudyMaterial } from '../types';
-import { BookOpen, FileText, Download, ExternalLink, MessageSquare, Search, Filter } from 'lucide-react';
+import { BookOpen, FileText, Download, ExternalLink, MessageSquare, Search, Filter, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const StudentMaterials: React.FC = () => {
@@ -69,7 +69,7 @@ export const StudentMaterials: React.FC = () => {
         </div>
       </div>
 
-      {/* Material Grid matching §8 */}
+      {/* Material Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="h-48 apple-glass-card rounded-2xl animate-pulse"></div>
@@ -77,57 +77,85 @@ export const StudentMaterials: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMaterials.map((mat) => (
-            <div key={mat.id} className="apple-glass-card rounded-[24px] p-5.5 flex flex-col justify-between">
-              
-              <div>
-                <div className="flex justify-between items-start mb-3">
-                  <div className="w-10 h-10 bg-indigo-50/80 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-xs border border-indigo-100 shadow-sm">
-                    {mat.material_type}
+          {filteredMaterials.map((mat) => {
+            const isUrl = mat.material_type === 'URL';
+            const resolvedUrl = getFileUrl(mat.file_url);
+
+            return (
+              <div key={mat.id} className="apple-glass-card rounded-[24px] p-5.5 flex flex-col justify-between transition-all">
+                
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="w-10 h-10 bg-indigo-50/80 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-xs border border-indigo-100 shadow-sm">
+                      {isUrl ? <Globe className="w-5 h-5 text-indigo-600" /> : mat.material_type}
+                    </div>
+                    <span className="text-[10px] font-semibold text-indigo-700 apple-glass-pill px-2.5 py-1 rounded-full flex items-center space-x-1">
+                      {isUrl ? (
+                        <>
+                          <Globe className="w-3 h-3 inline mr-1" />
+                          <span>Website</span>
+                        </>
+                      ) : mat.page_count ? (
+                        `${mat.page_count} pages`
+                      ) : (
+                        'Document'
+                      )}
+                    </span>
                   </div>
-                  <span className="text-[10px] font-semibold text-indigo-700 apple-glass-pill px-2.5 py-1 rounded-full">
-                    {mat.page_count ? `${mat.page_count} pages` : 'Web Link'}
-                  </span>
+
+                  <h3 className="font-bold text-slate-900 text-base mb-1 line-clamp-2">{mat.title}</h3>
+                  <p className="text-xs text-slate-500 mb-4 line-clamp-3">{mat.description || 'No description provided.'}</p>
                 </div>
 
-                <h3 className="font-bold text-slate-900 text-base mb-1 line-clamp-2">{mat.title}</h3>
-                <p className="text-xs text-slate-500 mb-4 line-clamp-3">{mat.description || 'No description provided.'}</p>
+                {/* Action Buttons */}
+                <div className={`pt-4 border-t border-white/60 ${isUrl ? 'grid grid-cols-2 gap-2' : 'grid grid-cols-3 gap-2'}`}>
+                  {isUrl ? (
+                    <a
+                      href={resolvedUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-2 apple-btn-primary text-xs font-bold rounded-xl flex items-center justify-center space-x-1.5 shadow-sm"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Visit Site</span>
+                    </a>
+                  ) : (
+                    <>
+                      <a
+                        href={resolvedUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-2 apple-btn-glass text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>View</span>
+                      </a>
+
+                      <a
+                        href={resolvedUrl}
+                        download
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-2 apple-btn-glass text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download</span>
+                      </a>
+                    </>
+                  )}
+
+                  <button
+                    onClick={() => handleAskDoubt(mat.id)}
+                    className={`px-3 py-2 ${isUrl ? 'apple-btn-glass text-slate-700' : 'apple-btn-primary'} text-xs font-bold rounded-xl flex items-center justify-center space-x-1`}
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Ask AI</span>
+                  </button>
+                </div>
+
               </div>
-
-              {/* Action Buttons */}
-              <div className="pt-4 border-t border-white/60 grid grid-cols-3 gap-2">
-                <a
-                  href={getFileUrl(mat.file_url)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-2 apple-btn-glass text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>View</span>
-                </a>
-
-                <a
-                  href={getFileUrl(mat.file_url)}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-2 apple-btn-glass text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download</span>
-                </a>
-
-                <button
-                  onClick={() => handleAskDoubt(mat.id)}
-                  className="px-3 py-2 apple-btn-primary text-xs font-bold rounded-xl flex items-center justify-center space-x-1"
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>Ask AI</span>
-                </button>
-              </div>
-
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
