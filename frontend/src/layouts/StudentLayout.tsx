@@ -8,17 +8,20 @@ export const StudentLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f] flex flex-col relative overflow-x-hidden">
+      {/* Apple ambient diffuse glow lights in background */}
+      <div className="apple-ambient-glow" />
+
       <Header
         mobileMenuOpen={mobileMenuOpen}
         onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
       />
-      <div className="flex flex-1 relative">
+      <div className="flex flex-1 relative z-10">
         <StudentSidebar
           mobileOpen={mobileMenuOpen}
           onCloseMobile={() => setMobileMenuOpen(false)}
         />
-        <main className="flex-1 p-3 sm:p-6 max-w-7xl mx-auto w-full overflow-x-hidden page-enter-animation">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden page-enter-animation">
           <Outlet />
         </main>
       </div>

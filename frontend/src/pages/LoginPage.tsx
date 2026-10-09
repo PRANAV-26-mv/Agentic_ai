@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, ShieldAlert, Lock, User } from 'lucide-react';
+import { BookOpen, ShieldAlert, Lock, User, Loader2, Sparkles } from 'lucide-react';
 import { api } from '../services/api';
 
 export const LoginPage: React.FC = () => {
@@ -85,87 +85,78 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleGoogleEmailLogin = async (emailToLogin: string) => {
-    setErrorMsg(null);
-    setLoading(true);
-    try {
-      await loginWithDevEmail(emailToLogin);
-    } catch (err: any) {
-      const serverMsg = err.response?.data?.message || 'Access Denied: Your email is not registered.';
-      setErrorMsg(serverMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden animate-aurora">
+    <div className="min-h-screen bg-[#fbfbfd] flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
       
-      {/* Ambient glowing orbs */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-sky-500/15 rounded-full blur-3xl pointer-events-none animate-float"></div>
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-purple-500/15 rounded-full blur-3xl pointer-events-none animate-float-subtle"></div>
+      {/* Apple Studio Lighting Background Sheen */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Container */}
-      <div className="max-w-md w-full bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-white/30 p-8 space-y-6 text-center relative card-interactive animate-fade-in-up">
+      {/* Main Glass Card */}
+      <div className="max-w-md w-full bg-white/80 backdrop-blur-2xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.06)] border border-black/[0.06] p-8 sm:p-10 space-y-6 text-center relative z-10 animate-fade-in">
 
-        {/* Logo Badge */}
-        <div className="mx-auto w-16 h-16 bg-gradient-to-tr from-sky-600 to-blue-500 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-sky-500/30 mb-2 transition-transform duration-300 hover:rotate-6 hover:scale-110">
-          <BookOpen className="w-8 h-8" />
+        {/* Minimalist Apple-inspired Brand Icon */}
+        <div className="mx-auto w-14 h-14 bg-gradient-to-b from-[#1d1d1f] to-[#2c2c2e] text-white rounded-2xl flex items-center justify-center shadow-md mb-2 border border-white/10 transition-transform duration-300 hover:scale-105">
+          <BookOpen className="w-7 h-7 text-white" />
         </div>
 
-        {/* Title & Tagline */}
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">
-            Student Assessment<br />& Learning Portal
+        {/* Title & Product Storytelling */}
+        <div className="space-y-1">
+          <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full text-[10px] font-semibold bg-black/[0.04] text-slate-700 border border-black/[0.05] mb-1">
+            <Sparkles className="w-3 h-3 text-amber-500" />
+            <span>Campus Learning & Assessment Platform</span>
+          </div>
+          <h1 className="text-2xl font-extrabold text-[#1d1d1f] tracking-tight">
+            Sign In to Portal
           </h1>
-          <p className="text-xs font-bold text-sky-600 mt-2 tracking-wide uppercase">
-            Learn • Practice • Assess • Improve
+          <p className="text-xs text-slate-400 font-normal">
+            Precision Assessments • Group Discussion • Cohort Analytics
           </p>
         </div>
 
         {/* Access Denied Alert */}
         {errorMsg && (
-          <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-left flex items-start space-x-3 animate-fade-in-up">
-            <ShieldAlert className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5 animate-bounce" />
+          <div className="bg-rose-50 border border-rose-200/80 rounded-2xl p-4 text-left flex items-start space-x-3 animate-fade-in">
+            <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-bold text-rose-900">Access Denied</h4>
-              <p className="text-xs text-rose-700 mt-1">{errorMsg}</p>
+              <h4 className="text-xs font-bold text-rose-900">Access Denied</h4>
+              <p className="text-[11px] text-rose-700 mt-0.5">{errorMsg}</p>
             </div>
           </div>
         )}
 
-        {/* Credentials Login Form */}
-        <form onSubmit={handleLoginSubmit} className="space-y-4 text-left pt-2">
-          <div>
-            <label className="block text-xs font-extrabold text-slate-700 mb-1">
-              Email ID or Register Number
+        {/* Credentials Form */}
+        <form onSubmit={handleLoginSubmit} className="space-y-4 text-left pt-1">
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide">
+              Email or Registration Number
             </label>
             <div className="relative">
-              <User className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <User className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
               <input
                 type="text"
                 required
-                placeholder="abc@gmail.com"
+                placeholder="e.g. 717822P101 or email@domain.com"
                 value={loginId}
                 onChange={e => setLoginId(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                className="w-full pl-9 pr-3.5 py-2.5 bg-black/[0.02] border border-black/[0.08] focus:border-black/[0.2] focus:bg-white rounded-xl text-xs font-medium text-slate-900 focus:outline-hidden transition-all shadow-2xs"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-extrabold text-slate-700 mb-1">
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide">
               Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <Lock className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
               <input
                 type="password"
                 required
-                placeholder="Registration Number"
+                placeholder="Registration Number / Password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                className="w-full pl-9 pr-3.5 py-2.5 bg-black/[0.02] border border-black/[0.08] focus:border-black/[0.2] focus:bg-white rounded-xl text-xs font-medium text-slate-900 focus:outline-hidden transition-all shadow-2xs"
               />
             </div>
           </div>
@@ -173,24 +164,31 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-sky-500/25 btn-shimmer transform hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer"
+            className="w-full py-3 bg-[#1d1d1f] hover:bg-black text-white font-semibold text-xs rounded-full shadow-xs transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50 mt-2 transform hover:scale-[1.01] active:scale-[0.99]"
           >
-            <span>{loading ? 'Authenticating...' : 'Sign In to Portal'}</span>
+            {loading ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Authenticating...</span>
+              </>
+            ) : (
+              <span>Sign In</span>
+            )}
           </button>
         </form>
 
-        {/* Google OAuth Section (if configured) */}
+        {/* Google OAuth Section */}
         {!!googleClientId && (
-          <>
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
-              <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-white px-2 text-slate-400 font-bold">Or Google OAuth</span></div>
+          <div className="space-y-3 pt-2">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-black/[0.06]"></div></div>
+              <div className="relative flex justify-center text-[10px] uppercase"><span className="bg-white/80 px-2 text-slate-400 font-semibold">Or continue with</span></div>
             </div>
 
-            <div className="space-y-3">
-              <div id="googleSignInBtnContainer" className="flex justify-center min-h-[44px]"></div>
+            <div className="flex justify-center min-h-[44px]">
+              <div id="googleSignInBtnContainer"></div>
             </div>
-          </>
+          </div>
         )}
 
       </div>

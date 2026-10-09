@@ -35,74 +35,69 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
 
   const isSuperAdmin = user?.email?.toLowerCase() === 'pranavannur9659@gmail.com' || user?.is_super_admin;
 
-  const rawNavItems = [
-    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  const coreNav = [
+    { to: '/admin/dashboard', label: 'Overview Dashboard', icon: LayoutDashboard },
     { to: '/admin/manage-admins', label: 'Admin Members', icon: Crown, superOnly: true },
     { to: '/admin/restrictions', label: 'User Restrictions', icon: Ban, superOnly: true },
-    { to: '/admin/send-emails', label: 'Send Emails', icon: Mail },
+    { to: '/admin/send-emails', label: 'Email Broadcasts', icon: Mail },
+  ];
+
+  const sessionsNav = [
     { to: '/admin/meetings', label: 'Live Meetings', icon: Video },
-    { to: '/admin/students', label: 'Students', icon: Users },
-    { to: '/admin/assessments', label: 'Assessments', icon: FileCheck },
-    { to: '/admin/quiz-sessions', label: 'Live Quiz Sessions', icon: Zap },
+    { to: '/admin/quiz-sessions', label: 'Live Quiz Sessions', icon: Zap, isLiveBadge: true },
     { to: '/admin/gd-sessions', label: 'GD Sessions', icon: MessagesSquare },
-    { to: '/admin/certificate-settings', label: 'Certificate Settings', icon: Award },
+    { to: '/admin/assessments', label: 'Assessments', icon: FileCheck },
+    { to: '/admin/monitoring', label: 'Live Monitoring', icon: Activity, isPulseGreen: true },
+  ];
+
+  const academicNav = [
+    { to: '/admin/students', label: 'Student Directory', icon: Users },
     { to: '/admin/question-bank', label: 'Question Bank', icon: HelpCircle },
     { to: '/admin/study-materials', label: 'Study Materials', icon: BookOpen },
     { to: '/admin/attendance', label: 'Attendance', icon: CalendarCheck },
+    { to: '/admin/results', label: 'Assessment Results', icon: BarChart },
+    { to: '/admin/certificate-settings', label: 'Certificates', icon: Award },
     { to: '/admin/notifications', label: 'Notifications', icon: Bell },
-    { to: '/admin/results', label: 'Results', icon: BarChart },
-    { to: '/admin/monitoring', label: 'Assessment Monitoring', icon: Activity },
     { to: '/admin/analytics', label: 'Analytics', icon: PieChart },
-    { to: '/admin/audit-log', label: 'User & Admin Activity', icon: ShieldAlert, superOnly: true },
+    { to: '/admin/audit-log', label: 'Audit Logs', icon: ShieldAlert, superOnly: true },
   ];
 
-  const navItems = rawNavItems.filter(item => !item.superOnly || isSuperAdmin);
+  const renderNavGroup = (items: Array<any>, title?: string) => {
+    const visibleItems = items.filter(item => !item.superOnly || isSuperAdmin);
+    if (visibleItems.length === 0) return null;
 
-  const sidebarInner = (
-    <>
-      <div className="space-y-1">
-        <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">
-            Admin Management
-          </span>
-          {onCloseMobile && (
-            <button
-              onClick={onCloseMobile}
-              className="md:hidden p-1 text-slate-400 hover:text-white rounded-lg transition-colors"
-              title="Close Navigation Drawer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-
-        {navItems.map((item) => {
+    return (
+      <div className="space-y-0.5">
+        {title && (
+          <p className="px-3 pt-3 pb-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider select-none">
+            {title}
+          </p>
+        )}
+        {visibleItems.map((item) => {
           const Icon = item.icon;
-          const isLiveQuiz = item.to === '/admin/quiz-sessions';
-          const isMonitoring = item.to === '/admin/monitoring';
           return (
             <NavLink
               key={item.to}
               to={item.to}
               onClick={() => onCloseMobile && onCloseMobile()}
               className={({ isActive }) =>
-                `group flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 transform hover:translate-x-1.5 ${
+                `group flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-950/40 font-bold border-l-4 border-amber-400 pl-2.5'
-                    : 'text-slate-300 hover:bg-slate-800/90 hover:text-white'
+                    ? 'bg-[#1d1d1f] text-white shadow-xs font-semibold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-black/[0.04]'
                 }`
               }
             >
-              <div className="flex items-center space-x-3 min-w-0">
-                <Icon className="w-4 h-4 shrink-0 group-hover:scale-125 group-hover:text-purple-300 transition-all duration-200 text-slate-400 group-hover:rotate-3" />
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <Icon className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
                 <span className="truncate">{item.label}</span>
               </div>
-              {isLiveQuiz ? (
-                <span className="flex h-2.5 w-2.5 relative shrink-0">
+              {item.isLiveBadge ? (
+                <span className="flex h-2 w-2 relative shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500 shadow-xs shadow-amber-500"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                 </span>
-              ) : isMonitoring ? (
+              ) : item.isPulseGreen ? (
                 <span className="flex h-2 w-2 relative shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -112,43 +107,74 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
           );
         })}
       </div>
+    );
+  };
 
-      <div className="pt-4 border-t border-slate-800 space-y-3">
-        <div className="px-3 text-xs">
-          <p className="font-bold text-slate-100 truncate">{user?.name}</p>
-          <p className="text-[11px] text-purple-300 font-mono truncate">{user?.email}</p>
+  const sidebarContent = (
+    <div className="flex flex-col h-full justify-between p-3.5 space-y-4">
+      <div className="space-y-3">
+        {/* Mobile Header Title */}
+        <div className="flex items-center justify-between px-3 py-1 md:hidden">
+          <span className="text-xs font-bold text-slate-900 tracking-tight">Admin Console</span>
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-black/[0.05]"
+              title="Close Navigation"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
+
+        {renderNavGroup(coreNav, 'Administration')}
+        {renderNavGroup(sessionsNav, 'Live Sessions & Monitoring')}
+        {renderNavGroup(academicNav, 'Academic Data & System')}
+      </div>
+
+      {/* Admin Identity Footer */}
+      <div className="pt-3 border-t border-black/[0.06] space-y-2.5">
+        <div className="flex items-center space-x-2.5 px-2.5 py-1.5 bg-black/[0.02] rounded-xl border border-black/[0.04]">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-900 to-[#1d1d1f] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+            {user?.name?.charAt(0) || 'A'}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-slate-900 truncate">{user?.name}</p>
+            <p className="text-[10px] text-slate-400 font-mono truncate">{user?.email}</p>
+          </div>
+        </div>
+
         <button
           onClick={() => {
             if (onCloseMobile) onCloseMobile();
             logout();
             navigate('/login');
           }}
-          className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-950 hover:text-rose-300 transition-all"
+          className="w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all cursor-pointer"
         >
-          <LogOut className="w-4 h-4 shrink-0" />
-          <span>Logout</span>
+          <LogOut className="w-3.5 h-3.5 shrink-0" />
+          <span>Sign Out</span>
         </button>
       </div>
-    </>
+    </div>
   );
 
   return (
     <>
-      {/* Desktop Sidebar (Fixed) */}
-      <aside className="hidden md:flex w-64 bg-slate-900 text-slate-300 min-h-[calc(100vh-4rem)] flex-col justify-between p-4 shadow-xl shrink-0">
-        {sidebarInner}
+      {/* Desktop Frosted Glass Sidebar */}
+      <aside className="hidden md:flex w-64 bg-white/70 backdrop-blur-2xl border-r border-black/[0.06] min-h-[calc(100vh-4rem)] flex-col justify-between shrink-0 shadow-[1px_0_12px_rgba(0,0,0,0.02)]">
+        {sidebarContent}
       </aside>
 
-      {/* Mobile Drawer (Slide-Over with Backdrop Blur) */}
+      {/* Mobile Drawer */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
+        <div className="fixed inset-0 z-50 md:hidden flex animate-fade-in">
           <div
-            className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity"
             onClick={onCloseMobile}
           />
-          <aside className="relative w-72 max-w-[85vw] bg-slate-900 text-slate-300 h-full flex flex-col justify-between p-4 shadow-2xl z-10 overflow-y-auto">
-            {sidebarInner}
+          <aside className="relative w-72 max-w-[85vw] bg-white/95 backdrop-blur-2xl h-full flex flex-col justify-between shadow-2xl z-10 border-r border-black/[0.08] overflow-y-auto">
+            {sidebarContent}
           </aside>
         </div>
       )}

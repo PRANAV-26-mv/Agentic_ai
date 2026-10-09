@@ -17,7 +17,9 @@ import {
   Zap, 
   Medal,
   Download,
-  Loader2
+  Loader2,
+  Users,
+  ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GiftBurstModal } from '../components/GiftBurstModal';
@@ -100,135 +102,108 @@ export const StudentDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-24 bg-slate-200 rounded-2xl"></div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="h-32 bg-slate-200 rounded-xl"></div>
-          <div className="h-32 bg-slate-200 rounded-xl"></div>
-          <div className="h-32 bg-slate-200 rounded-xl"></div>
+        <div className="h-44 bg-slate-200/70 rounded-3xl"></div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="h-32 bg-slate-200/70 rounded-3xl"></div>
+          <div className="h-32 bg-slate-200/70 rounded-3xl"></div>
+          <div className="h-32 bg-slate-200/70 rounded-3xl"></div>
+          <div className="h-32 bg-slate-200/70 rounded-3xl"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in pb-12">
       
-      {/* Welcome Hero Card */}
-      <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 animate-aurora rounded-2xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden border border-sky-900/40 animate-fade-in-up">
-        <div className="absolute top-0 right-0 transform translate-x-8 -translate-y-8 w-64 h-64 bg-sky-500/25 rounded-full blur-3xl pointer-events-none animate-float"></div>
-        <div className="absolute bottom-0 left-1/3 transform translate-y-12 w-48 h-48 bg-purple-500/15 rounded-full blur-2xl pointer-events-none animate-float-subtle"></div>
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-          <div>
-            <div className="inline-flex items-center space-x-2 bg-sky-500/30 text-sky-200 text-xs font-bold px-3 py-1 rounded-full mb-3 border border-sky-400/40 shadow-xs shimmer-badge">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-sparkle-spin" />
+      {/* Apple Product Storytelling Hero Card */}
+      <div className="bg-gradient-to-b from-[#1d1d1f] to-[#121214] text-white rounded-3xl p-7 sm:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.14)] relative overflow-hidden border border-white/10 backdrop-blur-2xl">
+        {/* Subtle diffuse ambient lighting sheen */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="space-y-2 max-w-xl">
+            <div className="inline-flex items-center space-x-2 bg-white/10 text-white/90 text-xs font-medium px-3.5 py-1 rounded-full border border-white/15 backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               <span>{user?.community || 'Agentic AI Community'}</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-              <span>Welcome back, {user?.name}!</span>
-              <span className="inline-block animate-bounce text-2xl">👋</span>
+
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+              Welcome back, {user?.name}.
             </h2>
-            <p className="text-slate-200 text-sm mt-1 font-medium">
-              Department of {user?.department} • Year {user?.year} • Suggested Role: <span className="text-sky-300 font-bold bg-sky-950/60 px-2 py-0.5 rounded-md border border-sky-800/60">{user?.suggested_role || 'AI Developer'}</span>
+
+            <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed">
+              Department of {user?.department} • Year {user?.year} • Role Focus: <span className="text-white font-medium bg-white/10 px-2 py-0.5 rounded-md border border-white/15">{user?.suggested_role || 'AI Developer'}</span>
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               onClick={handleDownloadReportCard}
               disabled={downloadingReport}
-              className="inline-flex items-center space-x-2 bg-white/10 hover:bg-white/20 text-white font-extrabold text-sm px-4 py-2.5 rounded-xl border border-white/20 shadow-md backdrop-blur-xs transition-all transform hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-60"
-              title="Download your official academic performance report card PDF"
+              className="inline-flex items-center space-x-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs px-4 py-2.5 rounded-full border border-white/20 shadow-xs backdrop-blur-md transition-all cursor-pointer disabled:opacity-50"
+              title="Download official report card PDF"
             >
               {downloadingReport ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin text-sky-300" />
-                  <span>Generating PDF...</span>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                  <span>Preparing...</span>
                 </>
               ) : (
                 <>
-                  <Download className="w-4 h-4 text-sky-300" />
+                  <Download className="w-3.5 h-3.5 text-white" />
                   <span>Report Card PDF</span>
                 </>
               )}
             </button>
+
             <Link
               to="/ask-doubt"
-              className="inline-flex items-center space-x-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-sky-500/30 btn-shimmer transform hover:scale-105 active:scale-95 transition-all"
+              className="inline-flex items-center space-x-2 bg-white hover:bg-slate-100 text-[#1d1d1f] font-bold text-xs px-5 py-2.5 rounded-full shadow-md transition-all cursor-pointer transform hover:scale-102 active:scale-98"
             >
-              <MessageSquare className="w-4 h-4 animate-pulse" />
+              <MessageSquare className="w-3.5 h-3.5 text-[#1d1d1f]" />
               <span>Ask AI Assistant</span>
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Podium Victory Banner (When student won 1st, 2nd, or 3rd place in a live quiz) */}
+      {/* Podium Victory Banner (If student achieved top 3 in any live quiz) */}
       {podiumQuiz && (
-        <div className={`border-2 rounded-2xl p-5 sm:p-6 shadow-2xl relative overflow-hidden animate-fade-in-up stagger-1 ${
+        <div className={`rounded-3xl p-6 sm:p-7 shadow-lg relative overflow-hidden border backdrop-blur-xl ${
           podiumQuiz.my_rank === 1
-            ? 'bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 border-amber-400/80 animate-champion-glow'
+            ? 'bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 border-amber-400/50 text-white'
             : podiumQuiz.my_rank === 2
-            ? 'bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 border-slate-300/80 animate-silver-glow'
-            : 'bg-gradient-to-r from-amber-950 via-orange-950 to-amber-950 border-amber-500/80 animate-bronze-glow'
+            ? 'bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-slate-300/50 text-white'
+            : 'bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/70 border-amber-500/50 text-white'
         }`}>
-          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-white/5 blur-2xl pointer-events-none animate-float" />
-          
           <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-start sm:items-center space-x-4">
-              <div className={`w-14 h-14 rounded-2xl p-0.5 shadow-lg shrink-0 ${
-                podiumQuiz.my_rank === 1
-                  ? 'bg-gradient-to-tr from-amber-400 to-yellow-300 shadow-amber-500/40'
-                  : podiumQuiz.my_rank === 2
-                  ? 'bg-gradient-to-tr from-slate-300 to-sky-200 shadow-slate-400/40'
-                  : 'bg-gradient-to-tr from-amber-600 to-orange-400 shadow-orange-500/40'
-              }`}>
-                <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                  {podiumQuiz.my_rank === 1 ? (
-                    <Trophy className="w-7 h-7 text-amber-300 fill-amber-300 filter drop-shadow animate-float" />
-                  ) : podiumQuiz.my_rank === 2 ? (
-                    <Medal className="w-7 h-7 text-slate-200 fill-slate-300 filter drop-shadow animate-silver-float" />
-                  ) : (
-                    <Award className="w-7 h-7 text-amber-400 fill-amber-500 filter drop-shadow animate-bronze-float" />
-                  )}
-                </div>
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
+                {podiumQuiz.my_rank === 1 ? (
+                  <Trophy className="w-6 h-6 text-amber-300 fill-amber-300" />
+                ) : podiumQuiz.my_rank === 2 ? (
+                  <Medal className="w-6 h-6 text-slate-200 fill-slate-200" />
+                ) : (
+                  <Award className="w-6 h-6 text-amber-400 fill-amber-400" />
+                )}
               </div>
 
               <div>
-                <div className={`inline-flex items-center space-x-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border mb-1 ${
-                  podiumQuiz.my_rank === 1
-                    ? 'bg-amber-400/20 text-amber-300 border-amber-400/30'
-                    : podiumQuiz.my_rank === 2
-                    ? 'bg-sky-400/20 text-sky-200 border-sky-400/30 shimmer-silver-badge'
-                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30 shimmer-bronze-badge'
-                }`}>
-                  {podiumQuiz.my_rank === 1 ? (
-                    <>
-                      <Crown className="w-3 h-3 text-amber-300 fill-amber-300 animate-bounce" />
-                      <span>1st Place Champion Record 🥇</span>
-                    </>
-                  ) : podiumQuiz.my_rank === 2 ? (
-                    <>
-                      <Medal className="w-3 h-3 text-sky-300 animate-silver-float" />
-                      <span>2nd Place Silver Podium Record 🥈</span>
-                    </>
-                  ) : (
-                    <>
-                      <Award className="w-3 h-3 text-amber-400 animate-bronze-float" />
-                      <span>3rd Place Bronze Podium Record 🥉</span>
-                    </>
-                  )}
-                </div>
-                <h3 className="text-lg font-black text-white">
-                  {podiumQuiz.my_rank === 1 && `You Won 1st Place in ${podiumQuiz.title}! 🥇`}
-                  {podiumQuiz.my_rank === 2 && `You Won 2nd Place in ${podiumQuiz.title}! 🥈`}
-                  {podiumQuiz.my_rank === 3 && `You Won 3rd Place in ${podiumQuiz.title}! 🥉`}
+                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white/90 border border-white/15 mb-1">
+                  {podiumQuiz.my_rank === 1 ? '1st Place Champion Record 🥇' : podiumQuiz.my_rank === 2 ? '2nd Place Silver Record 🥈' : '3rd Place Bronze Record 🥉'}
+                </span>
+                <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                  Cohort Podium Finish: {podiumQuiz.title}
                 </h3>
-                <p className="text-xs text-slate-200/90 mt-0.5">
-                  Score: <strong className="text-white">{podiumQuiz.my_score} / {podiumQuiz.my_max_score} pts</strong> ({podiumQuiz.my_percentage}%) • Ranked #{podiumQuiz.my_rank} on the cohort winners podium
+                <p className="text-xs text-slate-300">
+                  Score: <strong className="text-white">{podiumQuiz.my_score} / {podiumQuiz.my_max_score} pts</strong> ({podiumQuiz.my_percentage}%)
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => {
                   setCertificateData({
@@ -246,136 +221,94 @@ export const StudentDashboard: React.FC = () => {
                   });
                   setShowCertificate(true);
                 }}
-                className="px-3.5 py-2 sm:px-4 sm:py-2.5 bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl border border-white/30 shadow-md cursor-pointer transition-all transform hover:scale-105 active:scale-95 inline-flex items-center space-x-2 shrink-0"
-                title="Generate Official AGENTIC_AI_A7 Certificate"
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-full border border-white/20 transition-all cursor-pointer"
               >
-                <Award className="w-4 h-4 text-amber-300" />
-                <span>Certificate 📜</span>
+                Certificate
               </button>
 
               <button
                 onClick={() => setShowGiftBurst(true)}
-                className={`px-4 py-2 sm:px-5 sm:py-2.5 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg cursor-pointer transform hover:scale-105 active:scale-95 transition-all inline-flex items-center space-x-2 shrink-0 btn-shimmer ${
-                  podiumQuiz.my_rank === 1
-                    ? 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-500 hover:to-yellow-400 text-slate-950 shadow-amber-500/40 shimmer-badge'
-                    : podiumQuiz.my_rank === 2
-                    ? 'bg-gradient-to-r from-slate-200 via-sky-100 to-slate-200 hover:from-slate-300 hover:to-sky-200 text-slate-950 shadow-sky-400/40 shimmer-silver-badge'
-                    : 'bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 hover:from-amber-700 hover:to-orange-600 text-white shadow-orange-500/40 shimmer-bronze-badge'
-                }`}
+                className="px-5 py-2 bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 font-bold text-xs rounded-full shadow-md transition-all cursor-pointer"
               >
-                <span className="text-base animate-gift-wobble">🎁</span>
-                <span>
-                  {podiumQuiz.my_rank === 1 ? 'Open Champion Gift Burst' : podiumQuiz.my_rank === 2 ? 'Open Silver Reward Burst' : 'Open Bronze Reward Burst'}
-                </span>
-                <Sparkles className={`w-3.5 h-3.5 animate-sparkle-spin ${podiumQuiz.my_rank === 3 ? 'text-white' : 'text-slate-950'}`} />
+                Open Reward Burst 🎉
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Live Quiz Callout Banner if an active session exists and student isn't on podium yet */}
-      {!podiumQuiz && quizSessions.some(q => q.status === 'ACTIVE') && (
-        <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-purple-500/15 border border-amber-300/80 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 animate-pulse-glow animate-fade-in-up stagger-1 shadow-sm">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-amber-500 text-white rounded-xl shadow-md animate-bounce">
-              <Zap className="w-5 h-5 fill-white" />
-            </div>
-            <div>
-              <div className="inline-flex items-center space-x-1.5 text-amber-800 text-[10px] font-extrabold uppercase tracking-wide">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 beacon-ping" />
-                <span>Live Quiz Session Active Now</span>
-              </div>
-              <p className="text-xs font-bold text-slate-900 mt-0.5">
-                Join the live quiz room, answer fast, and conquer 1st Place to unlock your Champion Gift Burst!
-              </p>
-            </div>
-          </div>
-          <Link
-            to="/quiz-sessions"
-            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl shadow-md btn-shimmer transition-all shrink-0 inline-flex items-center space-x-1.5 transform hover:scale-105"
-          >
-            <span>Enter Quiz Room</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      )}
-
-      {/* Dashboard Cards with interactive lift, glowing border, and animated progress */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* 4 Apple-inspired Metric Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         
         {/* Total Assessments */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-interactive hover:border-sky-400 group animate-fade-in-up stagger-1">
-          <div className="flex justify-between items-center text-slate-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Assessments</span>
-            <div className="p-2 bg-sky-50 text-sky-600 rounded-xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 shadow-2xs">
-              <FileText className="w-5 h-5" />
+        <div className="bg-white/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-black/[0.05] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-0.5 group">
+          <div className="flex justify-between items-center text-slate-400 mb-3">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Assessments</span>
+            <div className="p-2 bg-black/[0.03] text-slate-700 rounded-xl">
+              <FileText className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">{assessments.length}</div>
-          <div className="text-xs text-slate-500 mt-1">Assigned for your cohort</div>
-          <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="text-2xl sm:text-3xl font-extrabold text-[#1d1d1f] tracking-tight">{assessments.length}</div>
+          <div className="text-[11px] text-slate-400 mt-1">Assigned for cohort</div>
+          <div className="w-full bg-black/[0.04] rounded-full h-1.5 mt-3 overflow-hidden">
             <div 
-              className="bg-gradient-to-r from-sky-400 to-blue-500 h-full rounded-full transition-all duration-1000 ease-out"
+              className="bg-[#1d1d1f] h-full rounded-full transition-all duration-1000"
               style={{ width: `${assessments.length > 0 ? (completedCount / assessments.length) * 100 : 0}%` }}
             />
           </div>
         </div>
 
         {/* Completed / Pending */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-interactive hover:border-emerald-400 group animate-fade-in-up stagger-2">
-          <div className="flex justify-between items-center text-slate-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Completed / Pending</span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 shadow-2xs">
-              <CheckCircle2 className="w-5 h-5" />
+        <div className="bg-white/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-black/[0.05] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-0.5 group">
+          <div className="flex justify-between items-center text-slate-400 mb-3">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Completed</span>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">
-            {completedCount} <span className="text-slate-400 font-medium text-base">/ {pendingCount} pending</span>
+          <div className="text-2xl sm:text-3xl font-extrabold text-[#1d1d1f] tracking-tight">
+            {completedCount} <span className="text-slate-400 text-sm font-medium">/ {pendingCount} left</span>
           </div>
-          <div className="text-xs text-emerald-600 font-medium mt-1 flex items-center space-x-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-            <span>Active evaluation pipeline</span>
-          </div>
-          <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="text-[11px] text-emerald-600 font-medium mt-1">Active pipeline</div>
+          <div className="w-full bg-black/[0.04] rounded-full h-1.5 mt-3 overflow-hidden">
             <div 
-              className="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-1000 ease-out"
+              className="bg-emerald-500 h-full rounded-full transition-all duration-1000"
               style={{ width: `${assessments.length > 0 ? (completedCount / assessments.length) * 100 : 0}%` }}
             />
           </div>
         </div>
 
         {/* Attendance % */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-interactive hover:border-purple-400 group animate-fade-in-up stagger-3">
-          <div className="flex justify-between items-center text-slate-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Attendance %</span>
-            <div className="p-2 bg-purple-50 text-purple-600 rounded-xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 shadow-2xs">
-              <Calendar className="w-5 h-5" />
+        <div className="bg-white/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-black/[0.05] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-0.5 group">
+          <div className="flex justify-between items-center text-slate-400 mb-3">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Attendance</span>
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+              <Calendar className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">{attendanceStats.percentage || 100}%</div>
-          <div className="text-xs text-slate-500 mt-1">{attendanceStats.present || 1} present of {attendanceStats.total || 1} sessions</div>
-          <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="text-2xl sm:text-3xl font-extrabold text-[#1d1d1f] tracking-tight">{attendanceStats.percentage || 100}%</div>
+          <div className="text-[11px] text-slate-400 mt-1">{attendanceStats.present || 1} of {attendanceStats.total || 1} present</div>
+          <div className="w-full bg-black/[0.04] rounded-full h-1.5 mt-3 overflow-hidden">
             <div 
-              className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full bg-stripes-animated transition-all duration-1000 ease-out"
+              className="bg-indigo-600 h-full rounded-full transition-all duration-1000"
               style={{ width: `${Math.min(100, attendanceStats.percentage || 100)}%` }}
             />
           </div>
         </div>
 
         {/* Average Score */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-interactive hover:border-amber-400 group animate-fade-in-up stagger-4">
-          <div className="flex justify-between items-center text-slate-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Average Score</span>
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 shadow-2xs">
-              <Award className="w-5 h-5" />
+        <div className="bg-white/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-black/[0.05] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-0.5 group">
+          <div className="flex justify-between items-center text-slate-400 mb-3">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Average Mastery</span>
+            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+              <Award className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">{avgScore}%</div>
-          <div className="text-xs text-amber-600 font-medium mt-1">Top 15% in Community</div>
-          <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="text-2xl sm:text-3xl font-extrabold text-[#1d1d1f] tracking-tight">{avgScore}%</div>
+          <div className="text-[11px] text-amber-700 font-medium mt-1">Community percentile</div>
+          <div className="w-full bg-black/[0.04] rounded-full h-1.5 mt-3 overflow-hidden">
             <div 
-              className="bg-gradient-to-r from-amber-400 to-yellow-500 h-full rounded-full bg-stripes-animated transition-all duration-1000 ease-out"
+              className="bg-amber-500 h-full rounded-full transition-all duration-1000"
               style={{ width: `${Math.min(100, avgScore)}%` }}
             />
           </div>
@@ -383,35 +316,40 @@ export const StudentDashboard: React.FC = () => {
 
       </div>
 
-      {/* Grid Content: Upcoming Assessments & Recent Study Materials */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Grid: Upcoming Assessments & Learning Materials */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Upcoming Assessments */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm card-interactive animate-fade-in-up stagger-2">
-          <div className="flex justify-between items-center mb-5">
-            <h3 className="font-bold text-slate-900 text-base flex items-center space-x-2">
-              <Clock className="w-5 h-5 text-sky-600" />
-              <span>Upcoming & Active Assessments</span>
-            </h3>
-            <Link to="/assessments" className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center space-x-1 group">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-black/[0.05] p-6 sm:p-7 shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] space-y-4">
+          <div className="flex justify-between items-center border-b border-black/[0.05] pb-3">
+            <div className="flex items-center space-x-2">
+              <div className="p-1.5 rounded-lg bg-black/[0.03] text-slate-800">
+                <Clock className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-slate-900 text-sm tracking-tight">Active Assessments</h3>
+            </div>
+            <Link to="/assessments" className="text-xs font-semibold text-slate-500 hover:text-slate-900 flex items-center space-x-1">
               <span>View All</span>
-              <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {assessments.slice(0, 3).map((ass) => (
-              <div key={ass.id} className="p-4 bg-slate-50 hover:bg-slate-100/90 border border-slate-200 rounded-xl transition-all duration-200 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0 group hover:border-sky-300 hover:shadow-xs">
+              <div 
+                key={ass.id} 
+                className="p-4 bg-white rounded-2xl border border-black/[0.05] hover:border-black/[0.1] shadow-2xs hover:shadow-xs transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
+              >
                 <div>
-                  <div className="inline-block bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-0.5 rounded-full mb-1">
+                  <div className="inline-block bg-black/[0.04] text-slate-700 text-[10px] font-semibold px-2 py-0.5 rounded-md mb-1">
                     {ass.type} • {ass.duration_minutes} Mins
                   </div>
-                  <h4 className="font-bold text-slate-900 text-sm group-hover:text-sky-700 transition-colors">{ass.title}</h4>
-                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{ass.description}</p>
+                  <h4 className="font-bold text-slate-900 text-sm tracking-tight">{ass.title}</h4>
+                  <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{ass.description}</p>
                 </div>
                 <Link
                   to={`/assessments`}
-                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all border border-sky-500 btn-shimmer transform hover:scale-105 active:scale-95"
+                  className="px-4 py-2 bg-[#1d1d1f] hover:bg-black text-white font-semibold text-xs rounded-full shadow-xs transition-all shrink-0 cursor-pointer"
                 >
                   Start Assessment
                 </Link>
@@ -420,36 +358,41 @@ export const StudentDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Recent Study Materials */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm card-interactive animate-fade-in-up stagger-3">
-          <div className="flex justify-between items-center mb-5">
-            <h3 className="font-bold text-slate-900 text-base flex items-center space-x-2">
-              <BookOpen className="w-5 h-5 text-purple-600" />
-              <span>Recent Study Materials</span>
-            </h3>
-            <Link to="/materials" className="text-xs font-bold text-purple-600 hover:text-purple-700 flex items-center space-x-1 group">
+        {/* Study Materials */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-black/[0.05] p-6 sm:p-7 shadow-[0_4px_24px_-2px_rgba(0,0,0,0.03)] space-y-4">
+          <div className="flex justify-between items-center border-b border-black/[0.05] pb-3">
+            <div className="flex items-center space-x-2">
+              <div className="p-1.5 rounded-lg bg-black/[0.03] text-slate-800">
+                <BookOpen className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-slate-900 text-sm tracking-tight">Curated Study Materials</h3>
+            </div>
+            <Link to="/materials" className="text-xs font-semibold text-slate-500 hover:text-slate-900 flex items-center space-x-1">
               <span>View All</span>
-              <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {materials.slice(0, 3).map((mat) => (
-              <div key={mat.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between group hover:border-purple-300 hover:shadow-xs transition-all duration-200">
+              <div 
+                key={mat.id} 
+                className="p-4 bg-white rounded-2xl border border-black/[0.05] hover:border-black/[0.1] shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-3"
+              >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center font-bold text-xs group-hover:scale-110 group-hover:rotate-6 transition-all duration-200 shadow-2xs">
+                  <div className="w-10 h-10 rounded-xl bg-black/[0.04] text-slate-800 flex items-center justify-center font-bold text-xs shrink-0">
                     {mat.material_type}
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900 text-sm line-clamp-1 group-hover:text-purple-700 transition-colors">{mat.title}</h4>
-                    <p className="text-xs text-slate-500">{mat.page_count ? `${mat.page_count} pages` : 'External Link'}</p>
+                    <h4 className="font-bold text-slate-900 text-sm line-clamp-1 tracking-tight">{mat.title}</h4>
+                    <p className="text-xs text-slate-400">{mat.page_count ? `${mat.page_count} pages` : 'Digital Resource'}</p>
                   </div>
                 </div>
                 <Link
-                  to="/ask-doubt"
-                  className="px-3 py-1.5 bg-slate-200 hover:bg-purple-100 hover:text-purple-700 text-slate-700 text-xs font-bold rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
+                  to="/materials"
+                  className="px-3.5 py-1.5 bg-black/[0.04] hover:bg-black/[0.08] text-slate-800 font-semibold text-xs rounded-full transition-all shrink-0 cursor-pointer"
                 >
-                  Ask Doubts
+                  Access
                 </Link>
               </div>
             ))}
@@ -458,8 +401,8 @@ export const StudentDashboard: React.FC = () => {
 
       </div>
 
-      {/* Podium Celebration Gift Burst Modal */}
-      {podiumQuiz && (
+      {/* Podium Gift Burst Modal */}
+      {showGiftBurst && podiumQuiz && (
         <GiftBurstModal
           isOpen={showGiftBurst}
           onClose={() => setShowGiftBurst(false)}
@@ -467,44 +410,17 @@ export const StudentDashboard: React.FC = () => {
           rank={podiumQuiz.my_rank}
           score={podiumQuiz.my_score}
           maxScore={podiumQuiz.my_max_score}
-          accuracy={podiumQuiz.my_percentage}
-          timeTaken={podiumQuiz.my_time_taken_seconds ? `${Math.floor(podiumQuiz.my_time_taken_seconds / 60)}m ${podiumQuiz.my_time_taken_seconds % 60}s` : undefined}
+          accuracy={`${podiumQuiz.my_percentage}%`}
           totalParticipants={podiumQuiz.participant_count || 1}
-          onViewCertificate={() => {
-            setCertificateData({
-              studentName: user?.name || 'Candidate Student',
-              studentReg: user?.student_id,
-              studentDepartment: user?.department,
-              quizTitle: podiumQuiz.title,
-              rank: podiumQuiz.my_rank,
-              totalParticipants: podiumQuiz.participant_count || 1,
-              score: podiumQuiz.my_score,
-              maxScore: podiumQuiz.my_max_score,
-              percentage: podiumQuiz.my_percentage,
-              completionDate: podiumQuiz.my_submitted_at || new Date().toISOString(),
-              timeTaken: podiumQuiz.my_time_taken_seconds ? `${Math.floor(podiumQuiz.my_time_taken_seconds / 60)}m ${podiumQuiz.my_time_taken_seconds % 60}s` : undefined
-            });
-            setShowCertificate(true);
-          }}
         />
       )}
 
-      {/* Official AGENTIC_AI_A7 Certificate Modal */}
+      {/* Official Certificate Modal */}
       {showCertificate && certificateData && (
         <CertificateModal
           isOpen={showCertificate}
           onClose={() => setShowCertificate(false)}
-          studentName={certificateData.studentName}
-          studentReg={certificateData.studentReg}
-          studentDepartment={certificateData.studentDepartment}
-          quizTitle={certificateData.quizTitle}
-          rank={certificateData.rank}
-          totalParticipants={certificateData.totalParticipants}
-          score={certificateData.score}
-          maxScore={certificateData.maxScore}
-          percentage={certificateData.percentage}
-          completionDate={certificateData.completionDate}
-          timeTaken={certificateData.timeTaken}
+          {...certificateData}
         />
       )}
 
