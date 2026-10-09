@@ -144,9 +144,11 @@ export interface AssessmentAttempt {
   mcq_score: number;
   writing_score: number;
   total_score: number;
+  max_score?: number;
   percentage: number;
   tab_switches_count: number;
   assigned_questions_json?: string;
+  writing_pending?: boolean;
 }
 
 export interface StudentAnswer {
@@ -259,6 +261,7 @@ export interface QuizSession {
   participant_count?: number;
   submitted_count?: number;
   all_students_finished?: boolean;
+  is_results_published?: boolean;
   my_status?: 'LOBBY' | 'IN_PROGRESS' | 'SUBMITTED' | 'TIMED_OUT' | null;
   my_score?: number | null;
   my_max_score?: number | null;
