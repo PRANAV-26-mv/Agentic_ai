@@ -153,6 +153,7 @@ export function App() {
               <Route path="/admin/meetings" element={<AdminMeetings />} />
               <Route path="/admin/quiz-sessions" element={<AdminQuizSessions />} />
               <Route path="/admin/gd-sessions" element={<AdminGdSessions />} />
+              <Route path="/admin/gd-sessions/:id" element={<StudentGdRoom />} />
               <Route path="/admin/certificate-settings" element={<CertificateSettingsPage />} />
               <Route path="/admin/question-bank" element={<QuestionBank />} />
               <Route path="/admin/study-materials" element={<StudyMaterialManagement />} />

@@ -432,18 +432,26 @@ export interface GdSession {
   status: 'SCHEDULED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
   created_by: string;
   created_at: string;
+  active_speaker_id?: string | null;
+  speaker_started_at?: string | null;
+  current_speaker_index?: number;
+  speaker_order?: string[];
+  session_stage?: 'WAITING' | 'SPEAKING' | 'RATING' | 'COMPLETED';
+  speaker_duration_limit_seconds?: number;
+  active_speaker?: GdParticipant | null;
   participant_count?: number;
   submitted_evaluations_count?: number;
   all_students_ranked?: boolean;
   is_results_published?: boolean;
   is_full?: boolean;
-  my_status?: 'JOINED' | 'EVALUATION_SUBMITTED' | null;
+  my_status?: 'JOINED' | 'EVALUATION_SUBMITTED' | 'SPOKEN' | null;
   my_rank?: number | null;
   my_average_rank?: number | null;
   participants?: GdParticipant[];
   leaderboard?: GdLeaderboardEntry[];
   my_participant?: GdParticipant;
   my_evaluations?: { [questionId: string]: Array<{ target_student_id: string; target_student_name: string; rank: number }> };
+  my_speaker_ratings?: { [speakerStudentId: string]: { [questionId: string]: number } };
 }
 
 export interface GdParticipant {
@@ -455,8 +463,21 @@ export interface GdParticipant {
   student_department: string;
   student_community: string;
   joined_at: string;
-  status: 'JOINED' | 'EVALUATION_SUBMITTED';
+  status: 'JOINED' | 'EVALUATION_SUBMITTED' | 'SPOKEN';
   submitted_at?: string;
+  speaking_time_seconds?: number;
+  speaking_order?: number;
+  speaking_status?: 'WAITING' | 'SPEAKING' | 'SPOKEN';
+  average_score_out_of_10?: number | null;
+  total_marks_received?: number | null;
+  ratings_count?: number;
+  question_scores?: {
+    [questionId: string]: {
+      average_score: number;
+      total_score: number;
+      evaluations_count: number;
+    };
+  };
   rank?: number | null;
   average_rank?: number | null;
   total_points?: number | null;
@@ -465,8 +486,21 @@ export interface GdParticipant {
       average_rank: number;
       rank_position: number;
       total_points: number;
+      average_score_out_of_10?: number;
     };
   };
+}
+
+export interface GdSpeakerRating {
+  id: string;
+  session_id: string;
+  speaker_student_id: string;
+  evaluator_student_id: string;
+  evaluator_student_name: string;
+  question_id: string;
+  marks_out_of_10: number; // 1 to 10 points
+  feedback?: string;
+  submitted_at: string;
 }
 
 export interface GdPeerEvaluation {
@@ -492,11 +526,16 @@ export interface GdLeaderboardEntry {
   student_community: string;
   average_rank: number;
   total_points: number;
+  average_score_out_of_10?: number;
+  total_marks?: number;
+  speaking_time_seconds?: number;
+  speaking_time_formatted?: string;
   question_ranks: {
     [questionId: string]: {
       average_rank: number;
       rank_position: number;
       total_points: number;
+      average_score_out_of_10?: number;
     };
   };
 }

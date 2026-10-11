@@ -85,6 +85,18 @@ export function setupMeetingSocket(httpServer: HttpServer): SocketIOServer {
       });
     });
 
+    // GD Session Real-Time Room Subscriptions
+    socket.on('gd-join-room', (payload: { sessionId: string; user?: any }) => {
+      if (!payload?.sessionId) return;
+      socket.join(`gd:${payload.sessionId}`);
+      console.log(`[Socket.io] Client ${socket.id} (${payload.user?.name || 'User'}) joined GD room gd:${payload.sessionId}`);
+    });
+
+    socket.on('gd-leave-room', (payload: { sessionId: string }) => {
+      if (!payload?.sessionId) return;
+      socket.leave(`gd:${payload.sessionId}`);
+    });
+
     // 1. Join Meeting Room
     socket.on('join-meeting', async (payload: {
       meetingId: string;

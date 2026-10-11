@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { GdSession } from '../types';
 import {
@@ -24,7 +25,14 @@ import {
   MessagesSquare,
   Lock,
   ChevronRight,
-  HelpCircle
+  HelpCircle,
+  Mic,
+  Star,
+  Sliders,
+  Minus,
+  Zap,
+  TrendingUp,
+  ShoppingCart
 } from 'lucide-react';
 
 const DEPARTMENTS = ['CS', 'AD', 'IT', 'ECE', 'EEE', 'MECH'];
@@ -43,7 +51,18 @@ const DEFAULT_QUESTIONS = [
   'Team Collaboration & Synthesis: Concluding consensus and group leadership'
 ];
 
+export const CAPACITY_PRESETS = [5, 8, 10, 12, 15, 20, 25, 30, 50, 100];
+export const DURATION_PRESETS = [60, 90, 120, 180, 300];
+
+export const getCapacityTier = (count: number) => {
+  if (count <= 6) return { label: 'Micro Panel (2-6)', color: 'bg-sky-50 text-sky-700 border-sky-200' };
+  if (count <= 12) return { label: 'Standard Cohort (7-12)', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+  if (count <= 25) return { label: 'Extended Group (13-25)', color: 'bg-purple-50 text-purple-700 border-purple-200' };
+  return { label: 'Mass Assembly (26-100+)', color: 'bg-amber-50 text-amber-800 border-amber-200' };
+};
+
 export const AdminGdSessions: React.FC = () => {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<GdSession[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [filterTab, setFilterTab] = useState<'ALL' | 'ACTIVE' | 'SCHEDULED' | 'COMPLETED'>('ALL');
@@ -54,7 +73,13 @@ export const AdminGdSessions: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [selectedSessionForRoster, setSelectedSessionForRoster] = useState<GdSession | null>(null);
   const [selectedSessionForLeaderboard, setSelectedSessionForLeaderboard] = useState<GdSession | null>(null);
+  const [selectedSessionForCapacity, setSelectedSessionForCapacity] = useState<GdSession | null>(null);
   const [sessionToDelete, setSessionToDelete] = useState<GdSession | null>(null);
+
+  // Capacity Cart State
+  const [capacityInput, setCapacityInput] = useState<number>(10);
+  const [durationLimitInput, setDurationLimitInput] = useState<number>(120);
+  const [updatingCapacity, setUpdatingCapacity] = useState<boolean>(false);
 
   // Action states
   const [creating, setCreating] = useState<boolean>(false);
@@ -69,7 +94,8 @@ export const AdminGdSessions: React.FC = () => {
     topic: '',
     description: '',
     pin: '',
-    max_participants: 5,
+    max_participants: 10,
+    speaker_duration_limit_seconds: 120,
     target_type: 'ALL' as 'ALL' | 'DEPARTMENT' | 'COMMUNITY',
     target_department: 'CS',
     target_community: 'Agentic AI & LLM Optimization',
@@ -105,7 +131,8 @@ export const AdminGdSessions: React.FC = () => {
       topic: '',
       description: '',
       pin: Math.floor(100000 + Math.random() * 900000).toString(),
-      max_participants: 5,
+      max_participants: 10,
+      speaker_duration_limit_seconds: 120,
       target_type: 'ALL',
       target_department: 'CS',
       target_community: 'Agentic AI & LLM Optimization',
@@ -113,6 +140,43 @@ export const AdminGdSessions: React.FC = () => {
     });
     setErrorMsg(null);
     setShowCreateModal(true);
+  };
+
+  // Capacity Cart Handlers
+  const handleOpenCapacityModal = (session: GdSession) => {
+    setSelectedSessionForCapacity(session);
+    setCapacityInput(session.max_participants || 10);
+    setDurationLimitInput(session.speaker_duration_limit_seconds || 120);
+  };
+
+  const handleQuickExpandCapacity = async (session: GdSession, increment: number = 5) => {
+    const currentMax = session.max_participants || 10;
+    const newMax = Math.min(500, currentMax + increment);
+    try {
+      await api.put(`/gd-sessions/${session.id}/capacity`, { max_participants: newMax });
+      setSuccessMsg(`Expanded candidate capacity cart for "${session.title}" to ${newMax} seats!`);
+      fetchSessions();
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || 'Failed to update capacity limit.');
+    }
+  };
+
+  const handleSaveCapacityCart = async () => {
+    if (!selectedSessionForCapacity) return;
+    setUpdatingCapacity(true);
+    try {
+      await api.put(`/gd-sessions/${selectedSessionForCapacity.id}/capacity`, {
+        max_participants: capacityInput,
+        speaker_duration_limit_seconds: durationLimitInput
+      });
+      setSuccessMsg(`Candidate limit successfully updated to ${capacityInput} candidates.`);
+      setSelectedSessionForCapacity(null);
+      fetchSessions();
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || 'Failed to update capacity limit.');
+    } finally {
+      setUpdatingCapacity(false);
+    }
   };
 
   const handleAddQuestion = () => {
@@ -153,7 +217,8 @@ export const AdminGdSessions: React.FC = () => {
         topic: formData.topic.trim(),
         description: formData.description.trim(),
         pin: formData.pin.trim() || undefined,
-        max_participants: Number(formData.max_participants) || 5,
+        max_participants: Number(formData.max_participants) || 10,
+        speaker_duration_limit_seconds: Number(formData.speaker_duration_limit_seconds) || 120,
         target_type: formData.target_type,
         target_department: formData.target_type === 'DEPARTMENT' ? formData.target_department : undefined,
         target_community: formData.target_type === 'COMMUNITY' ? formData.target_community : undefined,
@@ -487,44 +552,95 @@ export const AdminGdSessions: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Capacity & Progress */}
-                  <div className="space-y-2 pt-2 border-t border-black/[0.04]">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-400 font-medium">Capacity:</span>
-                      <strong className="text-slate-900 font-mono">
-                        {participantCount} / {maxParticipants} Students
-                      </strong>
-                    </div>
+                  {/* Candidate Capacity Cart Widget */}
+                  {(() => {
+                    const tier = getCapacityTier(maxParticipants);
+                    const isFull = participantCount >= maxParticipants;
+                    const fillPercent = Math.min(100, Math.round((participantCount / Math.max(1, maxParticipants)) * 100));
 
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-400 font-medium">Rankings:</span>
-                      <strong className="text-[#1d1d1f] font-mono">
-                        {submittedCount} / {participantCount} Ranked
-                      </strong>
-                    </div>
+                    return (
+                      <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100/90 rounded-2xl border border-black/[0.06] space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-1.5">
+                            <div className="w-5 h-5 rounded-lg bg-slate-900 text-white flex items-center justify-center">
+                              <Users className="w-3 h-3" />
+                            </div>
+                            <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">Candidate Capacity Cart</span>
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.color}`}>
+                            {isFull ? 'Cart Full' : `${maxParticipants - participantCount} Seats Free`}
+                          </span>
+                        </div>
 
-                    {/* Progress Bar */}
-                    <div className="w-full bg-black/[0.04] rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className={`h-1.5 rounded-full transition-all duration-500 ${
-                          allRanked ? 'bg-emerald-500' : 'bg-[#1d1d1f]'
-                        }`}
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            Math.round((submittedCount / Math.max(1, participantCount)) * 100)
-                          )}%`
-                        }}
-                      />
-                    </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500 font-medium">Enrolled Candidates:</span>
+                          <span className="font-mono font-extrabold text-slate-900">
+                            {participantCount} / <span className="text-indigo-600 font-black">{maxParticipants} Seats</span>
+                          </span>
+                        </div>
 
-                    {allRanked && !isCompleted && (
-                      <div className="p-2 bg-emerald-50 border border-emerald-200/60 rounded-xl text-emerald-800 text-[11px] font-semibold flex items-center space-x-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>All participants finished ranking! Ready to reveal.</span>
+                        {/* Capacity Fill Bar */}
+                        <div className="w-full bg-slate-200/90 rounded-full h-2 overflow-hidden">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-500 ${
+                              isFull
+                                ? 'bg-rose-500'
+                                : fillPercent > 75
+                                ? 'bg-amber-500'
+                                : 'bg-emerald-500'
+                            }`}
+                            style={{ width: `${fillPercent}%` }}
+                          />
+                        </div>
+
+                        {/* Rankings Progress */}
+                        <div className="flex justify-between items-center text-[11px] text-slate-500 pt-0.5">
+                          <span>Evaluations:</span>
+                          <span className="font-mono font-bold text-slate-700">
+                            {submittedCount} / {participantCount} Ranked
+                          </span>
+                        </div>
+
+                        {/* Quick Expand & Configure Cart Buttons */}
+                        <div className="flex items-center gap-1.5 pt-1 border-t border-black/[0.04]">
+                          <button
+                            type="button"
+                            onClick={() => handleQuickExpandCapacity(s, 5)}
+                            title="Expand room by adding +5 candidate seats immediately"
+                            className="flex-1 py-1 px-1.5 bg-white hover:bg-emerald-50 hover:text-emerald-800 text-slate-800 font-bold text-[10px] rounded-lg border border-black/[0.08] flex items-center justify-center space-x-0.5 cursor-pointer transition-all shadow-2xs active:scale-95"
+                          >
+                            <Plus className="w-2.5 h-2.5 text-emerald-600" />
+                            <span>+5 Seats</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleQuickExpandCapacity(s, 10)}
+                            title="Expand room by adding +10 candidate seats immediately"
+                            className="flex-1 py-1 px-1.5 bg-white hover:bg-emerald-50 hover:text-emerald-800 text-slate-800 font-bold text-[10px] rounded-lg border border-black/[0.08] flex items-center justify-center space-x-0.5 cursor-pointer transition-all shadow-2xs active:scale-95"
+                          >
+                            <Plus className="w-2.5 h-2.5 text-emerald-600" />
+                            <span>+10 Seats</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenCapacityModal(s)}
+                            title="Open interactive capacity cart to set custom limits"
+                            className="py-1 px-2.5 bg-slate-900 hover:bg-black text-white font-bold text-[10px] rounded-lg flex items-center justify-center space-x-1 cursor-pointer transition-all shadow-2xs active:scale-95"
+                          >
+                            <Sliders className="w-2.5 h-2.5 text-amber-400" />
+                            <span>Set Limit</span>
+                          </button>
+                        </div>
+
+                        {allRanked && !isCompleted && (
+                          <div className="p-2 bg-emerald-50 border border-emerald-200/60 rounded-xl text-emerald-800 text-[10px] font-semibold flex items-center space-x-1.5">
+                            <Sparkles className="w-3 h-3 text-emerald-600 shrink-0" />
+                            <span>All participants finished ranking! Ready to reveal.</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()}
 
                   <div className="flex items-center justify-between text-[11px] text-slate-400">
                     <span>{s.duration_minutes} Mins</span>
@@ -535,6 +651,14 @@ export const AdminGdSessions: React.FC = () => {
 
                 {/* Actions */}
                 <div className="space-y-2 pt-2 border-t border-black/[0.04]">
+                  <button
+                    onClick={() => navigate(`/admin/gd-sessions/${s.id}`)}
+                    className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 font-bold text-xs rounded-full flex items-center justify-center space-x-1.5 cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <Play className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
+                    <span>Enter Live Room (Moderate Turn & Timer)</span>
+                  </button>
+
                   {isCompleted ? (
                     <button
                       onClick={() => handleOpenLeaderboard(s)}
@@ -666,29 +790,128 @@ export const AdminGdSessions: React.FC = () => {
                 />
               </div>
 
-              {/* Capacity & PIN */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700 uppercase flex items-center space-x-1">
-                    <Users className="w-3.5 h-3.5 text-slate-700" />
-                    <span>Participant Limit *</span>
-                  </label>
-                  <input
-                    type="number"
-                    min={2}
-                    max={20}
-                    required
-                    value={formData.max_participants}
-                    onChange={(e) => setFormData({ ...formData, max_participants: parseInt(e.target.value, 10) || 5 })}
-                    className="w-full px-3.5 py-2 bg-black/[0.02] border border-black/[0.08] rounded-xl text-xs font-mono font-bold focus:outline-hidden focus:ring-2 focus:ring-black/10"
-                  />
-                  <p className="text-[10px] text-slate-400">Number of participating peers</p>
+              {/* CANDIDATE CAPACITY & LIMIT CONTROL CART */}
+              <div className="p-4 bg-gradient-to-br from-slate-50 to-slate-100/90 rounded-2xl border border-black/[0.08] space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.05] pb-2.5">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-7 h-7 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
+                      <Users className="w-4 h-4 text-amber-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-1.5">
+                        <span>Candidate Capacity & Limit Cart</span>
+                      </h4>
+                      <p className="text-[10px] text-slate-500">Configure room size from small squads to large cohorts (up to 500 candidates)</p>
+                    </div>
+                  </div>
+
+                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border self-start sm:self-auto ${getCapacityTier(formData.max_participants).color}`}>
+                    {getCapacityTier(formData.max_participants).label}
+                  </span>
                 </div>
 
+                {/* Stepper & Number Control */}
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <div className="flex items-center space-x-1.5 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, max_participants: Math.max(2, prev.max_participants - 5) }))}
+                      className="px-2.5 py-2 bg-white hover:bg-slate-50 border border-black/[0.08] text-slate-700 font-bold text-xs rounded-xl cursor-pointer shadow-2xs active:scale-95"
+                    >
+                      -5
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, max_participants: Math.max(2, prev.max_participants - 1) }))}
+                      className="px-2.5 py-2 bg-white hover:bg-slate-50 border border-black/[0.08] text-slate-700 font-bold text-xs rounded-xl cursor-pointer shadow-2xs active:scale-95"
+                    >
+                      -1
+                    </button>
+                    <div className="relative flex-1 sm:w-32">
+                      <input
+                        type="number"
+                        min={2}
+                        max={500}
+                        required
+                        value={formData.max_participants}
+                        onChange={(e) => setFormData({ ...formData, max_participants: Math.max(2, Math.min(500, parseInt(e.target.value, 10) || 2)) })}
+                        className="w-full px-3 py-2 bg-white border border-black/[0.12] rounded-xl text-center text-sm font-mono font-black text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 shadow-inner"
+                      />
+                      <span className="text-[9px] font-bold uppercase text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                        Seats
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, max_participants: Math.min(500, prev.max_participants + 1) }))}
+                      className="px-2.5 py-2 bg-white hover:bg-slate-50 border border-black/[0.08] text-slate-700 font-bold text-xs rounded-xl cursor-pointer shadow-2xs active:scale-95"
+                    >
+                      +1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, max_participants: Math.min(500, prev.max_participants + 5) }))}
+                      className="px-2.5 py-2 bg-white hover:bg-slate-50 border border-black/[0.08] text-slate-700 font-bold text-xs rounded-xl cursor-pointer shadow-2xs active:scale-95"
+                    >
+                      +5
+                    </button>
+                  </div>
+
+                  {/* Preset Cart Chips */}
+                  <div className="flex flex-wrap items-center gap-1.5 flex-1">
+                    {CAPACITY_PRESETS.map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, max_participants: p }))}
+                        className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+                          formData.max_participants === p
+                            ? 'bg-slate-900 text-white border-slate-900 shadow-xs scale-105'
+                            : 'bg-white hover:bg-slate-50 text-slate-700 border-black/[0.08]'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Speaker Turn Limit Presets */}
+                <div className="pt-2 border-t border-black/[0.04] space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-700 flex items-center space-x-1">
+                      <Clock className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Speaking Time Limit Per Candidate:</span>
+                    </span>
+                    <span className="font-mono font-bold text-indigo-600">
+                      {Math.floor(formData.speaker_duration_limit_seconds / 60)}m {formData.speaker_duration_limit_seconds % 60 ? `${formData.speaker_duration_limit_seconds % 60}s` : ''} ({formData.speaker_duration_limit_seconds}s)
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {DURATION_PRESETS.map((sec) => (
+                      <button
+                        key={sec}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, speaker_duration_limit_seconds: sec }))}
+                        className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg border transition-all cursor-pointer ${
+                          formData.speaker_duration_limit_seconds === sec
+                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                            : 'bg-white text-slate-700 border-black/[0.08] hover:bg-slate-50'
+                        }`}
+                      >
+                        {sec < 60 ? `${sec}s` : `${sec / 60} min${sec / 60 > 1 ? 's' : ''}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Duration & PIN */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-700 uppercase flex items-center space-x-1">
                     <Clock className="w-3.5 h-3.5 text-slate-700" />
-                    <span>Duration (Mins) *</span>
+                    <span>Total Session Duration (Mins) *</span>
                   </label>
                   <input
                     type="number"
@@ -699,7 +922,7 @@ export const AdminGdSessions: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value, 10) || 20 })}
                     className="w-full px-3.5 py-2 bg-black/[0.02] border border-black/[0.08] rounded-xl text-xs font-mono font-bold focus:outline-hidden focus:ring-2 focus:ring-black/10"
                   />
-                  <p className="text-[10px] text-slate-400">Discussion time</p>
+                  <p className="text-[10px] text-slate-400">Total room duration before conclusion</p>
                 </div>
 
                 <div className="space-y-1">
@@ -721,7 +944,7 @@ export const AdminGdSessions: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '').slice(0, 6) })}
                     className="w-full px-3.5 py-2 bg-black/[0.02] border border-black/[0.08] rounded-xl text-xs font-mono font-bold tracking-widest text-center focus:outline-hidden focus:ring-2 focus:ring-black/10"
                   />
-                  <p className="text-[10px] text-slate-400">6-digit access code</p>
+                  <p className="text-[10px] text-slate-400">6-digit access code for candidates</p>
                 </div>
               </div>
 
@@ -907,7 +1130,19 @@ export const AdminGdSessions: React.FC = () => {
                           </div>
                         </div>
 
-                        <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center space-x-1" title="Stored Speaking Time">
+                            <Clock className="w-3 h-3 text-emerald-600" />
+                            <span>{p.speaking_time_seconds ? `${Math.floor(p.speaking_time_seconds / 60)}:${(p.speaking_time_seconds % 60).toString().padStart(2, '0')}` : '00:00'}</span>
+                          </span>
+
+                          {p.average_score_out_of_10 ? (
+                            <span className="font-mono text-[11px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md flex items-center space-x-1" title="Average Marks Out of 10">
+                              <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                              <span>{p.average_score_out_of_10}/10</span>
+                            </span>
+                          ) : null}
+
                           {isSubmitted ? (
                             <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full flex items-center space-x-1 border border-emerald-200/60">
                               <CheckCircle2 className="w-3 h-3 text-emerald-600" />
@@ -916,7 +1151,7 @@ export const AdminGdSessions: React.FC = () => {
                           ) : (
                             <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full flex items-center space-x-1 border border-amber-200/60">
                               <Clock className="w-3 h-3 text-amber-600" />
-                              <span>Ranking...</span>
+                              <span>Active</span>
                             </span>
                           )}
                         </div>
@@ -1013,13 +1248,14 @@ export const AdminGdSessions: React.FC = () => {
                     <th className="py-3 px-3">Overall Rank</th>
                     <th className="py-3 px-3">Student Name</th>
                     <th className="py-3 px-3">Reg & Dept</th>
-                    <th className="py-3 px-3">Overall Avg Rank</th>
+                    <th className="py-3 px-3 text-center">Speaking Time (Stored)</th>
+                    <th className="py-3 px-3 text-center">Marks (Out of 10)</th>
                     {selectedSessionForLeaderboard.questions?.map((q, idx) => (
                       <th key={q.id} className="py-3 px-2 text-center" title={q.question_text}>
-                        Q{idx + 1} Rank
+                        Q{idx + 1} Marks
                       </th>
                     ))}
-                    <th className="py-3 px-3 text-right">Total Points</th>
+                    <th className="py-3 px-3 text-right">Total Marks</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/[0.04]">
@@ -1032,12 +1268,21 @@ export const AdminGdSessions: React.FC = () => {
                       </td>
                       <td className="py-3 px-3 font-bold text-slate-900">{entry.student_name}</td>
                       <td className="py-3 px-3 text-slate-400">{entry.student_reg} • {entry.student_department}</td>
-                      <td className="py-3 px-3 font-mono font-semibold text-slate-700">#{entry.average_rank}</td>
+                      <td className="py-3 px-3 text-center font-mono font-bold text-emerald-700">
+                        {entry.speaking_time_formatted || '00:00'}
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <span className="inline-block px-2 py-0.5 rounded-full font-mono font-bold text-xs bg-amber-100 text-amber-950">
+                          {entry.average_score_out_of_10 ? `${entry.average_score_out_of_10} / 10` : `#${entry.average_rank}`}
+                        </span>
+                      </td>
                       {selectedSessionForLeaderboard.questions?.map((q) => {
                         const qr = entry.question_ranks?.[q.id];
                         return (
-                          <td key={q.id} className="py-3 px-2 text-center">
-                            {qr?.rank_position ? (
+                          <td key={q.id} className="py-3 px-2 text-center font-mono text-[11px]">
+                            {qr?.average_score_out_of_10 !== undefined ? (
+                              <span className="font-bold text-slate-800">{qr.average_score_out_of_10} / 10</span>
+                            ) : qr?.rank_position ? (
                               <span className="inline-block px-2 py-0.5 rounded-full bg-black/[0.03] text-slate-800 font-mono font-semibold text-[11px]">
                                 #{qr.rank_position}
                               </span>
@@ -1047,7 +1292,9 @@ export const AdminGdSessions: React.FC = () => {
                           </td>
                         );
                       })}
-                      <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">{entry.total_points}</td>
+                      <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">
+                        {entry.total_marks || entry.total_points || 0}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1060,6 +1307,177 @@ export const AdminGdSessions: React.FC = () => {
                 className="px-5 py-2 bg-[#1d1d1f] text-white rounded-full text-xs font-semibold cursor-pointer"
               >
                 Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CANDIDATE CAPACITY CART MODAL */}
+      {selectedSessionForCapacity && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="bg-white/95 backdrop-blur-2xl rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-black/[0.08] space-y-5 my-8">
+            <div className="flex justify-between items-center border-b border-black/[0.05] pb-3.5">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-md">
+                  <Users className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">Candidate Capacity Cart</h3>
+                  <p className="text-[11px] text-slate-400">Configure participant limit and speaking duration</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedSessionForCapacity(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-800 rounded-full hover:bg-black/[0.05] cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Session Info Pill */}
+            <div className="p-3 bg-slate-50 rounded-2xl border border-black/[0.05] space-y-1">
+              <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Active Session</p>
+              <h4 className="text-xs font-bold text-slate-900">{selectedSessionForCapacity.title}</h4>
+              <p className="text-[11px] text-slate-600 truncate">{selectedSessionForCapacity.topic}</p>
+              <div className="flex items-center gap-2 pt-1 text-[10px] text-slate-500 font-medium">
+                <span>Currently Enrolled: <strong className="text-slate-900">{selectedSessionForCapacity.participant_count || 0} Candidates</strong></span>
+                <span>•</span>
+                <span>PIN: <strong className="font-mono text-slate-800">{selectedSessionForCapacity.pin}</strong></span>
+              </div>
+            </div>
+
+            {/* Capacity Control Box */}
+            <div className="p-4 bg-gradient-to-br from-indigo-50/60 to-purple-50/60 rounded-2xl border border-indigo-100 space-y-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Maximum Candidate Seats</span>
+                </span>
+                <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${getCapacityTier(capacityInput).color}`}>
+                  {getCapacityTier(capacityInput).label}
+                </span>
+              </div>
+
+              {/* Stepper */}
+              <div className="flex items-center justify-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setCapacityInput(prev => Math.max(Math.max(2, selectedSessionForCapacity.participant_count || 2), prev - 5))}
+                  className="px-3 py-2 bg-white hover:bg-slate-50 border border-black/[0.1] text-slate-700 font-bold text-xs rounded-xl cursor-pointer shadow-2xs active:scale-95"
+                >
+                  -5
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCapacityInput(prev => Math.max(Math.max(2, selectedSessionForCapacity.participant_count || 2), prev - 1))}
+                  className="px-3 py-2 bg-white hover:bg-slate-50 border border-black/[0.1] text-slate-700 font-bold text-xs rounded-xl cursor-pointer shadow-2xs active:scale-95"
+                >
+                  -1
+                </button>
+                <div className="relative w-36">
+                  <input
+                    type="number"
+                    min={Math.max(2, selectedSessionForCapacity.participant_count || 2)}
+                    max={500}
+                    value={capacityInput}
+                    onChange={(e) => setCapacityInput(Math.max(2, Math.min(500, parseInt(e.target.value, 10) || 2)))}
+                    className="w-full px-3 py-2.5 bg-white border border-indigo-300 rounded-xl text-center text-lg font-mono font-black text-indigo-950 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 shadow-inner"
+                  />
+                  <span className="text-[9px] font-bold uppercase text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    Seats
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCapacityInput(prev => Math.min(500, prev + 1))}
+                  className="px-3 py-2 bg-white hover:bg-slate-50 border border-black/[0.1] text-slate-700 font-bold text-xs rounded-xl cursor-pointer shadow-2xs active:scale-95"
+                >
+                  +1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCapacityInput(prev => Math.min(500, prev + 5))}
+                  className="px-3 py-2 bg-white hover:bg-slate-50 border border-black/[0.1] text-slate-700 font-bold text-xs rounded-xl cursor-pointer shadow-2xs active:scale-95"
+                >
+                  +5
+                </button>
+              </div>
+
+              {/* Preset Chips */}
+              <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+                {CAPACITY_PRESETS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setCapacityInput(p)}
+                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+                      capacityInput === p
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs scale-105'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 border-black/[0.08]'
+                    }`}
+                  >
+                    {p} Seats
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Speaking Duration Control */}
+            <div className="space-y-2 p-3 bg-slate-50 rounded-2xl border border-black/[0.05]">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-700 flex items-center space-x-1">
+                  <Clock className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Speaking Time Per Candidate:</span>
+                </span>
+                <span className="font-mono font-bold text-indigo-600">
+                  {Math.floor(durationLimitInput / 60)}m {durationLimitInput % 60 ? `${durationLimitInput % 60}s` : ''} ({durationLimitInput}s)
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {DURATION_PRESETS.map((sec) => (
+                  <button
+                    key={sec}
+                    type="button"
+                    onClick={() => setDurationLimitInput(sec)}
+                    className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg border transition-all cursor-pointer ${
+                      durationLimitInput === sec
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                        : 'bg-white text-slate-700 border-black/[0.08] hover:bg-slate-50'
+                    }`}
+                  >
+                    {sec < 60 ? `${sec}s` : `${sec / 60} min${sec / 60 > 1 ? 's' : ''}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-black/[0.05]">
+              <button
+                type="button"
+                onClick={() => setSelectedSessionForCapacity(null)}
+                className="px-4 py-2 border border-black/[0.08] text-slate-600 rounded-full text-xs font-semibold cursor-pointer hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveCapacityCart}
+                disabled={updatingCapacity}
+                className="px-5 py-2 bg-slate-900 hover:bg-black text-white rounded-full text-xs font-bold cursor-pointer flex items-center space-x-1.5 shadow-md disabled:opacity-50"
+              >
+                {updatingCapacity ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving Limit...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Save Candidate Limit ({capacityInput} Seats)</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

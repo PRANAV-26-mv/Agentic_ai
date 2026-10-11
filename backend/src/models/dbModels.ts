@@ -2052,7 +2052,7 @@ export interface GdSession {
   topic: string;
   description?: string;
   pin: string;
-  max_participants: number; // Configured by admin: how many should participate
+  max_participants: number; // Configured by admin: how many should participate (e.g. 10 candidates)
   target_type: 'ALL' | 'DEPARTMENT' | 'COMMUNITY';
   target_department?: string;
   target_community?: string;
@@ -2062,6 +2062,12 @@ export interface GdSession {
   created_by: string;
   created_at: string;
   is_results_published?: boolean;
+  active_speaker_id?: string | null;
+  speaker_started_at?: string | null;
+  current_speaker_index?: number;
+  speaker_order?: string[]; // Array of student_id in speaking order
+  session_stage?: 'WAITING' | 'SPEAKING' | 'RATING' | 'COMPLETED';
+  speaker_duration_limit_seconds?: number; // e.g. 120s or 180s
 }
 
 export interface GdParticipant {
@@ -2073,8 +2079,21 @@ export interface GdParticipant {
   student_department: string;
   student_community: string;
   joined_at: string;
-  status: 'JOINED' | 'EVALUATION_SUBMITTED';
+  status: 'JOINED' | 'EVALUATION_SUBMITTED' | 'SPOKEN';
   submitted_at?: string;
+  speaking_time_seconds?: number; // Stored speaking duration in seconds
+  speaking_order?: number; // 1, 2, ... 10
+  speaking_status?: 'WAITING' | 'SPEAKING' | 'SPOKEN';
+  average_score_out_of_10?: number | null;
+  total_marks_received?: number | null;
+  ratings_count?: number;
+  question_scores?: {
+    [questionId: string]: {
+      average_score: number;
+      total_score: number;
+      evaluations_count: number;
+    };
+  };
   rank?: number | null;
   average_rank?: number | null;
   total_points?: number | null;
@@ -2083,8 +2102,21 @@ export interface GdParticipant {
       average_rank: number;
       rank_position: number;
       total_points: number;
+      average_score_out_of_10?: number;
     };
   };
+}
+
+export interface GdSpeakerRating {
+  id: string;
+  session_id: string;
+  speaker_student_id: string;
+  evaluator_student_id: string;
+  evaluator_student_name: string;
+  question_id: string;
+  marks_out_of_10: number; // 1 to 10 points rating
+  feedback?: string;
+  submitted_at: string;
 }
 
 export interface GdPeerEvaluation {
@@ -2110,11 +2142,16 @@ export interface GdLeaderboardEntry {
   student_community: string;
   average_rank: number;
   total_points: number;
+  average_score_out_of_10?: number;
+  total_marks?: number;
+  speaking_time_seconds?: number;
+  speaking_time_formatted?: string;
   question_ranks: {
     [questionId: string]: {
       average_rank: number;
       rank_position: number;
       total_points: number;
+      average_score_out_of_10?: number;
     };
   };
 }
@@ -2158,7 +2195,13 @@ export const GdSessionsModel = {
       id: `gd-${Date.now()}`,
       pin,
       created_at: new Date().toISOString(),
-      is_results_published: false
+      is_results_published: false,
+      session_stage: 'WAITING',
+      speaker_order: [],
+      current_speaker_index: 0,
+      active_speaker_id: null,
+      speaker_started_at: null,
+      speaker_duration_limit_seconds: data.speaker_duration_limit_seconds || 120
     };
     memoryDb.table('gd_sessions').unshift(newSession);
     db.save();
@@ -2188,10 +2231,233 @@ export const GdSessionsModel = {
       for (let i = eList.length - 1; i >= 0; i--) {
         if (eList[i].session_id === id) eList.splice(i, 1);
       }
+      const rList = memoryDb.table('gd_speaker_ratings') as GdSpeakerRating[];
+      for (let i = rList.length - 1; i >= 0; i--) {
+        if (rList[i].session_id === id) rList.splice(i, 1);
+      }
       db.save();
       return true;
     }
     return false;
+  },
+
+  startSpeakerTurn(sessionId: string, studentId: string): { session: GdSession; speaker?: GdParticipant } | undefined {
+    const session = this.findById(sessionId);
+    if (!session) return undefined;
+
+    const participants = GdParticipantsModel.getParticipants(sessionId);
+    const speaker = participants.find(p => p.student_id === studentId);
+    if (!speaker) return undefined;
+
+    // Build/maintain speaker sequence
+    if (!session.speaker_order || session.speaker_order.length === 0) {
+      session.speaker_order = participants.map(p => p.student_id);
+    }
+    if (!session.speaker_order.includes(studentId)) {
+      session.speaker_order.push(studentId);
+    }
+
+    const speakerIdx = session.speaker_order.indexOf(studentId);
+    session.current_speaker_index = speakerIdx >= 0 ? speakerIdx : 0;
+    session.active_speaker_id = studentId;
+    session.speaker_started_at = new Date().toISOString();
+    session.session_stage = 'SPEAKING';
+    if (session.status === 'SCHEDULED') {
+      session.status = 'ACTIVE';
+    }
+
+    // Set speaking status for speaker and reset any previous active speaker
+    for (const p of participants) {
+      if (p.student_id === studentId) {
+        p.speaking_status = 'SPEAKING';
+      } else if (p.speaking_status === 'SPEAKING') {
+        p.speaking_status = 'SPOKEN';
+      }
+    }
+
+    db.save();
+    return { session, speaker };
+  },
+
+  stopSpeakerTurn(sessionId: string, studentId: string, durationSeconds?: number): { session: GdSession; speaker?: GdParticipant } | undefined {
+    const session = this.findById(sessionId);
+    if (!session) return undefined;
+
+    const participants = GdParticipantsModel.getParticipants(sessionId);
+    const speaker = participants.find(p => p.student_id === studentId);
+    if (!speaker) return undefined;
+
+    let elapsed = 0;
+    if (typeof durationSeconds === 'number' && durationSeconds >= 0) {
+      elapsed = durationSeconds;
+    } else if (session.speaker_started_at) {
+      elapsed = Math.max(1, Math.round((Date.now() - new Date(session.speaker_started_at).getTime()) / 1000));
+    }
+
+    // Store participant's speaking duration
+    speaker.speaking_time_seconds = elapsed;
+    speaker.speaking_status = 'SPOKEN';
+    session.session_stage = 'RATING';
+    session.speaker_started_at = null;
+
+    db.save();
+    return { session, speaker };
+  },
+
+  submitSpeakerRatings(
+    sessionId: string,
+    evaluatorStudentId: string,
+    evaluatorStudentName: string,
+    speakerStudentId: string,
+    ratings: Array<{ question_id: string; marks_out_of_10: number; feedback?: string }>
+  ): { success: boolean; speaker?: GdParticipant } {
+    const session = this.findById(sessionId);
+    if (!session) return { success: false };
+
+    const speaker = GdParticipantsModel.findBySessionAndStudent(sessionId, speakerStudentId);
+    if (!speaker) return { success: false };
+
+    if (evaluatorStudentId === speakerStudentId) {
+      return { success: false };
+    }
+
+    const ratingsTable = memoryDb.table('gd_speaker_ratings') as GdSpeakerRating[];
+
+    // Remove any previous ratings from this evaluator for this speaker in this session
+    for (let i = ratingsTable.length - 1; i >= 0; i--) {
+      if (
+        ratingsTable[i].session_id === sessionId &&
+        ratingsTable[i].speaker_student_id === speakerStudentId &&
+        ratingsTable[i].evaluator_student_id === evaluatorStudentId
+      ) {
+        ratingsTable.splice(i, 1);
+      }
+    }
+
+    const now = new Date().toISOString();
+    for (const r of ratings) {
+      const raw = r.marks_out_of_10 !== undefined ? r.marks_out_of_10 : (r as any).score_out_of_10;
+      const cleanMarks = Math.max(1, Math.min(10, Number(raw) || 5));
+      ratingsTable.push({
+        id: `gdsr-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        session_id: sessionId,
+        speaker_student_id: speakerStudentId,
+        evaluator_student_id: evaluatorStudentId,
+        evaluator_student_name: evaluatorStudentName,
+        question_id: r.question_id,
+        marks_out_of_10: cleanMarks,
+        feedback: r.feedback?.trim() || '',
+        submitted_at: now
+      });
+    }
+
+    // Recompute speaker aggregate metrics
+    const allRatingsForSpeaker = ratingsTable.filter(
+      r => r.session_id === sessionId && r.speaker_student_id === speakerStudentId
+    );
+
+    const evaluatorsSet = new Set(allRatingsForSpeaker.map(r => r.evaluator_student_id));
+    speaker.ratings_count = evaluatorsSet.size;
+
+    const totalMarks = allRatingsForSpeaker.reduce((sum, r) => sum + r.marks_out_of_10, 0);
+    speaker.total_marks_received = totalMarks;
+    speaker.average_score_out_of_10 = allRatingsForSpeaker.length > 0
+      ? Number((totalMarks / allRatingsForSpeaker.length).toFixed(2))
+      : null;
+
+    const qScores: { [qId: string]: { average_score: number; total_score: number; evaluations_count: number } } = {};
+    for (const q of (session.questions || [])) {
+      const qRatings = allRatingsForSpeaker.filter(r => r.question_id === q.id);
+      const qTotal = qRatings.reduce((sum, r) => sum + r.marks_out_of_10, 0);
+      qScores[q.id] = {
+        total_score: qTotal,
+        evaluations_count: qRatings.length,
+        average_score: qRatings.length > 0 ? Number((qTotal / qRatings.length).toFixed(2)) : 0
+      };
+    }
+    speaker.question_scores = qScores;
+
+    db.save();
+    return { success: true, speaker };
+  },
+
+  nextSpeakerTurn(sessionId: string): { session: GdSession; nextSpeaker?: GdParticipant; completed?: boolean } | undefined {
+    const session = this.findById(sessionId);
+    if (!session) return undefined;
+
+    const participants = GdParticipantsModel.getParticipants(sessionId);
+    if (participants.length === 0) return undefined;
+
+    let order = session.speaker_order || [];
+    if (order.length === 0) {
+      order = participants.map(p => p.student_id);
+      session.speaker_order = order;
+    }
+
+    let nextStudentId: string | undefined = undefined;
+    const currentIdx = session.current_speaker_index ?? -1;
+
+    for (let i = currentIdx + 1; i < order.length; i++) {
+      const candidate = participants.find(p => p.student_id === order[i]);
+      if (candidate && candidate.speaking_status !== 'SPOKEN') {
+        nextStudentId = candidate.student_id;
+        session.current_speaker_index = i;
+        break;
+      }
+    }
+
+    if (!nextStudentId) {
+      for (let i = 0; i <= currentIdx; i++) {
+        const candidate = participants.find(p => p.student_id === order[i]);
+        if (candidate && candidate.speaking_status !== 'SPOKEN') {
+          nextStudentId = candidate.student_id;
+          session.current_speaker_index = i;
+          break;
+        }
+      }
+    }
+
+    if (!nextStudentId) {
+      session.session_stage = 'COMPLETED';
+      session.active_speaker_id = null;
+      session.speaker_started_at = null;
+      session.is_results_published = true;
+      GdParticipantsModel.calculateLeaderboard(sessionId);
+      db.save();
+      return { session, completed: true };
+    }
+
+    return this.startSpeakerTurn(sessionId, nextStudentId);
+  },
+
+  resetSpeakerTurns(sessionId: string): GdSession | undefined {
+    const session = this.findById(sessionId);
+    if (!session) return undefined;
+
+    session.session_stage = 'WAITING';
+    session.active_speaker_id = null;
+    session.speaker_started_at = null;
+    session.current_speaker_index = 0;
+
+    const participants = GdParticipantsModel.getParticipants(sessionId);
+    for (const p of participants) {
+      p.speaking_status = 'WAITING';
+      p.speaking_time_seconds = 0;
+      p.average_score_out_of_10 = null;
+      p.total_marks_received = null;
+      p.ratings_count = 0;
+      p.question_scores = undefined;
+    }
+
+    const ratingsTable = memoryDb.table('gd_speaker_ratings') as GdSpeakerRating[];
+    for (let i = ratingsTable.length - 1; i >= 0; i--) {
+      if (ratingsTable[i].session_id === sessionId) {
+        ratingsTable.splice(i, 1);
+      }
+    }
+
+    db.save();
+    return session;
   }
 };
 
@@ -2228,6 +2494,7 @@ export const GdParticipantsModel = {
       };
     }
 
+    const orderNumber = currentParticipants.length + 1;
     const newParticipant: GdParticipant = {
       id: `gdp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       session_id: sessionId,
@@ -2237,8 +2504,16 @@ export const GdParticipantsModel = {
       student_department: student.department,
       student_community: student.community,
       joined_at: new Date().toISOString(),
-      status: 'JOINED'
+      status: 'JOINED',
+      speaking_status: 'WAITING',
+      speaking_order: orderNumber,
+      speaking_time_seconds: 0
     };
+
+    if (!session.speaker_order) session.speaker_order = [];
+    if (!session.speaker_order.includes(student.id)) {
+      session.speaker_order.push(student.id);
+    }
 
     memoryDb.table('gd_participants').push(newParticipant);
     db.save();
@@ -2297,8 +2572,18 @@ export const GdParticipantsModel = {
     const evaluations = (memoryDb.table('gd_peer_evaluations') as GdPeerEvaluation[])
       .filter(e => e.session_id === sessionId);
 
+    const speakerRatings = (memoryDb.table('gd_speaker_ratings') as GdSpeakerRating[])
+      .filter(r => r.session_id === sessionId);
+
     const questions = session.questions || [];
     const N = participants.length;
+
+    const formatSpeakingTime = (sec?: number): string => {
+      if (!sec || sec <= 0) return '00:00';
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
 
     interface ParticipantStats {
       student_id: string;
@@ -2306,12 +2591,17 @@ export const GdParticipantsModel = {
       student_reg: string;
       student_department: string;
       student_community: string;
+      speaking_time_seconds: number;
+      speaking_time_formatted: string;
+      average_score_out_of_10: number;
+      total_marks: number;
       question_ranks: {
         [qId: string]: {
           average_rank: number;
           rank_position: number;
           total_points: number;
           votes_count: number;
+          average_score_out_of_10?: number;
         };
       };
       overall_avg_rank: number;
@@ -2326,14 +2616,21 @@ export const GdParticipantsModel = {
         student_reg: p.student_reg,
         student_department: p.student_department,
         student_community: p.student_community,
+        speaking_time_seconds: p.speaking_time_seconds || 0,
+        speaking_time_formatted: formatSpeakingTime(p.speaking_time_seconds),
+        average_score_out_of_10: p.average_score_out_of_10 || 0,
+        total_marks: p.total_marks_received || 0,
         question_ranks: {},
         overall_avg_rank: 0,
         overall_points: 0
       };
     }
 
+    const hasSpeakerRatings = speakerRatings.length > 0;
+
     for (const q of questions) {
       const qEvals = evaluations.filter(e => e.question_id === q.id);
+      const qRatings = speakerRatings.filter(r => r.question_id === q.id);
 
       const ranksReceived: { [studentId: string]: number[] } = {};
       for (const p of participants) {
@@ -2348,22 +2645,33 @@ export const GdParticipantsModel = {
         }
       }
 
-      const questionScores: Array<{ student_id: string; avg_rank: number; points: number }> = [];
+      const questionScores: Array<{ student_id: string; avg_rank: number; points: number; avg_marks: number }> = [];
 
       for (const p of participants) {
         const votes = ranksReceived[p.student_id] || [];
         const avg = votes.length > 0 ? (votes.reduce((a, b) => a + b, 0) / votes.length) : (N / 2);
         const totalPoints = votes.reduce((sum, r) => sum + Math.max(1, (N - r + 1)), 0);
 
+        // 10-point ratings for this question
+        const ratingsForStudent = qRatings.filter(r => r.speaker_student_id === p.student_id);
+        const avgMarks = ratingsForStudent.length > 0
+          ? Number((ratingsForStudent.reduce((s, r) => s + r.marks_out_of_10, 0) / ratingsForStudent.length).toFixed(2))
+          : (p.average_score_out_of_10 || 0);
+
         questionScores.push({
           student_id: p.student_id,
           avg_rank: Number(avg.toFixed(2)),
-          points: totalPoints
+          points: totalPoints,
+          avg_marks: avgMarks
         });
       }
 
-      // Sort by lowest average rank first, then highest points
-      questionScores.sort((a, b) => a.avg_rank - b.avg_rank || b.points - a.points);
+      // If we have 10-point ratings, prioritize highest marks, else rank-based
+      if (hasSpeakerRatings) {
+        questionScores.sort((a, b) => b.avg_marks - a.avg_marks || a.avg_rank - b.avg_rank);
+      } else {
+        questionScores.sort((a, b) => a.avg_rank - b.avg_rank || b.points - a.points);
+      }
 
       questionScores.forEach((qs, idx) => {
         const rankPos = idx + 1;
@@ -2371,7 +2679,8 @@ export const GdParticipantsModel = {
           average_rank: qs.avg_rank,
           rank_position: rankPos,
           total_points: qs.points,
-          votes_count: (ranksReceived[qs.student_id] || []).length
+          votes_count: (ranksReceived[qs.student_id] || []).length,
+          average_score_out_of_10: qs.avg_marks
         };
       });
     }
@@ -2393,10 +2702,22 @@ export const GdParticipantsModel = {
 
       item.overall_avg_rank = Number((sumAvgRanks / qCount).toFixed(2));
       item.overall_points = totalPts;
+
+      // Overall average marks out of 10 from speaker ratings
+      const stRatings = speakerRatings.filter(r => r.speaker_student_id === item.student_id);
+      if (stRatings.length > 0) {
+        const sumMarks = stRatings.reduce((s, r) => s + r.marks_out_of_10, 0);
+        item.total_marks = sumMarks;
+        item.average_score_out_of_10 = Number((sumMarks / stRatings.length).toFixed(2));
+      }
     }
 
-    // Sort overall: lowest average rank position across questions
-    overallList.sort((a, b) => a.overall_avg_rank - b.overall_avg_rank || b.overall_points - a.overall_points);
+    // Sort overall: if 10-point marks exist, sort by highest marks first; otherwise lowest average rank
+    if (hasSpeakerRatings) {
+      overallList.sort((a, b) => b.average_score_out_of_10 - a.average_score_out_of_10 || b.total_marks - a.total_marks || a.overall_avg_rank - b.overall_avg_rank);
+    } else {
+      overallList.sort((a, b) => a.overall_avg_rank - b.overall_avg_rank || b.overall_points - a.overall_points);
+    }
 
     const leaderboard: GdLeaderboardEntry[] = overallList.map((st, idx) => ({
       rank: idx + 1,
@@ -2407,6 +2728,10 @@ export const GdParticipantsModel = {
       student_community: st.student_community,
       average_rank: st.overall_avg_rank,
       total_points: st.overall_points,
+      average_score_out_of_10: st.average_score_out_of_10,
+      total_marks: st.total_marks,
+      speaking_time_seconds: st.speaking_time_seconds,
+      speaking_time_formatted: st.speaking_time_formatted,
       question_ranks: st.question_ranks
     }));
 
@@ -2416,6 +2741,8 @@ export const GdParticipantsModel = {
         p.rank = entry.rank;
         p.average_rank = entry.average_rank;
         p.total_points = entry.total_points;
+        p.average_score_out_of_10 = entry.average_score_out_of_10;
+        p.total_marks_received = entry.total_marks;
         p.question_ranks = entry.question_ranks;
       }
     });
