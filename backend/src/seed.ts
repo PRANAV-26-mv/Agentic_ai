@@ -768,6 +768,54 @@ export async function seedData() {
     seededAny = true;
   }
 
+  // 11. Initial GD Sessions & 10 Candidates Roster
+  if (!data.gd_sessions || data.gd_sessions.length === 0) {
+    console.log('Seeding baseline GD session (gd-demo-101) with 10 candidates...');
+    data.gd_sessions = [{
+      id: 'gd-demo-101',
+      title: 'Cohort Placement Mock GD - AI Ethics & Automation',
+      topic: 'Artificial Intelligence Ethics & Automation in 2026: Balancing Innovation with Human Welfare',
+      description: 'Sequential candidate turns with synchronized stopwatch, live audio visualization, and peer 10-point scoring.',
+      pin: '789123',
+      max_participants: 10,
+      target_type: 'ALL',
+      duration_minutes: 20,
+      speaker_duration_limit_seconds: 120,
+      session_stage: 'WAITING',
+      status: 'ACTIVE',
+      current_speaker_index: 0,
+      speaker_order: [
+        'std-001', 'std-002', 'std-003', 'std-004', 'std-005',
+        'std-006', 'std-007', 'std-008', 'std-009', 'std-010'
+      ],
+      questions: [
+        { id: 'gdq-1', question_text: 'Opening & Problem Definition: Clarity in introducing the core issue', order: 1 },
+        { id: 'gdq-2', question_text: 'Subject Knowledge & Argumentation: Evidence-based persuasive points', order: 2 },
+        { id: 'gdq-3', question_text: 'Active Listening & Rebuttals: Courteous and logical counter-arguments', order: 3 },
+        { id: 'gdq-4', question_text: 'Team Collaboration & Synthesis: Concluding consensus and group leadership', order: 4 }
+      ],
+      created_by: 'adm-002',
+      created_at: now
+    }];
+
+    data.gd_participants = (data.students || []).slice(0, 10).map((st: any, idx: number) => ({
+      id: `gdp-${idx + 1}`,
+      session_id: 'gd-demo-101',
+      student_id: st.id,
+      student_name: st.name,
+      student_reg: st.student_id,
+      student_department: st.department,
+      student_community: st.community,
+      joined_at: now,
+      status: 'JOINED',
+      speaking_order: idx + 1,
+      speaking_status: 'WAITING',
+      speaking_time_seconds: 0
+    }));
+
+    seededAny = true;
+  }
+
   if (seededAny) {
     memoryDb.save();
     console.log('✅ Portal baseline collections populated and persisted successfully!');

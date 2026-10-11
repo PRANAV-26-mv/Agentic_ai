@@ -188,12 +188,40 @@ class MemoryDb {
         if (res.rows.length > 0 && res.rows[0].data) {
           const pgData = res.rows[0].data;
           if (Array.isArray(pgData.students) && pgData.students.length > 0) {
-            this.data = { ...initialData, ...pgData };
+            const diskData = this.loadLocalFile();
+            const mergedData: DbData = { ...initialData, ...diskData, ...pgData };
+
+            // Ensure any arrays that diskData had populated are preserved if pgData is empty or missing them
+            const arrayKeys: (keyof DbData)[] = [
+              'admins', 'students', 'assessments', 'questions', 'study_materials',
+              'attendance_sessions', 'quiz_sessions', 'meetings', 'meeting_settings',
+              'gd_sessions', 'gd_participants'
+            ];
+
+            for (const k of arrayKeys) {
+              const diskArr = (diskData as any)[k];
+              const pgArr = (pgData as any)[k];
+              if (Array.isArray(diskArr) && diskArr.length > 0 && (!Array.isArray(pgArr) || pgArr.length === 0)) {
+                (mergedData as any)[k] = diskArr;
+              }
+            }
+
+            // Always ensure Super Admin is in admins
+            if (diskData.admins && diskData.admins.length > 0) {
+              for (const admin of diskData.admins) {
+                if (!mergedData.admins.some((a: any) => a.email?.toLowerCase() === admin.email?.toLowerCase())) {
+                  mergedData.admins.unshift(admin);
+                }
+              }
+            }
+
+            this.data = mergedData;
             this.storageMode = 'postgres';
             this.isHydrated = true;
             this.lastSavedAt = res.rows[0].updated_at || new Date().toISOString();
-            console.log(`✅ Database successfully hydrated from PostgreSQL (${this.data.students.length} students, ${this.data.admins.length} admins, ${this.data.assessments.length} assessments)!`);
+            console.log(`✅ Database successfully hydrated & merged from PostgreSQL (${this.data.students.length} students, ${this.data.admins.length} admins, ${this.data.gd_sessions?.length || 0} GD sessions)!`);
             this.saveLocalCopies();
+            await this.syncToPostgres();
             return;
           }
         }
@@ -224,11 +252,28 @@ class MemoryDb {
           const cloudData = await res.json();
           const payload = cloudData.record || cloudData;
           if (payload && typeof payload === 'object' && Array.isArray(payload.students) && payload.students.length > 0) {
-            this.data = { ...initialData, ...payload };
+            const diskData = this.loadLocalFile();
+            const mergedData: DbData = { ...initialData, ...diskData, ...payload };
+
+            const arrayKeys: (keyof DbData)[] = [
+              'admins', 'students', 'assessments', 'questions', 'study_materials',
+              'attendance_sessions', 'quiz_sessions', 'meetings', 'meeting_settings',
+              'gd_sessions', 'gd_participants'
+            ];
+
+            for (const k of arrayKeys) {
+              const diskArr = (diskData as any)[k];
+              const cArr = (payload as any)[k];
+              if (Array.isArray(diskArr) && diskArr.length > 0 && (!Array.isArray(cArr) || cArr.length === 0)) {
+                (mergedData as any)[k] = diskArr;
+              }
+            }
+
+            this.data = mergedData;
             this.storageMode = 'cloud_sync';
             this.isHydrated = true;
             this.lastSavedAt = new Date().toISOString();
-            console.log(`✅ Database successfully hydrated from Cloud Storage (${this.data.students.length} students)!`);
+            console.log(`✅ Database successfully hydrated & merged from Cloud Storage (${this.data.students.length} students)!`);
             this.saveLocalCopies();
             return;
           }
