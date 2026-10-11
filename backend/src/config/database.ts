@@ -137,6 +137,8 @@ class MemoryDb {
   private storageMode: StorageMode = 'ephemeral_local';
   private lastSavedAt: string = new Date().toISOString();
   private isHydrated: boolean = false;
+  private postgresLastError: string | null = null;
+  private postgresHost: string | null = null;
 
   constructor() {
     this.data = this.loadLocalFile();
@@ -166,13 +168,53 @@ class MemoryDb {
     const databaseUrl = process.env.DATABASE_URL;
     if (databaseUrl) {
       try {
-        console.log('Connecting to PostgreSQL Cloud Database (DATABASE_URL)...');
-        this.pgPool = new Pool({
-          connectionString: databaseUrl,
-          ssl: databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')
-            ? false
-            : { rejectUnauthorized: false }
-        });
+        let extractedHost = 'postgres';
+        try {
+          const parsed = new URL(databaseUrl.replace('postgresql://', 'http://').replace('postgres://', 'http://'));
+          extractedHost = parsed.hostname;
+        } catch {
+          extractedHost = databaseUrl.split('@')[1]?.split('/')[0]?.split(':')[0] || 'postgres';
+        }
+        this.postgresHost = extractedHost;
+
+        const isLocal = extractedHost === 'localhost' || extractedHost === '127.0.0.1';
+        const isRenderInternal = extractedHost.startsWith('dpg-') && !extractedHost.includes('.');
+        const isSslExplicitlyDisabled = databaseUrl.includes('sslmode=disable') || databaseUrl.includes('ssl=false');
+
+        console.log(`Connecting to PostgreSQL Database at ${extractedHost} (Render internal: ${isRenderInternal})...`);
+
+        const createAndTestPool = async (useSsl: boolean) => {
+          const pool = new Pool({
+            connectionString: databaseUrl,
+            ssl: useSsl ? { rejectUnauthorized: false } : false,
+            connectionTimeoutMillis: 7000
+          });
+          await pool.query('SELECT 1 as ping;');
+          return pool;
+        };
+
+        // Render internal connections often require non-SSL or self-signed certs. External cloud databases require SSL.
+        // We attempt the best mode first, and if it fails, try the alternative before falling back.
+        let connectedPool: Pool | null = null;
+        const initialSslAttempt = !isLocal && !isSslExplicitlyDisabled;
+
+        try {
+          connectedPool = await createAndTestPool(initialSslAttempt);
+        } catch (firstErr: any) {
+          console.warn(`PostgreSQL initial connection (SSL=${initialSslAttempt}) failed: ${firstErr.message}. Retrying alternate SSL mode...`);
+          try {
+            connectedPool = await createAndTestPool(!initialSslAttempt);
+          } catch (secondErr: any) {
+            this.postgresLastError = secondErr.message || firstErr.message;
+            if (isRenderInternal && (secondErr.code === 'ENOTFOUND' || firstErr.code === 'ENOTFOUND')) {
+              console.error('⚠️ Notice: The provided DATABASE_URL contains a Render Internal Hostname (dpg-...). Render internal hostnames only resolve within Render services hosted in the exact same region. For external connections or local development, use Render\'s External Database URL.');
+            }
+            throw secondErr;
+          }
+        }
+
+        this.pgPool = connectedPool;
+        this.postgresLastError = null;
 
         // Initialize table
         await this.pgPool.query(`
@@ -233,6 +275,7 @@ class MemoryDb {
         console.log('✅ PostgreSQL connected & initial portal state stored.');
         return;
       } catch (err: any) {
+        this.postgresLastError = err.message;
         console.error('⚠️ PostgreSQL connection failed, falling back:', err.message);
       }
     }
@@ -371,6 +414,10 @@ class MemoryDb {
     return {
       mode: this.storageMode,
       is_ephemeral: this.storageMode === 'ephemeral_local',
+      postgres_connected: this.storageMode === 'postgres',
+      postgres_host: this.postgresHost,
+      postgres_error: this.postgresLastError,
+      is_render_internal: Boolean(this.postgresHost && this.postgresHost.startsWith('dpg-') && !this.postgresHost.includes('.')),
       has_database_url: Boolean(process.env.DATABASE_URL),
       has_cloud_sync: Boolean(process.env.DATABASE_SYNC_URL || process.env.JSONBIN_URL),
       has_persistent_disk: Boolean(process.env.DATA_DIR || fs.existsSync('/var/data')),
@@ -387,7 +434,9 @@ class MemoryDb {
         notifications: this.data.notifications?.length || 0,
         audit_logs: this.data.audit_logs?.length || 0,
         restricted_emails: this.data.restricted_emails?.length || 0,
-        email_logs: this.data.email_logs?.length || 0
+        email_logs: this.data.email_logs?.length || 0,
+        gd_sessions: this.data.gd_sessions?.length || 0,
+        gd_participants: this.data.gd_participants?.length || 0
       }
     };
   }
