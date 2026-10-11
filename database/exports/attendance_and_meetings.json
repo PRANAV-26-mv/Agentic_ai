@@ -1,0 +1,88 @@
+{
+  "attendance_sessions": [
+    {
+      "id": "sess-001",
+      "community": "Agentic AI & LLM Optimization",
+      "department": "ALL",
+      "date": "2026-09-03",
+      "code": "8K4P7Q",
+      "start_time": "2026-09-03T09:58:32.444Z",
+      "expires_at": "2026-09-03T11:58:32.447Z",
+      "created_by": "adm-001"
+    },
+    {
+      "community": "Agentic AI & LLM Optimization",
+      "department": "ALL",
+      "date": "2026-09-03",
+      "code": "83BTVC",
+      "expires_at": "2026-09-03T11:15:34.173Z",
+      "created_by": "adm-001",
+      "id": "sess-1788430534174",
+      "start_time": "2026-09-03T10:15:34.174Z"
+    },
+    {
+      "community": "Agentic AI & LLM Optimization",
+      "department": "ALL",
+      "date": "2026-09-03",
+      "code": "F2GF44",
+      "expires_at": "2026-09-03T10:26:24.250Z",
+      "created_by": "adm-001",
+      "id": "sess-1788430884250",
+      "start_time": "2026-09-03T10:21:24.250Z"
+    }
+  ],
+  "attendance_records": [
+    {
+      "id": "76e419cd-db90-4685-b0b5-a468df4759e1",
+      "session_id": "sess-001",
+      "student_id": "std-001",
+      "marked_at": "2026-09-03T09:58:32.444Z",
+      "status": "PRESENT"
+    },
+    {
+      "id": "attrec-1788430581456",
+      "session_id": "sess-001",
+      "student_id": "std-002",
+      "marked_at": "2026-09-03T10:16:21.455Z",
+      "status": "PRESENT"
+    }
+  ],
+  "meetings": [
+    {
+      "id": "meet-1791570854126-ai001",
+      "code": "abc-defg-hij",
+      "title": "Agentic AI & Neural Systems Workshop (Live Meet)",
+      "description": "Interactive live video & audio discussion, Q&A on neural architectures, and model evaluations.",
+      "host_id": "adm-002",
+      "host_name": "Pranav (Super Admin)",
+      "host_email": "pranavannur9659@gmail.com",
+      "meeting_type": "VIDEO_VOICE",
+      "audience_type": "ALL_STUDENTS",
+      "status": "ACTIVE",
+      "scheduled_start_time": "2026-10-09T18:34:14.126Z",
+      "actual_start_time": "2026-10-09T18:34:14.126Z",
+      "allow_screen_share": true,
+      "allow_student_chat": true,
+      "mute_on_entry": false,
+      "created_at": "2026-10-09T18:34:14.126Z",
+      "updated_at": "2026-10-09T18:34:14.126Z",
+      "external_link": "https://meet.google.com/abc-defg-hij"
+    }
+  ],
+  "meeting_settings": [
+    {
+      "id": "global-meeting-settings",
+      "is_enabled": true,
+      "allow_all_admins": true,
+      "permitted_admin_ids": [],
+      "allowed_audience_types": [
+        "ALL_STUDENTS",
+        "SPECIFIC_STUDENTS",
+        "ADMINS_ONLY",
+        "ALL"
+      ],
+      "max_participants": 100,
+      "updated_at": "2026-10-09T18:34:14.126Z"
+    }
+  ]
+}

@@ -1,0 +1,529 @@
+[
+  {
+    "id": "audit-1791734196793-148",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "UPDATE_GD_CAPACITY",
+    "entity_type": "GD_SESSION",
+    "entity_id": "gd-demo-101",
+    "metadata": "{\"max_participants\":10,\"speaker_duration_limit_seconds\":120}",
+    "timestamp": "2026-10-11T15:56:36.793Z"
+  },
+  {
+    "id": "audit-1791734196783-46",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-11T15:56:36.783Z"
+  },
+  {
+    "id": "audit-1791734185321-21",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "UPDATE_GD_CAPACITY",
+    "entity_type": "GD_SESSION",
+    "entity_id": "gd-demo-101",
+    "metadata": "{\"max_participants\":25,\"speaker_duration_limit_seconds\":180}",
+    "timestamp": "2026-10-11T15:56:25.321Z"
+  },
+  {
+    "id": "audit-1791734185307-597",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-11T15:56:25.307Z"
+  },
+  {
+    "id": "audit-1791733129965-548",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-11T15:38:49.965Z"
+  },
+  {
+    "id": "audit-1791733121702-357",
+    "actor_id": "std-003",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-003",
+    "timestamp": "2026-10-11T15:38:41.702Z"
+  },
+  {
+    "id": "audit-1791733121683-530",
+    "actor_id": "std-002",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-002",
+    "timestamp": "2026-10-11T15:38:41.683Z"
+  },
+  {
+    "id": "audit-1791733119563-658",
+    "actor_id": "std-001",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-001",
+    "timestamp": "2026-10-11T15:38:39.563Z"
+  },
+  {
+    "id": "audit-1791733119528-481",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-11T15:38:39.528Z"
+  },
+  {
+    "id": "audit-1791732951681-576",
+    "actor_id": "std-003",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-003",
+    "timestamp": "2026-10-11T15:35:51.681Z"
+  },
+  {
+    "id": "audit-1791732951671-77",
+    "actor_id": "std-002",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-002",
+    "timestamp": "2026-10-11T15:35:51.671Z"
+  },
+  {
+    "id": "audit-1791732949628-92",
+    "actor_id": "std-001",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-001",
+    "timestamp": "2026-10-11T15:35:49.628Z"
+  },
+  {
+    "id": "audit-1791732949622-692",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-11T15:35:49.622Z"
+  },
+  {
+    "id": "audit-1791732855410-542",
+    "actor_id": "std-001",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-001",
+    "timestamp": "2026-10-11T15:34:15.410Z"
+  },
+  {
+    "id": "audit-1791732855404-565",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-11T15:34:15.404Z"
+  },
+  {
+    "id": "audit-1791573860281-514",
+    "actor_id": "std-001",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-001",
+    "timestamp": "2026-10-09T19:24:20.281Z"
+  },
+  {
+    "id": "audit-1791573702492-195",
+    "actor_id": "std-001",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-001",
+    "timestamp": "2026-10-09T19:21:42.492Z"
+  },
+  {
+    "id": "audit-1791573609677-943",
+    "actor_id": "std-001",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-001",
+    "timestamp": "2026-10-09T19:20:09.677Z"
+  },
+  {
+    "id": "audit-1791573534029-961",
+    "actor_id": "std-001",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-001",
+    "timestamp": "2026-10-09T19:18:54.029Z"
+  },
+  {
+    "id": "audit-1791573484333-636",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-09T19:18:04.333Z"
+  },
+  {
+    "id": "audit-1791571812093-409",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-09T18:50:12.093Z"
+  },
+  {
+    "id": "audit-1789326302286-464",
+    "actor_id": "std-001",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-001",
+    "timestamp": "2026-09-13T19:05:02.286Z"
+  },
+  {
+    "id": "audit-1789326136532-488",
+    "actor_id": "std-001",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-001",
+    "timestamp": "2026-09-13T19:02:16.532Z"
+  },
+  {
+    "id": "audit-1789326136527-28",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "CREATE_QUIZ_SESSION",
+    "entity_type": "QUIZ_SESSION",
+    "entity_id": "qs-1789326136526",
+    "metadata": "{\"title\":\"AI Agent Architecture & Reasoning Sprint\",\"pin\":\"882201\"}",
+    "timestamp": "2026-09-13T19:02:16.527Z"
+  },
+  {
+    "id": "audit-1789326136513-863",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-09-13T19:02:16.513Z"
+  },
+  {
+    "id": "audit-1789325376448-583",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-09-13T18:49:36.448Z"
+  },
+  {
+    "id": "audit-1789325343340-714",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "CREATE_MATERIAL",
+    "entity_type": "MATERIAL",
+    "entity_id": "mat-1789325343336",
+    "metadata": "{\"title\":\"Official LangGraph & AutoGen Documentation\"}",
+    "timestamp": "2026-09-13T18:49:03.340Z"
+  },
+  {
+    "id": "audit-1789325343321-141",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "CREATE_MATERIAL",
+    "entity_type": "MATERIAL",
+    "entity_id": "mat-1789325343319",
+    "metadata": "{\"title\":\"Advanced Agentic Workflows & Multi-Agent Systems\"}",
+    "timestamp": "2026-09-13T18:49:03.321Z"
+  },
+  {
+    "id": "audit-1789325343275-864",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-09-13T18:49:03.275Z"
+  },
+  {
+    "id": "audit-1789325182349-453",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-09-13T18:46:22.349Z"
+  },
+  {
+    "id": "audit-1789325178204-258",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "CREATE_MATERIAL",
+    "entity_type": "MATERIAL",
+    "entity_id": "mat-1789325178203",
+    "metadata": "{\"title\":\"Test PDF Upload\"}",
+    "timestamp": "2026-09-13T18:46:18.204Z"
+  },
+  {
+    "id": "audit-1789325178185-297",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-09-13T18:46:18.185Z"
+  },
+  {
+    "id": "audit-1789034265075-108",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "DELETE_STUDENT",
+    "entity_type": "STUDENT",
+    "entity_id": "std-1789034264986-869",
+    "metadata": "{\"name\":\"Test Deletable\",\"email\":\"deletable@bitsathy.ac.in\",\"student_id\":\"7376TEST999\"}",
+    "timestamp": "2026-09-10T09:57:45.075Z"
+  },
+  {
+    "id": "audit-1789034264991-387",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "CREATE_STUDENT",
+    "entity_type": "STUDENT",
+    "entity_id": "std-1789034264986-869",
+    "metadata": "{\"name\":\"Test Deletable\"}",
+    "timestamp": "2026-09-10T09:57:44.991Z"
+  },
+  {
+    "id": "audit-1789031327268-896",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "RESTORE_DATABASE",
+    "entity_type": "SYSTEM",
+    "entity_id": "DATABASE",
+    "metadata": "{\"timestamp\":\"2026-09-10T09:08:47.268Z\"}",
+    "timestamp": "2026-09-10T09:08:47.268Z"
+  },
+  {
+    "id": "audit-1789031319961-200",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "RESTORE_DATABASE",
+    "entity_type": "SYSTEM",
+    "entity_id": "DATABASE",
+    "metadata": "{\"timestamp\":\"2026-09-10T09:08:39.961Z\"}",
+    "timestamp": "2026-09-10T09:08:39.961Z"
+  },
+  {
+    "id": "audit-1789031296594-443",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-09-10T09:08:16.594Z"
+  },
+  {
+    "id": "audit-1788676594977-763",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-09-06T06:36:34.977Z"
+  },
+  {
+    "id": "audit-1788631239781-372",
+    "actor_id": "std-001",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-001",
+    "timestamp": "2026-09-05T18:00:39.781Z"
+  },
+  {
+    "id": "audit-1788631236618-751",
+    "actor_id": "std-001",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-001",
+    "timestamp": "2026-09-05T18:00:36.618Z"
+  },
+  {
+    "id": "audit-1788631200026-177",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-09-05T18:00:00.026Z"
+  },
+  {
+    "id": "audit-1788631195637-335",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-09-05T17:59:55.637Z"
+  },
+  {
+    "id": "audit-1788628054063-42",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-09-05T17:07:34.063Z"
+  },
+  {
+    "id": "audit-1788626953698-222",
+    "actor_id": "adm-1788626901288",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-1788626901288",
+    "timestamp": "2026-09-05T16:49:13.698Z"
+  },
+  {
+    "id": "audit-1788626901290-999",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "CREATE_ADMIN",
+    "entity_type": "ADMIN_USER",
+    "entity_id": "adm-1788626901288",
+    "metadata": "{\"email\":\"yamunaranir.al25@bitsathy.ac.in\",\"name\":\"YAMUNA RANI R\"}",
+    "timestamp": "2026-09-05T16:48:21.290Z"
+  },
+  {
+    "id": "audit-1788626838852-291",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "DELETE_ADMIN",
+    "entity_type": "ADMIN_USER",
+    "entity_id": "adm-001",
+    "metadata": "{\"email\":\"admin@college.edu\"}",
+    "timestamp": "2026-09-05T16:47:18.852Z"
+  },
+  {
+    "id": "audit-1788626820101-323",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-09-05T16:47:00.101Z"
+  },
+  {
+    "id": "audit-1788604731023-825",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "DELETE_MATERIAL",
+    "entity_type": "MATERIAL",
+    "entity_id": "mat-003",
+    "timestamp": "2026-09-05T10:38:51.023Z"
+  },
+  {
+    "id": "audit-1788604726293-302",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "DELETE_MATERIAL",
+    "entity_type": "MATERIAL",
+    "entity_id": "mat-002",
+    "timestamp": "2026-09-05T10:38:46.293Z"
+  },
+  {
+    "id": "audit-1788604723589-883",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "DELETE_MATERIAL",
+    "entity_type": "MATERIAL",
+    "entity_id": "mat-001",
+    "timestamp": "2026-09-05T10:38:43.589Z"
+  },
+  {
+    "id": "audit-1788604706431-82",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "DELETE_QUESTION_POOL",
+    "entity_type": "QUESTION_POOL",
+    "entity_id": "pool-1788601517672",
+    "timestamp": "2026-09-05T10:38:26.431Z"
+  },
+  {
+    "id": "audit-1788604700714-289",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "DELETE_ALL_QUESTIONS",
+    "entity_type": "QUESTION",
+    "timestamp": "2026-09-05T10:38:20.715Z"
+  },
+  {
+    "id": "audit-1788604507742-947",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "DELETE_NOTIFICATION",
+    "entity_type": "NOTIFICATION",
+    "entity_id": "73d4f482-2a11-4328-abf2-74c3920857bd",
+    "metadata": "{\"title\":\"New Assessment Available: Agentic AI Level 1\"}",
+    "timestamp": "2026-09-05T10:35:07.742Z"
+  },
+  {
+    "id": "audit-1788604504628-71",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "DELETE_NOTIFICATION",
+    "entity_type": "NOTIFICATION",
+    "entity_id": "6ba0575b-0188-498d-af85-68b98b56fe0c",
+    "metadata": "{\"title\":\"Welcome to Student Assessment Portal v2\"}",
+    "timestamp": "2026-09-05T10:35:04.628Z"
+  },
+  {
+    "id": "audit-1788604501736-546",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "DELETE_NOTIFICATION",
+    "entity_type": "NOTIFICATION",
+    "entity_id": "notif-1788430527373",
+    "metadata": "{\"title\":\"knkmnmm\"}",
+    "timestamp": "2026-09-05T10:35:01.737Z"
+  },
+  {
+    "id": "audit-1788604041512-592",
+    "actor_id": "std-020",
+    "actor_role": "STUDENT",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "std-020",
+    "timestamp": "2026-09-05T10:27:21.512Z"
+  },
+  {
+    "id": "audit-1788604018689-834",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "DELETE_ASSESSMENT",
+    "entity_type": "ASSESSMENT",
+    "entity_id": "ass-1788601618038",
+    "timestamp": "2026-09-05T10:26:58.689Z"
+  }
+]

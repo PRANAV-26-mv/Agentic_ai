@@ -1,0 +1,561 @@
+{
+  "gd_sessions": [
+    {
+      "id": "gd-demo-101",
+      "title": "Campus Cohort GD: Autonomous AI Systems in Industry",
+      "topic": "Will autonomous multi-agent AI ecosystems transform software engineering or create critical security bottlenecks?",
+      "description": "Turn-based 10-candidate discussion. Each speaker takes the floor with live timer. Cohort peers award marks (1-10) on discussion questions and speaking duration is recorded.",
+      "pin": "789123",
+      "max_participants": 10,
+      "target_type": "ALL",
+      "duration_minutes": 25,
+      "status": "ACTIVE",
+      "created_by": "adm-002",
+      "created_at": "2026-10-11T12:00:00.000Z",
+      "is_results_published": false,
+      "active_speaker_id": null,
+      "speaker_started_at": null,
+      "current_speaker_index": 0,
+      "session_stage": "WAITING",
+      "speaker_order": [
+        "std-001",
+        "std-002",
+        "std-003",
+        "std-004",
+        "std-005",
+        "std-006",
+        "std-007",
+        "std-008",
+        "std-009",
+        "std-010"
+      ],
+      "questions": [
+        {
+          "id": "gdq-1",
+          "question_text": "Opening Stance & Problem Articulation: Clarity and impact in introducing the core issue",
+          "order": 1
+        },
+        {
+          "id": "gdq-2",
+          "question_text": "Subject Knowledge & Technical Depth: Evidence-based persuasive points on AI capabilities",
+          "order": 2
+        },
+        {
+          "id": "gdq-3",
+          "question_text": "Listening & Constructive Rebuttals: Courteous and logical counter-perspectives",
+          "order": 3
+        },
+        {
+          "id": "gdq-4",
+          "question_text": "Team Collaboration & Synthesis: Concluding consensus, group leadership, and teamwork",
+          "order": 4
+        }
+      ],
+      "speaker_duration_limit_seconds": 120
+    }
+  ],
+  "gd_participants": [
+    {
+      "id": "gdp-1",
+      "session_id": "gd-demo-101",
+      "student_id": "std-001",
+      "student_name": "DEEPIKA J",
+      "student_reg": "7376242AD138",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-11T12:01:00.000Z",
+      "status": "JOINED",
+      "speaking_order": 1,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0,
+      "rank": 1,
+      "average_rank": 1,
+      "total_points": 0,
+      "average_score_out_of_10": null,
+      "total_marks_received": null,
+      "question_ranks": {
+        "gdq-1": {
+          "average_rank": 5,
+          "rank_position": 1,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 8.75
+        },
+        "gdq-2": {
+          "average_rank": 5,
+          "rank_position": 1,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 8.75
+        },
+        "gdq-3": {
+          "average_rank": 5,
+          "rank_position": 1,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 8.75
+        },
+        "gdq-4": {
+          "average_rank": 5,
+          "rank_position": 1,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 8.75
+        }
+      },
+      "ratings_count": 0
+    },
+    {
+      "id": "gdp-2",
+      "session_id": "gd-demo-101",
+      "student_id": "std-002",
+      "student_name": "DEEPIKA V",
+      "student_reg": "7376251CS145",
+      "student_department": "CS",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-11T12:01:05.000Z",
+      "status": "JOINED",
+      "speaking_order": 2,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0,
+      "rank": 2,
+      "average_rank": 2,
+      "total_points": 0,
+      "average_score_out_of_10": null,
+      "total_marks_received": null,
+      "question_ranks": {
+        "gdq-1": {
+          "average_rank": 5,
+          "rank_position": 2,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-2": {
+          "average_rank": 5,
+          "rank_position": 2,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-3": {
+          "average_rank": 5,
+          "rank_position": 2,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-4": {
+          "average_rank": 5,
+          "rank_position": 2,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        }
+      },
+      "ratings_count": 0
+    },
+    {
+      "id": "gdp-3",
+      "session_id": "gd-demo-101",
+      "student_id": "std-003",
+      "student_name": "MOHAMED IRFAN R",
+      "student_reg": "7376252AD242",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-11T12:01:10.000Z",
+      "status": "JOINED",
+      "speaking_order": 3,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0,
+      "rank": 3,
+      "average_rank": 3,
+      "total_points": 0,
+      "average_score_out_of_10": null,
+      "total_marks_received": null,
+      "question_ranks": {
+        "gdq-1": {
+          "average_rank": 5,
+          "rank_position": 3,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-2": {
+          "average_rank": 5,
+          "rank_position": 3,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-3": {
+          "average_rank": 5,
+          "rank_position": 3,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-4": {
+          "average_rank": 5,
+          "rank_position": 3,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        }
+      },
+      "ratings_count": 0
+    },
+    {
+      "id": "gdp-4",
+      "session_id": "gd-demo-101",
+      "student_id": "std-004",
+      "student_name": "SELVA RITHIKA S",
+      "student_reg": "7376252AD320",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-11T12:01:15.000Z",
+      "status": "JOINED",
+      "speaking_order": 4,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0,
+      "rank": 4,
+      "average_rank": 4,
+      "total_points": 0,
+      "average_score_out_of_10": null,
+      "total_marks_received": null,
+      "question_ranks": {
+        "gdq-1": {
+          "average_rank": 5,
+          "rank_position": 4,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-2": {
+          "average_rank": 5,
+          "rank_position": 4,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-3": {
+          "average_rank": 5,
+          "rank_position": 4,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-4": {
+          "average_rank": 5,
+          "rank_position": 4,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        }
+      },
+      "ratings_count": 0
+    },
+    {
+      "id": "gdp-5",
+      "session_id": "gd-demo-101",
+      "student_id": "std-005",
+      "student_name": "MAHESAN A",
+      "student_reg": "7376252IT236",
+      "student_department": "IT",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-11T12:01:20.000Z",
+      "status": "JOINED",
+      "speaking_order": 5,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0,
+      "rank": 5,
+      "average_rank": 5,
+      "total_points": 0,
+      "average_score_out_of_10": null,
+      "total_marks_received": null,
+      "question_ranks": {
+        "gdq-1": {
+          "average_rank": 5,
+          "rank_position": 5,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-2": {
+          "average_rank": 5,
+          "rank_position": 5,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-3": {
+          "average_rank": 5,
+          "rank_position": 5,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-4": {
+          "average_rank": 5,
+          "rank_position": 5,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        }
+      },
+      "ratings_count": 0
+    },
+    {
+      "id": "gdp-6",
+      "session_id": "gd-demo-101",
+      "student_id": "std-006",
+      "student_name": "JANANI SUBHA S",
+      "student_reg": "7376241CS214",
+      "student_department": "CS",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-11T12:01:25.000Z",
+      "status": "JOINED",
+      "speaking_order": 6,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0,
+      "rank": 6,
+      "average_rank": 6,
+      "total_points": 0,
+      "average_score_out_of_10": null,
+      "total_marks_received": null,
+      "question_ranks": {
+        "gdq-1": {
+          "average_rank": 5,
+          "rank_position": 6,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-2": {
+          "average_rank": 5,
+          "rank_position": 6,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-3": {
+          "average_rank": 5,
+          "rank_position": 6,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-4": {
+          "average_rank": 5,
+          "rank_position": 6,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        }
+      },
+      "ratings_count": 0
+    },
+    {
+      "id": "gdp-7",
+      "session_id": "gd-demo-101",
+      "student_id": "std-007",
+      "student_name": "TANUSHREE P",
+      "student_reg": "7376241CS432",
+      "student_department": "CS",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-11T12:01:30.000Z",
+      "status": "JOINED",
+      "speaking_order": 7,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0,
+      "rank": 7,
+      "average_rank": 7,
+      "total_points": 0,
+      "average_score_out_of_10": null,
+      "total_marks_received": null,
+      "question_ranks": {
+        "gdq-1": {
+          "average_rank": 5,
+          "rank_position": 7,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-2": {
+          "average_rank": 5,
+          "rank_position": 7,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-3": {
+          "average_rank": 5,
+          "rank_position": 7,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-4": {
+          "average_rank": 5,
+          "rank_position": 7,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        }
+      },
+      "ratings_count": 0
+    },
+    {
+      "id": "gdp-8",
+      "session_id": "gd-demo-101",
+      "student_id": "std-008",
+      "student_name": "DHARANISELVAM P",
+      "student_reg": "7376242AD143",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-11T12:01:35.000Z",
+      "status": "JOINED",
+      "speaking_order": 8,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0,
+      "rank": 8,
+      "average_rank": 8,
+      "total_points": 0,
+      "average_score_out_of_10": null,
+      "total_marks_received": null,
+      "question_ranks": {
+        "gdq-1": {
+          "average_rank": 5,
+          "rank_position": 8,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-2": {
+          "average_rank": 5,
+          "rank_position": 8,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-3": {
+          "average_rank": 5,
+          "rank_position": 8,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-4": {
+          "average_rank": 5,
+          "rank_position": 8,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        }
+      },
+      "ratings_count": 0
+    },
+    {
+      "id": "gdp-9",
+      "session_id": "gd-demo-101",
+      "student_id": "std-009",
+      "student_name": "PRITHIVIKA R",
+      "student_reg": "7376242AD258",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-11T12:01:40.000Z",
+      "status": "JOINED",
+      "speaking_order": 9,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0,
+      "rank": 9,
+      "average_rank": 9,
+      "total_points": 0,
+      "average_score_out_of_10": null,
+      "total_marks_received": null,
+      "question_ranks": {
+        "gdq-1": {
+          "average_rank": 5,
+          "rank_position": 9,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-2": {
+          "average_rank": 5,
+          "rank_position": 9,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-3": {
+          "average_rank": 5,
+          "rank_position": 9,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-4": {
+          "average_rank": 5,
+          "rank_position": 9,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        }
+      },
+      "ratings_count": 0
+    },
+    {
+      "id": "gdp-10",
+      "session_id": "gd-demo-101",
+      "student_id": "std-010",
+      "student_name": "SANJAI V S",
+      "student_reg": "7376242AD287",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-11T12:01:45.000Z",
+      "status": "JOINED",
+      "speaking_order": 10,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0,
+      "rank": 10,
+      "average_rank": 10,
+      "total_points": 0,
+      "average_score_out_of_10": null,
+      "total_marks_received": null,
+      "question_ranks": {
+        "gdq-1": {
+          "average_rank": 5,
+          "rank_position": 10,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-2": {
+          "average_rank": 5,
+          "rank_position": 10,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-3": {
+          "average_rank": 5,
+          "rank_position": 10,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        },
+        "gdq-4": {
+          "average_rank": 5,
+          "rank_position": 10,
+          "total_points": 0,
+          "votes_count": 0,
+          "average_score_out_of_10": 0
+        }
+      },
+      "ratings_count": 0
+    }
+  ],
+  "gd_peer_evaluations": [],
+  "gd_speaker_ratings": []
+}

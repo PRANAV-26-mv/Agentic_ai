@@ -1,0 +1,141 @@
+{
+  "assessments": [
+    {
+      "id": "ass-001",
+      "title": "Agentic AI & Prompt Engineering Level 1",
+      "description": "First mandatory evaluation covering ReAct pattern, RAG basics, and CoT reasoning.",
+      "type": "HYBRID",
+      "question_selection_mode": "FIXED",
+      "target_type": "ALL",
+      "duration_minutes": 30,
+      "start_time": "2026-09-09T09:07:49.978Z",
+      "end_time": "2026-09-17T09:07:49.978Z",
+      "passing_percentage": 60,
+      "max_marks": 14,
+      "status": "PUBLISHED",
+      "created_by": "adm-002",
+      "created_at": "2026-09-10T09:07:49.977Z",
+      "question_ids": [
+        "q-001",
+        "q-002",
+        "q-003",
+        "q-004"
+      ]
+    },
+    {
+      "id": "ass-002",
+      "title": "Advanced LLM Architecture & Pool Test",
+      "description": "Randomized draw assessment from the Agentic AI Core pool.",
+      "type": "HYBRID",
+      "question_selection_mode": "RANDOMIZED_POOL",
+      "pool_id": "pool-001",
+      "draw_count": 3,
+      "target_type": "COMMUNITY",
+      "community": "Agentic AI & LLM Optimization",
+      "duration_minutes": 45,
+      "start_time": "2026-09-09T09:07:49.978Z",
+      "end_time": "2026-09-17T09:07:49.978Z",
+      "passing_percentage": 70,
+      "max_marks": 12,
+      "status": "PUBLISHED",
+      "created_by": "adm-002",
+      "created_at": "2026-09-10T09:07:49.977Z"
+    }
+  ],
+  "assessment_assignments": [],
+  "questions": [
+    {
+      "id": "q-001",
+      "source_pdf_id": "mat-001",
+      "question_type": "MCQ",
+      "question_text": "What is the core distinction of a ReAct (Reasoning + Acting) agent compared to a standard prompt pipeline?",
+      "option_a": "It executes code natively without external tools",
+      "option_b": "It interleaves reasoning step thoughts with tool execution observations in an iterative loop",
+      "option_c": "It pre-compiles all decision paths before execution",
+      "option_d": "It relies solely on zero-shot memory search",
+      "correct_answer": "B",
+      "explanation": "ReAct agents iteratively generate reasoning traces (Thought) and actions (Tool invocation), observing tool outputs before deciding the next step.",
+      "marks": 2,
+      "difficulty": "Medium",
+      "topic": "Agentic Workflows",
+      "status": "APPROVED",
+      "created_at": "2026-09-10T09:07:49.977Z"
+    },
+    {
+      "id": "q-002",
+      "source_pdf_id": "mat-001",
+      "question_type": "MCQ",
+      "question_text": "Which component in a RAG (Retrieval-Augmented Generation) system converts unstructured text into dense semantic vector representations?",
+      "option_a": "Tokenizer",
+      "option_b": "Embedding Model",
+      "option_c": "Cross-Encoder Reranker",
+      "option_d": "Decoder Head",
+      "correct_answer": "B",
+      "explanation": "Embedding models map text chunks into high-dimensional vector spaces where semantic similarity can be computed via cosine distance.",
+      "marks": 2,
+      "difficulty": "Easy",
+      "topic": "RAG Systems",
+      "status": "APPROVED",
+      "created_at": "2026-09-10T09:07:49.977Z"
+    },
+    {
+      "id": "q-003",
+      "source_pdf_id": "mat-002",
+      "question_type": "MCQ",
+      "question_text": "What is the primary advantage of FlashAttention over standard Multi-Head Attention in modern LLM architectures?",
+      "option_a": "It eliminates the need for Positional Embeddings",
+      "option_b": "It reduces memory IO complexity from quadratic O(N?) to linear by tiling GPU SRAM operations",
+      "option_c": "It converts self-attention into feed-forward layers",
+      "option_d": "It increases vocabulary size automatically",
+      "correct_answer": "B",
+      "explanation": "FlashAttention optimizes GPU memory bandwidth by executing attention matrix computation in SRAM tiles without writing full N x N matrices to HBM.",
+      "marks": 2,
+      "difficulty": "Hard",
+      "topic": "LLM Architectures",
+      "status": "APPROVED",
+      "created_at": "2026-09-10T09:07:49.977Z"
+    },
+    {
+      "id": "q-004",
+      "source_pdf_id": "mat-001",
+      "question_type": "WRITING",
+      "question_text": "Explain the trade-offs between a single centralized orchestrator agent vs. a decentralized multi-agent network for complex software tasks.",
+      "rubric": "Centralized: 2 marks for clear single-point control vs complexity. Decentralized: 2 marks for modularity & scalability vs communication overhead. Examples & Clarity: 1 mark.",
+      "expected_answer": "A centralized orchestrator maintains global state and plan clarity, but can become a bottleneck or failure point. Decentralized networks distribute specialized tasks to autonomous worker agents, improving modularity but requiring robust inter-agent protocols.",
+      "marks": 5,
+      "difficulty": "Medium",
+      "topic": "Multi-Agent Systems",
+      "status": "APPROVED",
+      "created_at": "2026-09-10T09:07:49.977Z"
+    },
+    {
+      "id": "q-005",
+      "source_pdf_id": "mat-003",
+      "question_type": "WRITING",
+      "question_text": "Describe how Chain-of-Thought (CoT) prompting alters model inference and why it improves performance on multi-step reasoning problems.",
+      "rubric": "Model compute allocation explanation: 2 marks. Multi-step decomposition: 2 marks. Practical example: 1 mark.",
+      "expected_answer": "Chain-of-Thought forces the model to generate intermediate reasoning tokens, effectively extending sequence-level compute budget before outputting the final answer.",
+      "marks": 5,
+      "difficulty": "Easy",
+      "topic": "Prompt Engineering",
+      "status": "APPROVED",
+      "created_at": "2026-09-10T09:07:49.977Z"
+    }
+  ],
+  "question_pools": [
+    {
+      "id": "pool-001",
+      "name": "Agentic AI Core Pool",
+      "description": "Master pool of interchangeable MCQ and Writing questions on agentic design.",
+      "created_at": "2026-09-10T09:07:49.977Z",
+      "question_ids": [
+        "q-001",
+        "q-002",
+        "q-003",
+        "q-004",
+        "q-005"
+      ]
+    }
+  ],
+  "student_answers": []
+}

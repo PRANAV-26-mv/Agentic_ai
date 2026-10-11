@@ -1,0 +1,109 @@
+[
+  {
+    "id": "mat-001",
+    "title": "Agentic AI Introduction & Architecture Guidelines",
+    "description": "Comprehensive starter guide on ReAct, Planning Agents, and Multi-Agent Orchestration.",
+    "material_type": "PDF",
+    "file_url": "/uploads/Agentic_AI_Introduction.pdf",
+    "page_count": 15,
+    "target_type": "ALL",
+    "published_date": "2026-09-10T09:07:49.977Z",
+    "created_by": "adm-002"
+  },
+  {
+    "id": "mat-002",
+    "title": "Transformer Architecture & Attention Mechanisms",
+    "description": "Deep dive into Multi-Head Self Attention, Positional Encodings, and Encoder-Decoder models.",
+    "material_type": "PDF",
+    "file_url": "/uploads/Transformer_Architecture.pdf",
+    "page_count": 24,
+    "target_type": "COMMUNITY",
+    "target_community": "Agentic AI & LLM Optimization",
+    "published_date": "2026-09-10T09:07:49.977Z",
+    "created_by": "adm-002"
+  },
+  {
+    "id": "mat-003",
+    "title": "Prompt Engineering & Structured Outputs Guide",
+    "description": "Best practices for Few-Shot prompting, Chain of Thought, and JSON Schema constraints.",
+    "material_type": "URL",
+    "file_url": "https://learn.promptengineering.org/advanced-guide",
+    "target_type": "ALL",
+    "published_date": "2026-09-10T09:07:49.977Z",
+    "created_by": "adm-002"
+  },
+  {
+    "title": "Advanced Agentic Workflows & Multi-Agent Systems",
+    "description": "Comprehensive guide covering tool use, memory architectures, and delegation patterns.",
+    "material_type": "PDF",
+    "file_url": "/uploads/1789325343315-77518515.pdf",
+    "page_count": 7,
+    "target_type": "COMMUNITY",
+    "target_community": "Agentic AI & LLM Optimization",
+    "created_by": "adm-002",
+    "id": "mat-1789325343319",
+    "published_date": "2026-09-13T18:49:03.319Z"
+  },
+  {
+    "title": "Official LangGraph & AutoGen Documentation",
+    "description": "Official developer guides and orchestration frameworks.",
+    "material_type": "URL",
+    "file_url": "https://langchain-ai.github.io/langgraph/",
+    "target_type": "ALL",
+    "created_by": "adm-002",
+    "id": "mat-1789325343336",
+    "published_date": "2026-09-13T18:49:03.336Z"
+  },
+  {
+    "id": "mat-url-001",
+    "title": "Hugging Face Hub & Transformers Documentation",
+    "description": "Explore open-source models, pipelines, fine-tuning datasets, tokenizers, and active community spaces.",
+    "material_type": "URL",
+    "file_url": "https://huggingface.co/docs",
+    "target_type": "ALL",
+    "published_date": "2026-10-09T19:09:44.795Z",
+    "created_by": "adm-002"
+  },
+  {
+    "id": "mat-url-002",
+    "title": "DeepLearning.AI Agentic Systems & Short Courses",
+    "description": "Comprehensive video tutorials and code labs on ReAct, Function Calling, and Multi-Agent Orchestration.",
+    "material_type": "URL",
+    "file_url": "https://www.deeplearning.ai/short-courses/",
+    "target_type": "COMMUNITY",
+    "target_community": "Agentic AI & LLM Optimization",
+    "published_date": "2026-10-09T19:09:44.795Z",
+    "created_by": "adm-002"
+  },
+  {
+    "id": "mat-url-003",
+    "title": "Anthropic Claude Documentation & Workbench",
+    "description": "Official developer guidance on prompt evaluation, structured JSON outputs, and agentic workflows.",
+    "material_type": "URL",
+    "file_url": "https://docs.anthropic.com/",
+    "target_type": "ALL",
+    "published_date": "2026-10-09T19:09:44.795Z",
+    "created_by": "adm-002"
+  },
+  {
+    "id": "mat-url-004",
+    "title": "Fast.ai Practical Deep Learning for Coders",
+    "description": "Hands-on top-down curriculum covering PyTorch fundamentals, computer vision, NLP, and model training.",
+    "material_type": "URL",
+    "file_url": "https://course.fast.ai/",
+    "target_type": "ALL",
+    "published_date": "2026-10-09T19:09:44.795Z",
+    "created_by": "adm-002"
+  },
+  {
+    "id": "mat-url-005",
+    "title": "OpenAI Developer Platform & Function Calling Guide",
+    "description": "Production guides for tool calling, assistants API, structured reasoning, and multi-agent systems.",
+    "material_type": "URL",
+    "file_url": "https://platform.openai.com/docs/guides/function-calling",
+    "target_type": "COMMUNITY",
+    "target_community": "Agentic AI & LLM Optimization",
+    "published_date": "2026-10-09T19:09:44.795Z",
+    "created_by": "adm-002"
+  }
+]
