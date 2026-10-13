@@ -127,8 +127,9 @@ router.delete('/sessions/:id', requireAdmin, (req: AuthRequest, res: Response) =
     }
 
     PromptSessionsModel.delete(id);
-    AuditLogsModel.log(req.user!.id, 'ADMIN', 'DELETE_PROMPT_SESSION', 'PROMPT_EVALUATOR', id, { title: session.title });
-    res.json({ message: 'Session deleted successfully' });
+    const deletedSubmissions = PromptSubmissionsModel.deleteBySession(id);
+    AuditLogsModel.log(req.user!.id, 'ADMIN', 'DELETE_PROMPT_SESSION', 'PROMPT_EVALUATOR', id, { title: session.title, deletedSubmissions });
+    res.json({ message: 'Session and all associated submissions deleted successfully', deletedSubmissions });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }

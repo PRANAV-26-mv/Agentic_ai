@@ -2991,6 +2991,15 @@ export const PromptSubmissionsModel = {
     };
     db.save();
     return list[idx];
+  },
+
+  deleteBySession: (sessionId: string): number => {
+    const list = (db.getTable('prompt_submissions') || []) as PromptSubmission[];
+    const beforeCount = list.length;
+    const remaining = list.filter(sub => sub.session_id !== sessionId);
+    db.getData().prompt_submissions = remaining;
+    db.save();
+    return beforeCount - remaining.length;
   }
 };
 

@@ -21,7 +21,8 @@ import {
   X,
   ShieldCheck,
   TrendingUp,
-  BarChart2
+  BarChart2,
+  Trash2
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -99,6 +100,8 @@ export const AdminPromptEvaluator: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [inspectSubmission, setInspectSubmission] = useState<PromptSubmission | null>(null);
   const [showLaunchConfirmModal, setShowLaunchConfirmModal] = useState<boolean>(false);
+  const [deleteConfirmSession, setDeleteConfirmSession] = useState<PromptSession | null>(null);
+  const [deletingSession, setDeletingSession] = useState<boolean>(false);
 
   // Form states for creating session
   const [newTitle, setNewTitle] = useState<string>('');
@@ -205,6 +208,24 @@ export const AdminPromptEvaluator: React.FC = () => {
       setLaunchErrorMsg(err.response?.data?.message || 'Failed to launch final results');
     } finally {
       setLaunching(false);
+    }
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    setDeletingSession(true);
+    try {
+      await api.delete(`/prompt-evaluator/sessions/${sessionId}`);
+      const updatedSessions = sessions.filter(s => s.id !== sessionId);
+      setSessions(updatedSessions);
+      if (selectedSessionId === sessionId) {
+        setSelectedSessionId(updatedSessions.length > 0 ? updatedSessions[0].id : '');
+      }
+      setDeleteConfirmSession(null);
+      setLaunchSuccessMsg('Challenge session and its submissions were successfully deleted.');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to delete challenge session');
+    } finally {
+      setDeletingSession(false);
     }
   };
 
@@ -324,15 +345,28 @@ export const AdminPromptEvaluator: React.FC = () => {
                         <h3 className={`text-xs font-bold ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
                           {s.title}
                         </h3>
-                        {s.results_published ? (
-                          <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                            PUBLISHED
-                          </span>
-                        ) : (
-                          <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                            ACTIVE
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {s.results_published ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              PUBLISHED
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                              ACTIVE
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteConfirmSession(s);
+                            }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                            title="Delete session"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
 
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">
@@ -376,8 +410,19 @@ export const AdminPromptEvaluator: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* SUPER ADMIN LAUNCH BUTTON (CRITICAL REQUIREMENT) */}
-                  <div className="flex items-center gap-3">
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirmSession(currentSession)}
+                      className="px-3.5 py-2.5 rounded-xl text-xs font-bold border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all flex items-center gap-1.5"
+                      title="Delete Challenge Session"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete Session
+                    </button>
+
+                    {/* SUPER ADMIN LAUNCH BUTTON (CRITICAL REQUIREMENT) */}
                     {isSuperAdmin ? (
                       <button
                         type="button"
@@ -801,6 +846,68 @@ export const AdminPromptEvaluator: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Delete Session Confirmation */}
+      {deleteConfirmSession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6 text-rose-500" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                  Delete Prompt Challenge?
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Permanent Session Removal
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-rose-50/50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-xs text-slate-700 dark:text-slate-300 space-y-2">
+              <p>
+                Are you sure you want to permanently delete:
+              </p>
+              <p className="text-sm font-bold text-slate-900 dark:text-white">
+                "{deleteConfirmSession.title}"
+              </p>
+              <p className="text-[11px] text-rose-600 dark:text-rose-400">
+                ⚠️ Warning: This will delete the challenge session and all associated student submissions. This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmSession(null)}
+                disabled={deletingSession}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteSession(deleteConfirmSession.id)}
+                disabled={deletingSession}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/30 transition-all flex items-center gap-1.5"
+              >
+                {deletingSession ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Confirm & Delete
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
