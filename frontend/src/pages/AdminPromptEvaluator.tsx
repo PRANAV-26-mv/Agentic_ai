@@ -22,11 +22,38 @@ import {
   ShieldCheck,
   TrendingUp,
   BarChart2,
-  Trash2
+  Trash2,
+  Filter,
+  GraduationCap
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import confetti from 'canvas-confetti';
+
+export interface SessionStats {
+  totalEligible: number;
+  totalCompleted: number;
+  totalPending: number;
+  completionRate: number;
+  avgScore: number;
+  topScore: number;
+}
+
+export interface ParticipantDetail {
+  student_id: string;
+  student_reg: string;
+  name: string;
+  email: string;
+  department: string;
+  community: string;
+  year: number;
+  status: 'COMPLETED' | 'PENDING';
+  score: number | null;
+  grade: string | null;
+  mistakes_count: number | null;
+  submitted_at: string | null;
+  submission_id: string | null;
+}
 
 interface PromptMistake {
   id: string;
@@ -96,6 +123,12 @@ export const AdminPromptEvaluator: React.FC = () => {
   const [loadingSubmissions, setLoadingSubmissions] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
+  // Session Statistics & Full Participant List
+  const [stats, setStats] = useState<SessionStats | null>(null);
+  const [participantDetails, setParticipantDetails] = useState<ParticipantDetail[]>([]);
+  const [participantTab, setParticipantTab] = useState<'ALL' | 'COMPLETED' | 'PENDING'>('ALL');
+  const [participantSearch, setParticipantSearch] = useState<string>('');
+
   // Modals
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [inspectSubmission, setInspectSubmission] = useState<PromptSubmission | null>(null);
@@ -125,6 +158,8 @@ export const AdminPromptEvaluator: React.FC = () => {
       fetchSubmissions(selectedSessionId);
     } else {
       setSubmissions([]);
+      setStats(null);
+      setParticipantDetails([]);
     }
   }, [selectedSessionId]);
 
@@ -148,6 +183,8 @@ export const AdminPromptEvaluator: React.FC = () => {
       setLoadingSubmissions(true);
       const res = await api.get(`/prompt-evaluator/sessions/${sessionId}/submissions`);
       setSubmissions(res.data.submissions || []);
+      setStats(res.data.stats || null);
+      setParticipantDetails(res.data.participantDetails || []);
     } catch (err: any) {
       console.error('Failed to fetch session submissions:', err);
     } finally {
@@ -239,6 +276,22 @@ export const AdminPromptEvaluator: React.FC = () => {
       s.student_reg.toLowerCase().includes(query) ||
       s.student_email.toLowerCase().includes(query) ||
       s.grade.toLowerCase().includes(query)
+    );
+  });
+
+  // Filter participants by tab and search
+  const filteredParticipants = participantDetails.filter(p => {
+    if (participantTab === 'COMPLETED' && p.status !== 'COMPLETED') return false;
+    if (participantTab === 'PENDING' && p.status !== 'PENDING') return false;
+
+    if (!participantSearch.trim()) return true;
+    const query = participantSearch.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(query) ||
+      p.student_reg.toLowerCase().includes(query) ||
+      p.email.toLowerCase().includes(query) ||
+      p.department.toLowerCase().includes(query) ||
+      (p.grade && p.grade.toLowerCase().includes(query))
     );
   });
 
@@ -446,27 +499,260 @@ export const AdminPromptEvaluator: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Challenge Stats Row */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase">Submissions</span>
-                    <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{submissions.length}</p>
+                {/* Challenge Stats Row - Comprehensive Launch & Completion Tracking */}
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+                  {/* Total Eligible (Cohort) */}
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-1">
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Cohort Scope</span>
+                      <Users className="w-3.5 h-3.5 text-indigo-500" />
+                    </div>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">
+                      {stats?.totalEligible ?? submissions.length}
+                    </p>
+                    <p className="text-[10px] text-slate-400 truncate">
+                      Eligible: {currentSession.target_department || 'ALL'} Dept
+                    </p>
                   </div>
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase">Average Score</span>
-                    <p className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-1">{avgScore}/100</p>
+
+                  {/* Finished / Completed */}
+                  <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 space-y-1">
+                    <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Finished</span>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </div>
+                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                      {stats?.totalCompleted ?? submissions.length}
+                    </p>
+                    <p className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80">
+                      Submitted & Evaluated
+                    </p>
                   </div>
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase">Total Mistakes</span>
-                    <p className="text-xl font-black text-amber-500 mt-1">{totalMistakesCount}</p>
+
+                  {/* Pending / Incomplete */}
+                  <div className="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 space-y-1">
+                    <div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Pending</span>
+                      <Clock className="w-3.5 h-3.5" />
+                    </div>
+                    <p className="text-2xl font-black text-amber-600 dark:text-amber-400">
+                      {stats?.totalPending ?? 0}
+                    </p>
+                    <p className="text-[10px] text-amber-600/80 dark:text-amber-400/80">
+                      Awaiting Submission
+                    </p>
                   </div>
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase">Status</span>
-                    <p className="text-xs font-bold text-slate-900 dark:text-white mt-2">
-                      {currentSession.results_published ? '✅ Results Published' : '⏳ Awaiting Launch'}
+
+                  {/* Completion Rate */}
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-1">
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Completion Rate</span>
+                      <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
+                    </div>
+                    <p className="text-2xl font-black text-blue-600 dark:text-blue-400">
+                      {stats?.completionRate ?? 0}%
+                    </p>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mt-1">
+                      <div
+                        className="bg-blue-600 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${stats?.completionRate ?? 0}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Performance Benchmarks */}
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-1 col-span-2 lg:col-span-1">
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Score Avg / Top</span>
+                      <Award className="w-3.5 h-3.5 text-purple-500" />
+                    </div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-xl font-black text-indigo-600 dark:text-indigo-400">
+                        {stats?.avgScore ?? avgScore}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        / Top: {stats?.topScore ?? 0}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400">
+                      {totalMistakesCount} total flaws detected
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* COMPREHENSIVE PARTICIPANT DETAILS CARD */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <GraduationCap className="w-4 h-4 text-indigo-500" />
+                      Total Participant Details ({participantDetails.length})
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Track every student in the eligible cohort, their submission progress, score, and mistakes.
+                    </p>
+                  </div>
+
+                  {/* Search and Filters */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {/* Status Tabs */}
+                    <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => setParticipantTab('ALL')}
+                        className={`px-3 py-1 rounded-lg transition-all ${
+                          participantTab === 'ALL'
+                            ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-bold'
+                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        All ({participantDetails.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setParticipantTab('COMPLETED')}
+                        className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
+                          participantTab === 'COMPLETED'
+                            ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm font-bold'
+                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        Finished ({stats?.totalCompleted ?? submissions.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setParticipantTab('PENDING')}
+                        className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
+                          participantTab === 'PENDING'
+                            ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm font-bold'
+                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                        Pending ({stats?.totalPending ?? 0})
+                      </button>
+                    </div>
+
+                    <div className="relative w-full sm:w-60">
+                      <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        value={participantSearch}
+                        onChange={(e) => setParticipantSearch(e.target.value)}
+                        placeholder="Search student, reg no, dept..."
+                        className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {loadingSubmissions ? (
+                  <div className="py-12 text-center text-xs text-slate-400 animate-pulse">
+                    Loading participant details...
+                  </div>
+                ) : filteredParticipants.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-slate-400 border border-dashed rounded-xl">
+                    No participants found matching the selected filter or query.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase text-slate-400">
+                          <th className="py-3 px-3">Student Name & Email</th>
+                          <th className="py-3 px-3">Reg No</th>
+                          <th className="py-3 px-3">Department & Community</th>
+                          <th className="py-3 px-3">Status</th>
+                          <th className="py-3 px-3">Score & Grade</th>
+                          <th className="py-3 px-3">Mistakes</th>
+                          <th className="py-3 px-3">Submission Time</th>
+                          <th className="py-3 px-3 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {filteredParticipants.map((p) => {
+                          const matchingSub = submissions.find(s => s.id === p.submission_id || s.student_id === p.student_id);
+                          return (
+                            <tr key={p.student_id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                              <td className="py-3 px-3 font-semibold text-slate-900 dark:text-white">
+                                {p.name}
+                                <div className="text-[10px] text-slate-400 font-normal">{p.email}</div>
+                              </td>
+                              <td className="py-3 px-3 font-mono text-slate-600 dark:text-slate-300">
+                                {p.student_reg}
+                              </td>
+                              <td className="py-3 px-3 text-slate-600 dark:text-slate-400">
+                                <span>{p.department || 'General'}</span>
+                                {p.community && <span className="ml-1 text-[10px] opacity-75">({p.community})</span>}
+                              </td>
+                              <td className="py-3 px-3">
+                                {p.status === 'COMPLETED' ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                    <CheckCircle2 className="w-3 h-3" /> Finished
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                    <Clock className="w-3 h-3" /> Pending
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3">
+                                {p.status === 'COMPLETED' && p.score !== null ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-mono font-black text-slate-900 dark:text-white">
+                                      {p.score}/100
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                      p.score >= 80 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-blue-500/10 text-blue-600'
+                                    }`}>
+                                      {p.grade}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 font-mono text-[11px]">-</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3">
+                                {p.status === 'COMPLETED' && p.mistakes_count !== null ? (
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    p.mistakes_count === 0 
+                                      ? 'bg-emerald-500/10 text-emerald-600' 
+                                      : 'bg-amber-500/10 text-amber-600'
+                                  }`}>
+                                    <AlertTriangle className="w-3 h-3" />
+                                    {p.mistakes_count} issues
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 font-mono text-[11px]">-</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-[11px] text-slate-500 dark:text-slate-400">
+                                {p.submitted_at ? new Date(p.submitted_at).toLocaleString() : 'Not submitted yet'}
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                {matchingSub ? (
+                                  <button
+                                    onClick={() => setInspectSubmission(matchingSub)}
+                                    className="px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-[11px] font-semibold transition-all inline-flex items-center gap-1"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                    Inspect Prompt
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">
+                                    Awaiting Test
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               {/* Submissions Table Card */}

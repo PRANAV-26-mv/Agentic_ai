@@ -18,10 +18,40 @@ import {
   AlertCircle,
   Lock,
   ArrowLeft,
-  Edit3
+  Edit3,
+  Trophy,
+  Crown,
+  Medal,
+  Users,
+  TrendingUp
 } from 'lucide-react';
 import { api } from '../services/api';
 import confetti from 'canvas-confetti';
+
+export interface LeaderboardEntry {
+  rank: number;
+  student_id: string;
+  student_name: string;
+  student_reg: string;
+  student_department: string;
+  score: number;
+  grade: string;
+  mistakes_count: number;
+  submitted_at: string;
+}
+
+export interface LeaderboardData {
+  isPublished: boolean;
+  totalParticipants: number;
+  firstPlace: LeaderboardEntry | null;
+  podium: LeaderboardEntry[];
+  remaining: LeaderboardEntry[];
+  leaderboard: LeaderboardEntry[];
+  myRank: number | null;
+  myScore: number | null;
+  myGrade: string | null;
+  message?: string;
+}
 
 interface PromptMistake {
   id: string;
@@ -101,11 +131,21 @@ export const StudentPromptEvaluator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'CHALLENGES' | 'HISTORY'>('CHALLENGES');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [isResubmitting, setIsResubmitting] = useState<boolean>(false);
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
 
   useEffect(() => {
     fetchSessions();
     fetchPastSubmissions();
   }, []);
+
+  useEffect(() => {
+    if (selectedSessionId) {
+      fetchLeaderboard(selectedSessionId);
+    } else {
+      setLeaderboardData(null);
+    }
+  }, [selectedSessionId]);
 
   const fetchSessions = async () => {
     try {
@@ -125,6 +165,18 @@ export const StudentPromptEvaluator: React.FC = () => {
       setPastSubmissions(res.data);
     } catch (err: any) {
       console.error('Failed to load past submissions:', err);
+    }
+  };
+
+  const fetchLeaderboard = async (sessionId: string) => {
+    try {
+      setLoadingLeaderboard(true);
+      const res = await api.get(`/prompt-evaluator/sessions/${sessionId}/leaderboard`);
+      setLeaderboardData(res.data);
+    } catch (err: any) {
+      console.error('Failed to load session leaderboard:', err);
+    } finally {
+      setLoadingLeaderboard(false);
     }
   };
 
@@ -173,8 +225,11 @@ export const StudentPromptEvaluator: React.FC = () => {
         });
       }
 
-      // Refresh submissions list
+      // Refresh submissions list and leaderboard
       await fetchPastSubmissions();
+      if (selectedSessionId) {
+        await fetchLeaderboard(selectedSessionId);
+      }
     } catch (err: any) {
       setErrorMsg(err.response?.data?.message || 'Prompt evaluation failed. Please check your connection.');
     } finally {
@@ -215,6 +270,216 @@ export const StudentPromptEvaluator: React.FC = () => {
     if (val >= 12) return 'bg-blue-500';
     if (val >= 8) return 'bg-amber-500';
     return 'bg-rose-500';
+  };
+
+  const renderLeaderboard = () => {
+    if (!leaderboardData || !leaderboardData.isPublished) return null;
+
+    return (
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="space-y-1">
+            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-amber-500" />
+              Official Challenge Leaderboard & Hall of Fame
+            </h3>
+            <p className="text-xs text-slate-400">
+              Performance rankings released by the Super Administrator ({leaderboardData.totalParticipants} participants ranked)
+            </p>
+          </div>
+
+          {leaderboardData.myRank && (
+            <div className="px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto">
+              <Award className="w-4 h-4 text-indigo-500" />
+              <span>Your Rank: #{leaderboardData.myRank} of {leaderboardData.totalParticipants}</span>
+            </div>
+          )}
+        </div>
+
+        {/* 1ST PLACE CHAMPION STANDOUT CARD */}
+        {leaderboardData.firstPlace ? (
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/5 border-2 border-amber-400/80 dark:border-amber-400/50 p-6 shadow-lg">
+            <div className="absolute top-0 right-0 translate-x-4 -translate-y-4 opacity-10 pointer-events-none">
+              <Crown className="w-44 h-44 text-amber-500" />
+            </div>
+
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-start sm:items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 text-black flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/30">
+                  <Crown className="w-8 h-8" />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500 text-black shadow-sm">
+                    🥇 1st Place Champion
+                  </div>
+                  <h4 className="text-lg font-black text-slate-900 dark:text-white">
+                    {leaderboardData.firstPlace.student_name}
+                  </h4>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="font-mono">{leaderboardData.firstPlace.student_reg}</span>
+                    <span>•</span>
+                    <span>{leaderboardData.firstPlace.student_department}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-amber-300/40 dark:border-amber-700/40 pt-4 sm:pt-0 sm:pl-6">
+                <div className="text-center">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Top Score</span>
+                  <span className="text-3xl font-black text-amber-600 dark:text-amber-400 font-mono">
+                    {leaderboardData.firstPlace.score}
+                  </span>
+                  <span className="text-xs text-slate-400 font-bold block">/ 100</span>
+                </div>
+
+                <div className="space-y-1">
+                  <span className={`px-2.5 py-0.5 rounded-lg text-xs font-black border uppercase tracking-wider block text-center ${getGradeBadge(leaderboardData.firstPlace.grade)}`}>
+                    Grade {leaderboardData.firstPlace.grade}
+                  </span>
+                  <span className="text-[10px] text-slate-500 block text-center">
+                    {leaderboardData.firstPlace.mistakes_count === 0 ? '0 flaws - Flawless' : `${leaderboardData.firstPlace.mistakes_count} issues`}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {/* PODIUM RUNNER-UPS (2ND AND 3RD PLACE) */}
+        {leaderboardData.podium.length > 1 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {leaderboardData.podium.slice(1).map((runnerUp, idx) => {
+              const isSecond = idx === 0;
+              return (
+                <div
+                  key={runnerUp.student_id}
+                  className={`p-4 rounded-xl border transition-all ${
+                    isSecond
+                      ? 'bg-slate-100/60 dark:bg-slate-800/40 border-slate-300 dark:border-slate-700'
+                      : 'bg-amber-900/5 dark:bg-amber-950/20 border-amber-800/30'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1 ${
+                      isSecond
+                        ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200'
+                        : 'bg-amber-700/20 text-amber-700 dark:text-amber-400'
+                    }`}>
+                      <Medal className="w-3 h-3" />
+                      {isSecond ? '🥈 2nd Place' : '🥉 3rd Place'}
+                    </span>
+                    <span className="font-mono text-sm font-black text-slate-900 dark:text-white">
+                      {runnerUp.score}/100
+                    </span>
+                  </div>
+
+                  <h5 className="text-sm font-bold text-slate-900 dark:text-white">
+                    {runnerUp.student_name}
+                  </h5>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {runnerUp.student_reg} • {runnerUp.student_department}
+                  </p>
+                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-[10px]">
+                    <span className="font-bold text-slate-600 dark:text-slate-400">
+                      Grade {runnerUp.grade}
+                    </span>
+                    <span className="text-slate-400">
+                      {runnerUp.mistakes_count === 0 ? 'Flawless' : `${runnerUp.mistakes_count} issues`}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* REMAINING PLACES TABLE (RANK #4 ONWARDS) */}
+        <div className="space-y-3 pt-2">
+          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+            <span>Remaining Places ({leaderboardData.remaining.length > 0 ? `#4 to #${leaderboardData.totalParticipants}` : 'Full Standing'})</span>
+            <span className="text-[11px] text-slate-400 font-normal">
+              {leaderboardData.remaining.length} students
+            </span>
+          </h4>
+
+          {leaderboardData.remaining.length === 0 ? (
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/30 border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
+              All participating students are featured on the podium above!
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-[10px] font-bold uppercase text-slate-400">
+                    <th className="py-2.5 px-3">Rank</th>
+                    <th className="py-2.5 px-3">Student</th>
+                    <th className="py-2.5 px-3">Reg No & Department</th>
+                    <th className="py-2.5 px-3">Score & Grade</th>
+                    <th className="py-2.5 px-3">Mistakes</th>
+                    <th className="py-2.5 px-3">Submitted</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {leaderboardData.remaining.map((entry) => {
+                    const isCurrentUser = entry.rank === leaderboardData.myRank && entry.score === leaderboardData.myScore;
+                    return (
+                      <tr 
+                        key={entry.student_id}
+                        className={`transition-colors ${
+                          isCurrentUser
+                            ? 'bg-indigo-50/60 dark:bg-indigo-950/40 font-semibold'
+                            : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/40'
+                        }`}
+                      >
+                        <td className="py-2.5 px-3">
+                          <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black ${
+                            isCurrentUser
+                              ? 'bg-indigo-600 text-white shadow-sm'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                          }`}>
+                            #{entry.rank}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-900 dark:text-white">
+                          <div className="flex items-center gap-1.5">
+                            <span>{entry.student_name}</span>
+                            {isCurrentUser && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-500 text-white">
+                                You
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400">
+                          {entry.student_reg} • {entry.student_department}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-bold text-slate-900 dark:text-white">
+                              {entry.score}/100
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              {entry.grade}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400">
+                          {entry.mistakes_count === 0 ? 'Flawless' : `${entry.mistakes_count} flaws`}
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-400 text-[11px]">
+                          {new Date(entry.submitted_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -414,7 +679,8 @@ export const StudentPromptEvaluator: React.FC = () => {
                 {/* WORKSPACE AREA: Either Paste Area OR Results Area */}
                 {(!currentSubmission || isResubmitting) ? (
                   /* PASTE AREA - ONLY DISPLAYED FOR THIS SELECTED SESSION */
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <div className="lg:col-span-8 space-y-4">
                       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
                         <div className="flex items-center justify-between">
@@ -510,7 +776,11 @@ Constraints:
                       </div>
                     </div>
                   </div>
-                ) : (
+
+                  {/* If Results Are Released, Also Display Official Leaderboard Below */}
+                  {isReleased && renderLeaderboard()}
+                </div>
+              ) : (
                   /* POST-SUBMISSION VIEW: LOCKED OR RELEASED */
                   <div className="space-y-6">
                     {/* IF NOT RELEASED YET: ALL RESULTS (SCORE, GRADE, MISTAKES, CORRECTED PROMPT) ARE LOCKED */}
@@ -742,6 +1012,9 @@ Constraints:
                             </div>
                           </div>
                         )}
+
+                        {/* OFFICIAL CHALLENGE LEADERBOARD (1ST PLACE & REMAINING PLACES) */}
+                        {renderLeaderboard()}
                       </div>
                     )}
                   </div>

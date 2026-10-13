@@ -4,6 +4,7 @@ import {
   PromptSubmissionsModel, 
   NotificationsModel, 
   AuditLogsModel,
+  StudentsModel,
   PromptSession,
   PromptSubmission
 } from '../models/dbModels.js';
@@ -279,7 +280,7 @@ router.get('/my-submissions', requireAuth, (req: AuthRequest, res: Response) => 
   }
 });
 
-// GET /api/prompt-evaluator/sessions/:id/submissions - Admin view all submissions for session
+// GET /api/prompt-evaluator/sessions/:id/submissions - Admin view all submissions & participant details
 router.get('/sessions/:id/submissions', requireAdmin, (req: AuthRequest, res: Response) => {
   try {
     const sessionId = req.params.id as string;
@@ -290,9 +291,131 @@ router.get('/sessions/:id/submissions', requireAdmin, (req: AuthRequest, res: Re
     }
 
     const submissions = PromptSubmissionsModel.findBySession(sessionId);
+
+    // Fetch all eligible students matching this session's target criteria
+    const allStudents = StudentsModel.findAll({});
+    const eligibleStudents = allStudents.filter(s => {
+      if (s.status === 'INACTIVE') return false;
+      if (session.target_community && session.target_community !== 'ALL' && s.community !== session.target_community) return false;
+      if (session.target_department && session.target_department !== 'ALL' && s.department !== session.target_department) return false;
+      if (session.target_year && session.target_year > 0 && s.year !== session.target_year) return false;
+      return true;
+    });
+
+    // Create participant details combining submissions and pending students
+    const submissionMap = new Map(submissions.map(sub => [sub.student_id, sub]));
+
+    const participantDetails = eligibleStudents.map(student => {
+      const sub = submissionMap.get(student.id);
+      return {
+        student_id: student.id,
+        student_reg: student.student_id,
+        name: student.name,
+        email: student.email,
+        department: student.department,
+        community: student.community,
+        year: student.year,
+        status: sub ? ('COMPLETED' as const) : ('PENDING' as const),
+        score: sub ? sub.score : null,
+        grade: sub ? sub.grade : null,
+        mistakes_count: sub ? sub.mistakes.length : null,
+        submitted_at: sub ? sub.created_at : null,
+        submission_id: sub ? sub.id : null
+      };
+    });
+
+    // Sort participants: Completed first (by score desc), then pending
+    participantDetails.sort((a, b) => {
+      if (a.status === 'COMPLETED' && b.status === 'PENDING') return -1;
+      if (a.status === 'PENDING' && b.status === 'COMPLETED') return 1;
+      return (b.score ?? 0) - (a.score ?? 0);
+    });
+
+    const totalEligible = eligibleStudents.length;
+    const totalCompleted = submissions.length;
+    const totalPending = Math.max(0, totalEligible - totalCompleted);
+    const completionRate = totalEligible > 0 ? Math.round((totalCompleted / totalEligible) * 100) : 100;
+    const avgScore = totalCompleted > 0 ? Math.round(submissions.reduce((s, sub) => s + sub.score, 0) / totalCompleted) : 0;
+    const topScore = totalCompleted > 0 ? Math.max(...submissions.map(s => s.score)) : 0;
+
     res.json({
       session,
-      submissions
+      submissions,
+      stats: {
+        totalEligible,
+        totalCompleted,
+        totalPending,
+        completionRate,
+        avgScore,
+        topScore
+      },
+      participantDetails
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/prompt-evaluator/sessions/:id/leaderboard - Leaderboard with 1st place and remaining ranks
+router.get('/sessions/:id/leaderboard', requireAuth, (req: AuthRequest, res: Response) => {
+  try {
+    const sessionId = req.params.id as string;
+    const session = PromptSessionsModel.findById(sessionId);
+    if (!session) {
+      res.status(404).json({ message: 'Session not found' });
+      return;
+    }
+
+    const submissions = PromptSubmissionsModel.findBySession(sessionId);
+
+    // If results are not published yet, do not expose individual ranks or scores
+    if (!session.results_published) {
+      res.json({
+        isPublished: false,
+        totalParticipants: submissions.length,
+        message: 'Official ranks and leaderboard will unlock when the administrator releases final results.'
+      });
+      return;
+    }
+
+    // Sort submissions descending by score, tiebreak with fewest mistakes
+    const sorted = [...submissions].sort((a, b) => b.score - a.score || a.mistakes.length - b.mistakes.length);
+
+    let currentRank = 1;
+    const leaderboard = sorted.map((sub, idx) => {
+      if (idx > 0 && sub.score < sorted[idx - 1].score) {
+        currentRank = idx + 1;
+      }
+      return {
+        rank: currentRank,
+        student_id: sub.student_id,
+        student_name: sub.student_name,
+        student_reg: sub.student_reg,
+        student_department: sub.student_department || 'General',
+        score: sub.score,
+        grade: sub.grade,
+        mistakes_count: sub.mistakes.length,
+        submitted_at: sub.created_at
+      };
+    });
+
+    const firstPlace = leaderboard.length > 0 ? leaderboard[0] : null;
+    const podium = leaderboard.slice(0, 3);
+    const remaining = leaderboard.slice(3);
+
+    const myStudentId = req.user?.student?.id;
+    const myRankEntry = myStudentId ? leaderboard.find(e => e.student_id === myStudentId) : null;
+
+    res.json({
+      isPublished: true,
+      totalParticipants: leaderboard.length,
+      firstPlace,
+      podium,
+      remaining,
+      leaderboard,
+      myRank: myRankEntry ? myRankEntry.rank : null,
+      myScore: myRankEntry ? myRankEntry.score : null,
+      myGrade: myRankEntry ? myRankEntry.grade : null
     });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
