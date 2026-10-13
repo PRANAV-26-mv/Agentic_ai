@@ -70,7 +70,7 @@ export const StudentDashboard: React.FC = () => {
       .catch(err => console.error(err));
 
     // 2. Fetch learning materials
-    api.get('/materials')
+    api.get('/materials', { params: { _t: Date.now() } })
       .then(res => setMaterials(res.data.slice(0, 3)))
       .catch(err => console.error(err));
 

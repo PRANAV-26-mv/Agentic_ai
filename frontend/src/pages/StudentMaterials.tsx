@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { api, getFileUrl } from '../services/api';
+import { api, API_BASE_URL, getFileUrl } from '../services/api';
 import { StudyMaterial } from '../types';
-import { BookOpen, FileText, Download, ExternalLink, MessageSquare, Search, Filter, Globe } from 'lucide-react';
+import { BookOpen, FileText, Download, ExternalLink, MessageSquare, Search, Filter, Globe, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 
 export const StudentMaterials: React.FC = () => {
   const [materials, setMaterials] = useState<StudyMaterial[]>([]);
@@ -11,11 +12,44 @@ export const StudentMaterials: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    api.get('/materials')
+  const fetchMaterials = (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
+    api.get('/materials', {
+      params: { _t: Date.now() }
+    })
       .then(res => setMaterials(res.data))
-      .catch(err => console.error(err))
+      .catch(err => console.error('Failed to load materials:', err))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchMaterials(true);
+  }, []);
+
+  // Real-time synchronization: updates student view immediately when admin modifies materials
+  useEffect(() => {
+    const socketUrl = API_BASE_URL.startsWith('http')
+      ? API_BASE_URL.replace(/\/api\/?$/, '')
+      : window.location.origin;
+
+    const socket = io(socketUrl, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000
+    });
+
+    const handleMaterialsUpdate = () => {
+      console.log('[StudentMaterials] Real-time materials-updated event received.');
+      fetchMaterials(false);
+    };
+
+    socket.on('materials-updated', handleMaterialsUpdate);
+
+    return () => {
+      socket.off('materials-updated', handleMaterialsUpdate);
+      socket.disconnect();
+    };
   }, []);
 
   const filteredMaterials = materials.filter(m => {
@@ -66,6 +100,14 @@ export const StudentMaterials: React.FC = () => {
             <option value="PPT">PPT</option>
             <option value="URL">External URL</option>
           </select>
+
+          <button
+            onClick={() => fetchMaterials(true)}
+            title="Refresh materials"
+            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 transition-colors cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
         </div>
       </div>
 

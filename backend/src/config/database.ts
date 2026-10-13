@@ -415,8 +415,9 @@ class MemoryDb {
     }
 
     // 2. Check PostgreSQL Database (DATABASE2_URL or DATABASE_URL)
-    const databaseUrl = process.env.DATABASE2_URL || process.env.DATABASE_URL;
-    if (databaseUrl) {
+    const candidatePgUrls = Array.from(new Set([process.env.DATABASE2_URL, process.env.DATABASE_URL].filter(Boolean))) as string[];
+    for (const databaseUrl of candidatePgUrls) {
+      if (this.pgPool) break;
       try {
         let extractedHost = 'postgres';
         try {
@@ -764,7 +765,7 @@ class MemoryDb {
 
     this.pgSyncTimer = setTimeout(async () => {
       await this.syncToPostgres();
-    }, 1000);
+    }, 250);
   }
 
   private async syncToPostgres() {

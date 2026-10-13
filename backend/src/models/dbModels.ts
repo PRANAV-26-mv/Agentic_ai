@@ -1,5 +1,5 @@
 import { db, memoryDb } from '../config/database';
-export { memoryDb };
+export { memoryDb, db };
 import { v4 as uuidv4 } from 'uuid';
 
 export interface Admin {
@@ -571,10 +571,18 @@ export const StudyMaterialsModel = {
   findAll(student?: Student): StudyMaterial[] {
     let list = memoryDb.table('study_materials');
     if (student) {
+      const sDept = (student.department || '').trim().toLowerCase();
+      const sComm = (student.community || '').trim().toLowerCase();
       list = list.filter(m => {
-        if (m.target_type === 'ALL') return true;
-        if (m.target_type === 'DEPARTMENT' && m.target_department === student.department) return true;
-        if (m.target_type === 'COMMUNITY' && m.target_community === student.community) return true;
+        if (!m.target_type || m.target_type === 'ALL') return true;
+        if (m.target_type === 'DEPARTMENT' && sDept) {
+          const mDept = (m.target_department || '').trim().toLowerCase();
+          return mDept === sDept || mDept === 'all' || sDept.includes(mDept) || mDept.includes(sDept);
+        }
+        if (m.target_type === 'COMMUNITY' && sComm) {
+          const mComm = (m.target_community || '').trim().toLowerCase();
+          return mComm === sComm || mComm === 'all' || sComm.includes(mComm) || mComm.includes(sComm);
+        }
         return false;
       });
     }
@@ -592,6 +600,21 @@ export const StudyMaterialsModel = {
     memoryDb.table('study_materials').push(newMat);
     db.save();
     return newMat;
+  },
+  update(id: string, updates: Partial<StudyMaterial>): StudyMaterial | null {
+    const list = memoryDb.table('study_materials');
+    const index = list.findIndex(m => m.id === id);
+    if (index === -1) return null;
+    const existing = list[index];
+    const updated: StudyMaterial = {
+      ...existing,
+      ...updates,
+      id: existing.id,
+      published_date: updates.published_date || existing.published_date || new Date().toISOString()
+    };
+    list[index] = updated;
+    db.save();
+    return updated;
   },
   delete(id: string): boolean {
     const list = memoryDb.table('study_materials');

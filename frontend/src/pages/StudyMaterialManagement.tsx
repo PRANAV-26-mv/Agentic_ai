@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { api, getFileUrl } from '../services/api';
+import { api, API_BASE_URL, getFileUrl } from '../services/api';
 import { StudyMaterial } from '../types';
-import { BookOpen, Upload, Trash2, Plus, ExternalLink, Loader2, AlertCircle, CheckCircle2, FileText, Globe } from 'lucide-react';
+import { 
+  BookOpen, 
+  Upload, 
+  Trash2, 
+  Plus, 
+  ExternalLink, 
+  Loader2, 
+  AlertCircle, 
+  CheckCircle2, 
+  FileText, 
+  Globe, 
+  Edit2, 
+  RefreshCw,
+  Sparkles
+} from 'lucide-react';
+import { io } from 'socket.io-client';
 
 const DEPARTMENTS = ['CS', 'AD', 'IT', 'ECE', 'EEE', 'MECH'];
 const COMMUNITIES = [
@@ -16,7 +31,8 @@ export const StudyMaterialManagement: React.FC = () => {
   const [materials, setMaterials] = useState<StudyMaterial[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [uploading, setUploading] = useState<boolean>(false);
-  const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [editingMaterial, setEditingMaterial] = useState<StudyMaterial | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -33,33 +49,82 @@ export const StudyMaterialManagement: React.FC = () => {
   const [formData, setFormData] = useState(initialFormData);
   const [file, setFile] = useState<File | null>(null);
 
-  const fetchMaterials = () => {
-    setLoading(true);
-    api.get('/materials')
+  const fetchMaterials = (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
+    api.get('/materials', {
+      params: { _t: Date.now() }
+    })
       .then(res => setMaterials(res.data))
-      .catch(err => console.error('Failed to load materials:', err))
+      .catch(err => {
+        console.error('Failed to load materials:', err);
+        setErrorMsg('Failed to fetch study materials from server.');
+      })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchMaterials();
+    fetchMaterials(true);
   }, []);
 
-  const openModal = () => {
+  // Real-time synchronization via Socket.IO
+  useEffect(() => {
+    const socketUrl = API_BASE_URL.startsWith('http')
+      ? API_BASE_URL.replace(/\/api\/?$/, '')
+      : window.location.origin;
+
+    const socket = io(socketUrl, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000
+    });
+
+    const handleMaterialsUpdate = () => {
+      console.log('[StudyMaterialManagement] Real-time materials-updated event detected.');
+      fetchMaterials(false);
+    };
+
+    socket.on('materials-updated', handleMaterialsUpdate);
+
+    return () => {
+      socket.off('materials-updated', handleMaterialsUpdate);
+      socket.disconnect();
+    };
+  }, []);
+
+  const openCreateModal = () => {
+    setEditingMaterial(null);
     setFormData(initialFormData);
     setFile(null);
     setErrorMsg(null);
-    setShowUploadModal(true);
+    setShowModal(true);
+  };
+
+  const openEditModal = (mat: StudyMaterial) => {
+    setEditingMaterial(mat);
+    setFormData({
+      title: mat.title,
+      description: mat.description || '',
+      material_type: mat.material_type,
+      external_url: (mat.material_type === 'URL' || (mat.file_url && mat.file_url.startsWith('http'))) ? mat.file_url : '',
+      target_type: (mat.target_type === 'SELECTED' ? 'ALL' : (mat.target_type || 'ALL')) as 'ALL' | 'DEPARTMENT' | 'COMMUNITY',
+      target_department: mat.target_department || 'CS',
+      target_community: mat.target_community || 'Agentic AI & LLM Optimization'
+    });
+    setFile(null);
+    setErrorMsg(null);
+    setShowModal(true);
   };
 
   const closeModal = () => {
     if (uploading) return;
-    setShowUploadModal(false);
+    setShowModal(false);
+    setEditingMaterial(null);
     setErrorMsg(null);
     setFile(null);
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
@@ -68,7 +133,8 @@ export const StudyMaterialManagement: React.FC = () => {
       return;
     }
 
-    if (formData.material_type !== 'URL' && !file) {
+    // When creating, file is required for non-URL types
+    if (!editingMaterial && formData.material_type !== 'URL' && !file) {
       setErrorMsg('Please choose a file to upload.');
       return;
     }
@@ -95,19 +161,30 @@ export const StudyMaterialManagement: React.FC = () => {
 
       if (formData.material_type === 'URL') {
         data.append('external_url', formData.external_url.trim());
-      } else if (file) {
-        data.append('file', file);
+      } else {
+        if (formData.external_url.trim()) {
+          data.append('external_url', formData.external_url.trim());
+        }
+        if (file) {
+          data.append('file', file);
+        }
       }
 
-      await api.post('/materials', data);
+      if (editingMaterial) {
+        await api.put(`/materials/${editingMaterial.id}`, data);
+        setSuccessMsg('Study material updated and saved successfully!');
+      } else {
+        await api.post('/materials', data);
+        setSuccessMsg('Study material published and saved successfully!');
+      }
 
-      setShowUploadModal(false);
-      setSuccessMsg('Study material published successfully!');
+      setShowModal(false);
+      setEditingMaterial(null);
       setTimeout(() => setSuccessMsg(null), 4000);
-      fetchMaterials();
+      fetchMaterials(false);
     } catch (err: any) {
-      console.error('Upload failed:', err);
-      const msg = err.response?.data?.message || err.message || 'Failed to upload study material. Please try again.';
+      console.error('Material save failed:', err);
+      const msg = err.response?.data?.message || err.message || 'Failed to save study material. Please try again.';
       setErrorMsg(msg);
     } finally {
       setUploading(false);
@@ -120,7 +197,7 @@ export const StudyMaterialManagement: React.FC = () => {
       .then(() => {
         setSuccessMsg('Study material deleted successfully.');
         setTimeout(() => setSuccessMsg(null), 3000);
-        fetchMaterials();
+        fetchMaterials(false);
       })
       .catch(err => {
         alert(err.response?.data?.message || 'Failed to delete study material.');
@@ -135,20 +212,29 @@ export const StudyMaterialManagement: React.FC = () => {
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
             <BookOpen className="w-6 h-6 text-indigo-600" />
-            <span>Study Materials Publishing</span>
+            <span>Study Materials Publishing & Management</span>
           </h2>
           <p className="text-slate-500 text-xs mt-1">
-            Upload PDFs, DOCX, PPT slides, or external study URLs for targeted student cohorts.
+            Upload, update, and manage PDFs, DOCX, PPT slides, or external study URLs for targeted student cohorts.
           </p>
         </div>
 
-        <button
-          onClick={openModal}
-          className="px-5 py-2.5 apple-btn-primary text-white font-bold text-xs rounded-full shadow-md flex items-center space-x-2 transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Upload Material</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fetchMaterials(true)}
+            title="Refresh materials list"
+            className="p-2.5 rounded-full border border-slate-200 hover:bg-slate-50 text-slate-500 transition-colors cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+          <button
+            onClick={openCreateModal}
+            className="px-5 py-2.5 apple-btn-primary text-white font-bold text-xs rounded-full shadow-md flex items-center space-x-2 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Upload Material</span>
+          </button>
+        </div>
       </div>
 
       {/* Success Notification Alert */}
@@ -174,7 +260,7 @@ export const StudyMaterialManagement: React.FC = () => {
             Click "Upload Material" above to share lecture notes, slides, or references with students.
           </p>
           <button
-            onClick={openModal}
+            onClick={openCreateModal}
             className="mt-4 px-4 py-2 apple-btn-glass text-indigo-700 font-bold text-xs rounded-full transition-all inline-flex items-center space-x-2 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -193,14 +279,25 @@ export const StudyMaterialManagement: React.FC = () => {
                       {mat.material_type === 'URL' ? <Globe className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
                       <span>{mat.material_type}</span>
                     </span>
-                    <button
-                      onClick={() => handleDelete(mat.id, mat.title)}
-                      className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded-lg transition-colors"
-                      title="Delete material"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => openEditModal(mat)}
+                        className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                        title="Edit / Change material details"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(mat.id, mat.title)}
+                        className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                        title="Delete material"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
+
                   <h3 className="font-bold text-slate-900 text-sm line-clamp-1">{mat.title}</h3>
                   <p className="text-xs text-slate-500 mt-1 line-clamp-2">
                     {mat.description || 'No description provided.'}
@@ -216,7 +313,7 @@ export const StudyMaterialManagement: React.FC = () => {
                           : `Community: ${mat.target_community || 'All'}`}
                       </span>
                     </span>
-                    {mat.page_count && <span>{mat.page_count} pages</span>}
+                    {mat.page_count ? <span>{mat.page_count} pages</span> : null}
                   </div>
                 </div>
 
@@ -235,20 +332,29 @@ export const StudyMaterialManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Upload Modal */}
-      {showUploadModal && (
+      {/* Upload & Edit Modal */}
+      {showModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <h3 className="font-bold text-slate-900 text-base flex items-center space-x-2">
-                <Upload className="w-5 h-5 text-purple-600" />
-                <span>Upload Study Material</span>
+                {editingMaterial ? (
+                  <>
+                    <Edit2 className="w-5 h-5 text-indigo-600" />
+                    <span>Edit Study Material</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5 text-purple-600" />
+                    <span>Upload Study Material</span>
+                  </>
+                )}
               </h3>
               <button
                 type="button"
                 onClick={closeModal}
                 disabled={uploading}
-                className="text-slate-400 hover:text-slate-600 font-bold text-lg p-1 disabled:opacity-50"
+                className="text-slate-400 hover:text-slate-600 font-bold text-lg p-1 disabled:opacity-50 cursor-pointer"
               >
                 ✕
               </button>
@@ -261,7 +367,7 @@ export const StudyMaterialManagement: React.FC = () => {
               </div>
             )}
 
-            <form onSubmit={handleUpload} className="space-y-4 text-xs">
+            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               {/* Title */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
@@ -357,13 +463,20 @@ export const StudyMaterialManagement: React.FC = () => {
               {/* File Upload or External URL */}
               {formData.material_type !== 'URL' ? (
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Choose File <span className="text-rose-500">*</span> (Max 25MB)
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-bold text-slate-700">
+                      {editingMaterial ? 'Replace File (Optional, max 25MB)' : 'Choose File * (Max 25MB)'}
+                    </label>
+                    {editingMaterial && editingMaterial.file_url && (
+                      <span className="text-[10px] text-slate-400 truncate max-w-[200px]" title={editingMaterial.file_url}>
+                        Current: {editingMaterial.file_url.split('/').pop()}
+                      </span>
+                    )}
+                  </div>
                   <div className="border border-dashed border-purple-200 bg-purple-50/40 rounded-xl p-4 text-center hover:bg-purple-50 transition-colors">
                     <input
                       type="file"
-                      required
+                      required={!editingMaterial && !formData.external_url}
                       accept={
                         formData.material_type === 'PDF'
                           ? '.pdf,application/pdf'
@@ -379,6 +492,20 @@ export const StudyMaterialManagement: React.FC = () => {
                         Selected: {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
                       </p>
                     )}
+                  </div>
+
+                  {/* Or provide alternate online cloud URL */}
+                  <div className="mt-2">
+                    <label className="block text-[10px] font-semibold text-slate-500 mb-1">
+                      Or Online Cloud File Link (e.g. Google Drive, OneDrive, GitHub):
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://drive.google.com/file/d/..."
+                      value={formData.external_url}
+                      onChange={e => setFormData({ ...formData, external_url: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:border-purple-500 focus:outline-none"
+                    />
                   </div>
                 </div>
               ) : (
@@ -415,7 +542,12 @@ export const StudyMaterialManagement: React.FC = () => {
                   {uploading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Uploading...</span>
+                      <span>Saving...</span>
+                    </>
+                  ) : editingMaterial ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Save Changes</span>
                     </>
                   ) : (
                     <>

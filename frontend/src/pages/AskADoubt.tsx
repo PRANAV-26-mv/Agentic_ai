@@ -19,7 +19,7 @@ export const AskADoubt: React.FC = () => {
 
   useEffect(() => {
     // Fetch materials list for scope selector
-    api.get('/materials')
+    api.get('/materials', { params: { _t: Date.now() } })
       .then(res => setMaterials(res.data))
       .catch(err => console.error(err));
   }, []);
