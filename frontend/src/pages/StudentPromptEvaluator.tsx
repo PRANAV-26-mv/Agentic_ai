@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Sparkles, 
   Send, 
@@ -23,9 +23,11 @@ import {
   Crown,
   Medal,
   Users,
-  TrendingUp
+  TrendingUp,
+  X
 } from 'lucide-react';
-import { api } from '../services/api';
+import { io } from 'socket.io-client';
+import { api, API_BASE_URL } from '../services/api';
 import confetti from 'canvas-confetti';
 
 export interface LeaderboardEntry {
@@ -133,6 +135,13 @@ export const StudentPromptEvaluator: React.FC = () => {
   const [isResubmitting, setIsResubmitting] = useState<boolean>(false);
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState<boolean>(false);
+  const [resultsJustReleased, setResultsJustReleased] = useState<boolean>(false);
+  const wasReleasedRef = useRef<boolean>(false);
+  const selectedSessionIdRef = useRef<string | null>(selectedSessionId);
+
+  useEffect(() => {
+    selectedSessionIdRef.current = selectedSessionId;
+  }, [selectedSessionId]);
 
   useEffect(() => {
     fetchSessions();
@@ -141,54 +150,166 @@ export const StudentPromptEvaluator: React.FC = () => {
 
   useEffect(() => {
     if (selectedSessionId) {
-      fetchLeaderboard(selectedSessionId);
+      fetchLeaderboard(selectedSessionId, true);
     } else {
       setLeaderboardData(null);
     }
   }, [selectedSessionId]);
 
-  const fetchSessions = async () => {
+  const fetchSessions = async (showLoading = true) => {
     try {
-      setLoadingSessions(true);
-      const res = await api.get('/prompt-evaluator/sessions');
+      if (showLoading) setLoadingSessions(true);
+      const res = await api.get('/prompt-evaluator/sessions', {
+        params: { _t: Date.now() }
+      });
       setSessions(res.data);
     } catch (err: any) {
       console.error('Failed to load sessions:', err);
     } finally {
-      setLoadingSessions(false);
+      if (showLoading) setLoadingSessions(false);
     }
   };
 
-  const fetchPastSubmissions = async () => {
+  const fetchPastSubmissions = async (activeSessionId?: string) => {
     try {
-      const res = await api.get('/prompt-evaluator/my-submissions');
+      const res = await api.get('/prompt-evaluator/my-submissions', {
+        params: { _t: Date.now() }
+      });
       setPastSubmissions(res.data);
+
+      // Automatically sync unlocked evaluation details if student is viewing current session
+      const targetId = activeSessionId ?? selectedSessionIdRef.current;
+      if (targetId) {
+        const sub = res.data.find((s: PastSubmission) => s.session_id === targetId);
+        if (sub && (sub.session_published || sub.score !== null)) {
+          setEvaluation({
+            score: sub.score,
+            grade: sub.grade as any,
+            metrics: sub.metrics,
+            mistakes: sub.mistakes || [],
+            strengths: sub.strengths || [],
+            suggestions: sub.suggestions || [],
+            improvedPrompt: sub.improved_prompt || null,
+            summaryFeedback: sub.summary_feedback || '',
+            engineUsed: 'GEMINI_AI',
+            isResultsPublished: Boolean(sub.session_published)
+          });
+        }
+      }
     } catch (err: any) {
       console.error('Failed to load past submissions:', err);
     }
   };
 
-  const fetchLeaderboard = async (sessionId: string) => {
+  const fetchLeaderboard = async (sessionId: string, showLoading = false) => {
     try {
-      setLoadingLeaderboard(true);
-      const res = await api.get(`/prompt-evaluator/sessions/${sessionId}/leaderboard`);
+      if (showLoading) setLoadingLeaderboard(true);
+      const res = await api.get(`/prompt-evaluator/sessions/${sessionId}/leaderboard`, {
+        params: { _t: Date.now() }
+      });
       setLeaderboardData(res.data);
     } catch (err: any) {
       console.error('Failed to load session leaderboard:', err);
     } finally {
-      setLoadingLeaderboard(false);
+      if (showLoading) setLoadingLeaderboard(false);
     }
   };
+
+  // 1. Instant Socket.IO listener: catches release the exact millisecond admin clicks release
+  useEffect(() => {
+    const socketUrl = API_BASE_URL.startsWith('http')
+      ? API_BASE_URL.replace(/\/api\/?$/, '')
+      : window.location.origin;
+
+    const socket = io(socketUrl, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000
+    });
+
+    socket.on('connect', () => {
+      console.log('[StudentPromptEvaluator] Connected to real-time socket:', socket.id);
+      try {
+        const storedUser = localStorage.getItem('portal_auth_user');
+        if (storedUser) {
+          const u = JSON.parse(storedUser);
+          socket.emit('register-user', {
+            id: u.student?.id || u.id,
+            name: u.student?.name || u.name,
+            email: u.email,
+            role: u.role || 'STUDENT',
+            department: u.student?.department || u.department
+          });
+        }
+      } catch (_) {}
+    });
+
+    const handleRealtimeRelease = (payload: any) => {
+      console.log('[StudentPromptEvaluator] Real-time results release detected via socket:', payload);
+      const currentSid = selectedSessionIdRef.current;
+      // Immediately refresh all data without student having to manually refresh page!
+      fetchSessions(false);
+      fetchPastSubmissions(currentSid || undefined);
+      if (currentSid) {
+        fetchLeaderboard(currentSid, false);
+      }
+    };
+
+    socket.on('prompt-results-released', handleRealtimeRelease);
+    socket.on('notification-received', (notif: any) => {
+      if (notif.title?.includes('Prompt') || notif.action_url?.includes('prompt-evaluator')) {
+        handleRealtimeRelease(notif);
+      }
+    });
+
+    return () => {
+      socket.off('prompt-results-released', handleRealtimeRelease);
+      socket.disconnect();
+    };
+  }, []);
+
+  // 2. Continuous 3-second auto-poll fallback so results arrive automatically even if socket is disconnected
+  useEffect(() => {
+    const pollTimer = setInterval(() => {
+      const currentSid = selectedSessionIdRef.current;
+      fetchSessions(false);
+      fetchPastSubmissions(currentSid || undefined);
+      if (currentSid) {
+        fetchLeaderboard(currentSid, false);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollTimer);
+  }, []);
 
   const handleSelectSession = (sessionId: string) => {
     setSelectedSessionId(sessionId);
     setErrorMsg('');
     setIsResubmitting(false);
+    setResultsJustReleased(false);
 
-    // If student already has a submission for this session, load its prompt
-    const existing = pastSubmissions.find(s => s.session_id === sessionId);
+    const s = sessions.find(sess => sess.id === sessionId);
+    const existing = pastSubmissions.find(subm => subm.session_id === sessionId);
+    wasReleasedRef.current = Boolean(s?.results_published || existing?.session_published);
+
+    // If student already has a submission for this session, load its prompt and unlocked evaluation
     if (existing) {
       setPromptText(existing.submitted_prompt);
+      if (existing.session_published || existing.score !== null) {
+        setEvaluation({
+          score: existing.score,
+          grade: existing.grade as any,
+          metrics: existing.metrics,
+          mistakes: existing.mistakes || [],
+          strengths: existing.strengths || [],
+          suggestions: existing.suggestions || [],
+          improvedPrompt: existing.improved_prompt || null,
+          summaryFeedback: existing.summary_feedback || '',
+          engineUsed: 'GEMINI_AI',
+          isResultsPublished: Boolean(existing.session_published)
+        });
+      }
     } else {
       setPromptText('');
       setEvaluation(null);
@@ -248,6 +369,19 @@ export const StudentPromptEvaluator: React.FC = () => {
 
   // Determine if results are released for current session
   const isReleased = Boolean(currentSession?.results_published || currentSubmission?.session_published || evaluation?.isResultsPublished);
+
+  // Trigger celebration banner & confetti the instant admin releases results live
+  useEffect(() => {
+    if (isReleased && !wasReleasedRef.current && currentSubmission) {
+      setResultsJustReleased(true);
+      confetti({
+        particleCount: 110,
+        spread: 80,
+        origin: { y: 0.5 }
+      });
+    }
+    wasReleasedRef.current = isReleased;
+  }, [isReleased, currentSubmission]);
 
   const getGradeBadge = (grade: string) => {
     switch (grade) {
@@ -547,12 +681,37 @@ export const StudentPromptEvaluator: React.FC = () => {
                   </p>
                 </div>
                 <button
-                  onClick={fetchSessions}
+                  onClick={() => fetchSessions()}
                   className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   <RefreshCw className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* LIVE RELEASE ALERT BANNER ON SESSIONS LIST */}
+              {resultsJustReleased && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-teal-500/15 to-emerald-500/20 border-2 border-emerald-500/50 text-emerald-950 dark:text-emerald-100 flex items-center justify-between gap-4 shadow-lg animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-black flex items-center gap-2">
+                        🎉 Challenge Results Released Live by Administrator!
+                      </div>
+                      <div className="text-xs text-emerald-700 dark:text-emerald-300">
+                        Official scores and mistake reviews have just been published. Select your session below to view your results.
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setResultsJustReleased(false)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-colors shrink-0"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
 
               {loadingSessions ? (
                 <div className="py-16 text-center text-xs text-slate-400 animate-pulse">
@@ -675,6 +834,31 @@ export const StudentPromptEvaluator: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* LIVE CELEBRATION & RELEASE ALERT BANNER */}
+                {resultsJustReleased && (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-teal-500/15 to-emerald-500/20 border-2 border-emerald-500/50 text-emerald-950 dark:text-emerald-100 flex items-center justify-between gap-4 shadow-lg animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                        <Sparkles className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-black flex items-center gap-2">
+                          🎉 Official Final Results Released by Administrator!
+                        </div>
+                        <div className="text-xs text-emerald-700 dark:text-emerald-300">
+                          Your score, grade, mistakes breakdown, and leaderboard rankings have just been unlocked live without needing to refresh.
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setResultsJustReleased(false)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-colors shrink-0"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
 
                 {/* WORKSPACE AREA: Either Paste Area OR Results Area */}
                 {(!currentSubmission || isResubmitting) ? (
@@ -1036,7 +1220,7 @@ Constraints:
               </p>
             </div>
             <button
-              onClick={fetchPastSubmissions}
+              onClick={() => fetchPastSubmissions()}
               className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
             >
               <RefreshCw className="w-4 h-4" />

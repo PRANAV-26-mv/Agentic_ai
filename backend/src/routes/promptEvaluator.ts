@@ -11,7 +11,7 @@ import {
 import { requireAuth, requireAdmin, AuthRequest } from '../middleware/authMiddleware.js';
 import { promptEvaluatorService } from '../services/promptEvaluatorService.js';
 import { emailService } from '../services/emailService.js';
-import { broadcastNotification } from '../services/meetingSocketService.js';
+import { broadcastNotification, getSocketIO } from '../services/meetingSocketService.js';
 
 const router = Router();
 
@@ -449,6 +449,22 @@ router.post('/sessions/:id/launch-results', requireAdmin, async (req: AuthReques
 
     // 2. Mark all submissions in this session as published
     const submissions = PromptSubmissionsModel.markPublishedForSession(sessionId);
+
+    // Broadcast instant real-time release event via Socket.IO to all connected student portals
+    try {
+      const io = getSocketIO();
+      if (io) {
+        io.emit('prompt-results-released', {
+          sessionId,
+          sessionTitle: session.title,
+          results_published: true,
+          published_at: updatedSession?.published_at || new Date().toISOString()
+        });
+        console.log(`[Socket.io] Real-time broadcast 'prompt-results-released' for session: ${sessionId}`);
+      }
+    } catch (sockErr: any) {
+      console.error('Socket broadcast error on prompt results launch:', sockErr.message);
+    }
 
     if (submissions.length === 0) {
       res.json({ 
