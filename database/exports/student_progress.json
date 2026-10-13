@@ -223,5 +223,14 @@
     "avg_score": 0,
     "attendance_pct": 100,
     "updated_at": "2026-09-05T10:24:27.589Z"
+  },
+  {
+    "id": "1800049e-9cac-4b6d-8176-ca127168d43d",
+    "student_id": "std-1791830115370-612",
+    "materials_viewed_count": 0,
+    "assessments_completed_count": 0,
+    "avg_score": 0,
+    "attendance_pct": 100,
+    "updated_at": "2026-10-12T18:35:15.370Z"
   }
 ]

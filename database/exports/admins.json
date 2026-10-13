@@ -17,5 +17,50 @@
     "role": "ADMIN",
     "id": "adm-1788626901288",
     "created_at": "2026-09-05T16:48:21.288Z"
+  },
+  {
+    "email": "siddhikas.it25@bitsathy.ac.in",
+    "name": "SIDDHIKA S",
+    "department": "Information Technology",
+    "password": "7376252IT346",
+    "role": "ADMIN",
+    "id": "adm-1791829034985",
+    "created_at": "2026-10-12T18:17:14.985Z"
+  },
+  {
+    "email": "madhans.it25@bitsathy.ac.in",
+    "name": "Madhan S",
+    "department": "Information Technology",
+    "password": "7376252IT233",
+    "role": "ADMIN",
+    "id": "adm-1791829035278",
+    "created_at": "2026-10-12T18:17:15.278Z"
+  },
+  {
+    "email": "ashmitam.it25@bitsathy.ac.in",
+    "name": "Ashmita M",
+    "department": "Information Technology",
+    "password": "7376252IT117",
+    "role": "ADMIN",
+    "id": "adm-1791829035643",
+    "created_at": "2026-10-12T18:17:15.643Z"
+  },
+  {
+    "email": "sushanthip.it25@bitsathy.ac.in",
+    "name": "Sushanthi P",
+    "department": "Information Technology",
+    "password": "7376252IT363",
+    "role": "ADMIN",
+    "id": "adm-1791829035994",
+    "created_at": "2026-10-12T18:17:15.994Z"
+  },
+  {
+    "email": "pranavmv.it25@bitsathy.ac.in",
+    "name": "PRANAV M V",
+    "department": "Information Technology",
+    "password": "7376252IT280",
+    "role": "ADMIN",
+    "id": "adm-1791829036353",
+    "created_at": "2026-10-12T18:17:16.353Z"
   }
 ]

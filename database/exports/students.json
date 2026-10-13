@@ -398,5 +398,20 @@
     "suggested_role": "AI Systems Engineer",
     "status": "ACTIVE",
     "created_at": "2026-09-05T09:25:51.581Z"
+  },
+  {
+    "student_id": "111",
+    "name": "pranav",
+    "email": "pranav@gmail.com",
+    "department": "CS",
+    "year": 3,
+    "community": "Agentic AI & LLM Optimization",
+    "skill_level": "Intermediate",
+    "profile": "",
+    "interest": "",
+    "suggested_role": "AI Developer",
+    "id": "std-1791830115370-612",
+    "status": "ACTIVE",
+    "created_at": "2026-10-12T18:35:15.370Z"
   }
 ]

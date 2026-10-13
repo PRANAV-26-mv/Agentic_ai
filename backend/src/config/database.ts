@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
+import { Pool as PgPool } from 'pg';
+import mysql, { Pool as MysqlPool } from 'mysql2/promise';
 
 dotenv.config();
 
@@ -127,18 +128,22 @@ const initialData: DbData = {
   gd_speaker_ratings: []
 };
 
-export type StorageMode = 'postgres' | 'cloud_sync' | 'persistent_disk' | 'ephemeral_local';
+export type StorageMode = 'mysql' | 'postgres' | 'cloud_sync' | 'persistent_disk' | 'ephemeral_local';
 
 class MemoryDb {
   private data: DbData;
   private syncTimer: NodeJS.Timeout | null = null;
   private pgSyncTimer: NodeJS.Timeout | null = null;
-  private pgPool: Pool | null = null;
+  private pgPool: PgPool | null = null;
+  private mysqlPool: MysqlPool | null = null;
+  private mysqlSyncTimer: NodeJS.Timeout | null = null;
   private storageMode: StorageMode = 'ephemeral_local';
   private lastSavedAt: string = new Date().toISOString();
   private isHydrated: boolean = false;
   private postgresLastError: string | null = null;
   private postgresHost: string | null = null;
+  private mysqlLastError: string | null = null;
+  private mysqlHost: string | null = null;
 
   constructor() {
     this.data = this.loadLocalFile();
@@ -161,11 +166,252 @@ class MemoryDb {
     return { ...initialData };
   }
 
+  private async ensureMysqlTables(): Promise<void> {
+    if (!this.mysqlPool) return;
+
+    await this.mysqlPool.query(`
+      CREATE TABLE IF NOT EXISTS \`portal_storage\` (
+        \`key\` VARCHAR(64) PRIMARY KEY,
+        \`data\` LONGTEXT NOT NULL,
+        \`updated_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    await this.mysqlPool.query(`
+      CREATE TABLE IF NOT EXISTS \`admins\` (
+        \`id\` VARCHAR(64) PRIMARY KEY,
+        \`name\` VARCHAR(255) NOT NULL,
+        \`email\` VARCHAR(255) UNIQUE NOT NULL,
+        \`password\` VARCHAR(255) NOT NULL,
+        \`role\` VARCHAR(64) NOT NULL DEFAULT 'ADMIN',
+        \`department\` VARCHAR(255) NOT NULL,
+        \`is_super_admin\` TINYINT(1) DEFAULT 0,
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await this.mysqlPool.query(`
+      CREATE TABLE IF NOT EXISTS \`students\` (
+        \`id\` VARCHAR(64) PRIMARY KEY,
+        \`student_id\` VARCHAR(64) UNIQUE NOT NULL,
+        \`name\` VARCHAR(255) NOT NULL,
+        \`email\` VARCHAR(255) UNIQUE NOT NULL,
+        \`password\` VARCHAR(255) NOT NULL,
+        \`department\` VARCHAR(64) NOT NULL,
+        \`year\` INT NOT NULL,
+        \`community\` VARCHAR(255) NOT NULL,
+        \`skill_level\` VARCHAR(64) NOT NULL,
+        \`profile\` TEXT,
+        \`interest\` TEXT,
+        \`suggested_role\` VARCHAR(255),
+        \`status\` VARCHAR(64) NOT NULL DEFAULT 'ACTIVE',
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await this.mysqlPool.query(`
+      CREATE TABLE IF NOT EXISTS \`gd_sessions\` (
+        \`id\` VARCHAR(64) PRIMARY KEY,
+        \`title\` VARCHAR(255) NOT NULL,
+        \`topic\` TEXT NOT NULL,
+        \`description\` TEXT,
+        \`pin\` VARCHAR(32),
+        \`guidelines\` TEXT,
+        \`target_community\` VARCHAR(255),
+        \`department\` VARCHAR(64),
+        \`date\` VARCHAR(32),
+        \`start_time\` VARCHAR(32),
+        \`duration_minutes\` INT,
+        \`time_per_candidate_seconds\` INT DEFAULT 180,
+        \`max_participants\` INT DEFAULT 10,
+        \`min_evaluators_per_candidate\` INT DEFAULT 3,
+        \`evaluation_criteria\` JSON,
+        \`speaker_duration_limit_seconds\` INT DEFAULT 120,
+        \`status\` VARCHAR(64) DEFAULT 'UPCOMING',
+        \`created_by\` VARCHAR(64),
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await this.mysqlPool.query(`
+      CREATE TABLE IF NOT EXISTS \`gd_participants\` (
+        \`id\` VARCHAR(64) PRIMARY KEY,
+        \`session_id\` VARCHAR(64) NOT NULL,
+        \`student_id\` VARCHAR(64) NOT NULL,
+        \`student_name\` VARCHAR(255) NOT NULL,
+        \`student_reg\` VARCHAR(64) NOT NULL,
+        \`student_department\` VARCHAR(64),
+        \`student_community\` VARCHAR(255),
+        \`speaking_order\` INT DEFAULT 1,
+        \`speaking_status\` VARCHAR(64) DEFAULT 'PENDING',
+        \`speaking_time_seconds\` INT DEFAULT 0,
+        \`rank\` INT DEFAULT 0,
+        \`total_points\` FLOAT DEFAULT 0,
+        \`joined_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await this.mysqlPool.query(`
+      CREATE TABLE IF NOT EXISTS \`assessments\` (
+        \`id\` VARCHAR(64) PRIMARY KEY,
+        \`title\` VARCHAR(255) NOT NULL,
+        \`description\` TEXT,
+        \`type\` VARCHAR(64) NOT NULL,
+        \`question_selection_mode\` VARCHAR(64) NOT NULL DEFAULT 'FIXED',
+        \`community\` VARCHAR(255),
+        \`department\` VARCHAR(255),
+        \`target_type\` VARCHAR(64) NOT NULL DEFAULT 'ALL',
+        \`duration_minutes\` INT NOT NULL,
+        \`start_time\` DATETIME,
+        \`end_time\` DATETIME,
+        \`passing_percentage\` FLOAT NOT NULL,
+        \`max_marks\` FLOAT NOT NULL,
+        \`status\` VARCHAR(64) NOT NULL DEFAULT 'DRAFT',
+        \`created_by\` VARCHAR(64),
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await this.mysqlPool.query(`
+      CREATE TABLE IF NOT EXISTS \`questions\` (
+        \`id\` VARCHAR(64) PRIMARY KEY,
+        \`source_pdf_id\` VARCHAR(64),
+        \`question_type\` VARCHAR(64) NOT NULL,
+        \`question_text\` TEXT NOT NULL,
+        \`option_a\` TEXT,
+        \`option_b\` TEXT,
+        \`option_c\` TEXT,
+        \`option_d\` TEXT,
+        \`correct_answer\` TEXT,
+        \`explanation\` TEXT,
+        \`rubric\` TEXT,
+        \`expected_answer\` TEXT,
+        \`marks\` FLOAT NOT NULL DEFAULT 1,
+        \`difficulty\` VARCHAR(64) NOT NULL DEFAULT 'Medium',
+        \`topic\` VARCHAR(255),
+        \`status\` VARCHAR(64) NOT NULL DEFAULT 'APPROVED',
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await this.mysqlPool.query(`
+      CREATE TABLE IF NOT EXISTS \`audit_logs\` (
+        \`id\` VARCHAR(64) PRIMARY KEY,
+        \`actor_id\` VARCHAR(64) NOT NULL,
+        \`actor_role\` VARCHAR(64) NOT NULL,
+        \`action\` VARCHAR(255) NOT NULL,
+        \`entity_type\` VARCHAR(255) NOT NULL,
+        \`entity_id\` VARCHAR(255),
+        \`metadata\` TEXT,
+        \`timestamp\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+  }
+
   public async init(): Promise<void> {
     if (this.isHydrated) return;
 
-    // 1. Check PostgreSQL Database (DATABASE_URL)
-    const databaseUrl = process.env.DATABASE_URL;
+    // 1. Check MySQL Database (Option 2 - Real-Time sync to MySQL Workbench)
+    const useMysql = process.env.USE_MYSQL === 'true' || Boolean(process.env.MYSQL_URL) || Boolean(process.env.MYSQL_PASSWORD !== undefined && process.env.MYSQL_PASSWORD !== '');
+    if (useMysql || process.env.MYSQL_HOST) {
+      try {
+        const mysqlHost = process.env.MYSQL_HOST || 'localhost';
+        const mysqlPort = Number(process.env.MYSQL_PORT) || 3306;
+        const mysqlUser = process.env.MYSQL_USER || 'root';
+        const mysqlPassword = process.env.MYSQL_PASSWORD || '';
+        const mysqlDatabase = process.env.MYSQL_DATABASE || 'student_portal';
+        this.mysqlHost = mysqlHost;
+
+        console.log(`🐬 Connecting to MySQL Database at ${mysqlHost}:${mysqlPort} (database: ${mysqlDatabase})...`);
+
+        // Ensure database exists
+        try {
+          const rootConn = await mysql.createConnection({
+            host: mysqlHost,
+            port: mysqlPort,
+            user: mysqlUser,
+            password: mysqlPassword
+          });
+          await rootConn.query(`CREATE DATABASE IF NOT EXISTS \`${mysqlDatabase}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
+          await rootConn.end();
+        } catch (dbErr: any) {
+          // May not have CREATE DATABASE permissions or already exists
+        }
+
+        const pool = mysql.createPool({
+          host: mysqlHost,
+          port: mysqlPort,
+          user: mysqlUser,
+          password: mysqlPassword,
+          database: mysqlDatabase,
+          waitForConnections: true,
+          connectionLimit: 10,
+          queueLimit: 0
+        });
+
+        await pool.query('SELECT 1 as ping;');
+        this.mysqlPool = pool;
+        this.mysqlLastError = null;
+
+        // Ensure schema and tables exist
+        await this.ensureMysqlTables();
+
+        // Hydrate from MySQL
+        const [rows]: any = await this.mysqlPool.query(`
+          SELECT \`data\`, \`updated_at\` FROM \`portal_storage\` WHERE \`key\` = 'portal_state' LIMIT 1;
+        `);
+
+        if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
+          let parsedData: any = null;
+          try {
+            parsedData = typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
+          } catch {
+            console.warn('Could not parse MySQL portal_state JSON.');
+          }
+
+          if (parsedData && Array.isArray(parsedData.students) && parsedData.students.length > 0) {
+            const diskData = this.loadLocalFile();
+            const mergedData: DbData = { ...initialData, ...diskData, ...parsedData };
+
+            const arrayKeys: (keyof DbData)[] = [
+              'admins', 'students', 'assessments', 'questions', 'study_materials',
+              'attendance_sessions', 'quiz_sessions', 'meetings', 'meeting_settings',
+              'gd_sessions', 'gd_participants'
+            ];
+
+            for (const k of arrayKeys) {
+              const diskArr = (diskData as any)[k];
+              const myArr = (parsedData as any)[k];
+              if (Array.isArray(diskArr) && diskArr.length > 0 && (!Array.isArray(myArr) || myArr.length === 0)) {
+                (mergedData as any)[k] = diskArr;
+              }
+            }
+
+            this.data = mergedData;
+            this.storageMode = 'mysql';
+            this.isHydrated = true;
+            this.lastSavedAt = rows[0].updated_at ? new Date(rows[0].updated_at).toISOString() : new Date().toISOString();
+            console.log(`✅ Database successfully hydrated from MySQL (${this.data.students.length} students, ${this.data.admins.length} admins, ${this.data.gd_sessions?.length || 0} GD sessions)!`);
+            this.saveLocalCopies();
+            await this.syncToMysql();
+            return;
+          }
+        }
+
+        // If MySQL has no state yet, seed it with current portal data
+        this.storageMode = 'mysql';
+        this.isHydrated = true;
+        await this.syncToMysql();
+        console.log('✅ MySQL connected & initial portal state stored.');
+        return;
+      } catch (err: any) {
+        this.mysqlLastError = err.message;
+        console.error('⚠️ MySQL connection failed, falling back:', err.message);
+      }
+    }
+
+    // 2. Check PostgreSQL Database (DATABASE2_URL or DATABASE_URL)
+    const databaseUrl = process.env.DATABASE2_URL || process.env.DATABASE_URL;
     if (databaseUrl) {
       try {
         let extractedHost = 'postgres';
@@ -184,7 +430,7 @@ class MemoryDb {
         console.log(`Connecting to PostgreSQL Database at ${extractedHost} (Render internal: ${isRenderInternal})...`);
 
         const createAndTestPool = async (useSsl: boolean) => {
-          const pool = new Pool({
+          const pool = new PgPool({
             connectionString: databaseUrl,
             ssl: useSsl ? { rejectUnauthorized: false } : false,
             connectionTimeoutMillis: 7000
@@ -193,9 +439,7 @@ class MemoryDb {
           return pool;
         };
 
-        // Render internal connections often require non-SSL or self-signed certs. External cloud databases require SSL.
-        // We attempt the best mode first, and if it fails, try the alternative before falling back.
-        let connectedPool: Pool | null = null;
+        let connectedPool: PgPool | null = null;
         const initialSslAttempt = !isLocal && !isSslExplicitlyDisabled;
 
         try {
@@ -233,7 +477,6 @@ class MemoryDb {
             const diskData = this.loadLocalFile();
             const mergedData: DbData = { ...initialData, ...diskData, ...pgData };
 
-            // Ensure any arrays that diskData had populated are preserved if pgData is empty or missing them
             const arrayKeys: (keyof DbData)[] = [
               'admins', 'students', 'assessments', 'questions', 'study_materials',
               'attendance_sessions', 'quiz_sessions', 'meetings', 'meeting_settings',
@@ -248,7 +491,6 @@ class MemoryDb {
               }
             }
 
-            // Always ensure Super Admin is in admins
             if (diskData.admins && diskData.admins.length > 0) {
               for (const admin of diskData.admins) {
                 if (!mergedData.admins.some((a: any) => a.email?.toLowerCase() === admin.email?.toLowerCase())) {
@@ -261,14 +503,13 @@ class MemoryDb {
             this.storageMode = 'postgres';
             this.isHydrated = true;
             this.lastSavedAt = res.rows[0].updated_at || new Date().toISOString();
-            console.log(`✅ Database successfully hydrated & merged from PostgreSQL (${this.data.students.length} students, ${this.data.admins.length} admins, ${this.data.gd_sessions?.length || 0} GD sessions)!`);
+            console.log(`✅ Database successfully hydrated & merged from PostgreSQL (${this.data.students.length} students, ${this.data.admins.length} admins)!`);
             this.saveLocalCopies();
             await this.syncToPostgres();
             return;
           }
         }
 
-        // If table is empty, save current seed/local data into PostgreSQL
         this.storageMode = 'postgres';
         this.isHydrated = true;
         await this.syncToPostgres();
@@ -280,7 +521,7 @@ class MemoryDb {
       }
     }
 
-    // 2. Check Remote Cloud Sync (JSONBIN_URL / DATABASE_SYNC_URL)
+    // 3. Check Remote Cloud Sync (JSONBIN_URL / DATABASE_SYNC_URL)
     const syncUrl = process.env.DATABASE_SYNC_URL || process.env.JSONBIN_URL;
     const syncKey = process.env.DATABASE_SYNC_KEY || process.env.JSONBIN_SECRET_KEY;
 
@@ -298,25 +539,11 @@ class MemoryDb {
             const diskData = this.loadLocalFile();
             const mergedData: DbData = { ...initialData, ...diskData, ...payload };
 
-            const arrayKeys: (keyof DbData)[] = [
-              'admins', 'students', 'assessments', 'questions', 'study_materials',
-              'attendance_sessions', 'quiz_sessions', 'meetings', 'meeting_settings',
-              'gd_sessions', 'gd_participants'
-            ];
-
-            for (const k of arrayKeys) {
-              const diskArr = (diskData as any)[k];
-              const cArr = (payload as any)[k];
-              if (Array.isArray(diskArr) && diskArr.length > 0 && (!Array.isArray(cArr) || cArr.length === 0)) {
-                (mergedData as any)[k] = diskArr;
-              }
-            }
-
             this.data = mergedData;
             this.storageMode = 'cloud_sync';
             this.isHydrated = true;
             this.lastSavedAt = new Date().toISOString();
-            console.log(`✅ Database successfully hydrated & merged from Cloud Storage (${this.data.students.length} students)!`);
+            console.log(`✅ Database successfully hydrated from Cloud Storage (${this.data.students.length} students)!`);
             this.saveLocalCopies();
             return;
           }
@@ -326,7 +553,7 @@ class MemoryDb {
       }
     }
 
-    // 3. Persistent Disk
+    // 4. Persistent Disk
     if (process.env.DATA_DIR || fs.existsSync('/var/data')) {
       this.storageMode = 'persistent_disk';
       this.isHydrated = true;
@@ -334,10 +561,10 @@ class MemoryDb {
       return;
     }
 
-    // 4. Fallback Ephemeral Local
+    // 5. Fallback Ephemeral Local
     this.storageMode = 'ephemeral_local';
     this.isHydrated = true;
-    console.log('⚠️ Active storage mode: Ephemeral Local (Render Free Tier). Changes will reset when instance spins down unless DATABASE_URL or JSONBIN_URL is configured.');
+    console.log('⚠️ Active storage mode: Ephemeral Local.');
   }
 
   public saveLocalCopies() {
@@ -347,7 +574,6 @@ class MemoryDb {
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(dbPath, JSON.stringify(this.data, null, 2), 'utf-8');
 
-      // Also ensure mirror to both root and backend
       const rootPath = path.resolve(process.cwd(), 'database/portal.json');
       const backendPath = path.resolve(process.cwd(), 'backend/database/portal.json');
 
@@ -368,9 +594,14 @@ class MemoryDb {
     this.saveLocalCopies();
     this.triggerCloudSync();
     this.triggerPostgresSync();
+    this.triggerMysqlSync();
   }
 
   public async flush(): Promise<void> {
+    if (this.mysqlSyncTimer) {
+      clearTimeout(this.mysqlSyncTimer);
+      this.mysqlSyncTimer = null;
+    }
     if (this.pgSyncTimer) {
       clearTimeout(this.pgSyncTimer);
       this.pgSyncTimer = null;
@@ -380,6 +611,9 @@ class MemoryDb {
       this.syncTimer = null;
     }
     this.saveLocalCopies();
+    if (this.mysqlPool) {
+      await this.syncToMysql();
+    }
     if (this.pgPool) {
       await this.syncToPostgres();
     }
@@ -414,13 +648,14 @@ class MemoryDb {
     return {
       mode: this.storageMode,
       is_ephemeral: this.storageMode === 'ephemeral_local',
+      mysql_connected: this.storageMode === 'mysql',
+      mysql_host: this.mysqlHost,
+      mysql_error: this.mysqlLastError,
       postgres_connected: this.storageMode === 'postgres',
       postgres_host: this.postgresHost,
       postgres_error: this.postgresLastError,
-      is_render_internal: Boolean(this.postgresHost && this.postgresHost.startsWith('dpg-') && !this.postgresHost.includes('.')),
-      has_database_url: Boolean(process.env.DATABASE_URL),
-      has_cloud_sync: Boolean(process.env.DATABASE_SYNC_URL || process.env.JSONBIN_URL),
-      has_persistent_disk: Boolean(process.env.DATA_DIR || fs.existsSync('/var/data')),
+      has_mysql: Boolean(process.env.USE_MYSQL === 'true' || process.env.MYSQL_PASSWORD),
+      has_database_url: Boolean(process.env.DATABASE2_URL || process.env.DATABASE_URL),
       last_saved: this.lastSavedAt,
       db_path: dbPath,
       counts: {
@@ -433,12 +668,89 @@ class MemoryDb {
         attendance_sessions: this.data.attendance_sessions?.length || 0,
         notifications: this.data.notifications?.length || 0,
         audit_logs: this.data.audit_logs?.length || 0,
-        restricted_emails: this.data.restricted_emails?.length || 0,
-        email_logs: this.data.email_logs?.length || 0,
         gd_sessions: this.data.gd_sessions?.length || 0,
         gd_participants: this.data.gd_participants?.length || 0
       }
     };
+  }
+
+  private triggerMysqlSync() {
+    if (!this.mysqlPool) return;
+    if (this.mysqlSyncTimer) clearTimeout(this.mysqlSyncTimer);
+    this.mysqlSyncTimer = setTimeout(async () => {
+      await this.syncToMysql();
+    }, 250);
+  }
+
+  private async syncToMysql() {
+    if (!this.mysqlPool) return;
+    try {
+      // 1. Save master state in portal_storage
+      await this.mysqlPool.query(`
+        INSERT INTO \`portal_storage\` (\`key\`, \`data\`, \`updated_at\`)
+        VALUES ('portal_state', ?, NOW())
+        ON DUPLICATE KEY UPDATE \`data\` = VALUES(\`data\`), \`updated_at\` = NOW();
+      `, [JSON.stringify(this.data)]);
+
+      // 2. Sync Admins relational table
+      if (this.data.admins && this.data.admins.length > 0) {
+        for (const a of this.data.admins) {
+          await this.mysqlPool.query(`
+            INSERT INTO \`admins\` (\`id\`, \`name\`, \`email\`, \`password\`, \`role\`, \`department\`, \`is_super_admin\`, \`created_at\`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE \`name\` = VALUES(\`name\`), \`email\` = VALUES(\`email\`), \`password\` = VALUES(\`password\`), \`role\` = VALUES(\`role\`), \`department\` = VALUES(\`department\`);
+          `, [a.id, a.name, a.email, a.password, a.role || 'ADMIN', a.department || '', a.is_super_admin ? 1 : 0, a.created_at ? new Date(a.created_at) : new Date()]);
+        }
+      }
+
+      // 3. Sync Students relational table
+      if (this.data.students && this.data.students.length > 0) {
+        for (const s of this.data.students) {
+          await this.mysqlPool.query(`
+            INSERT INTO \`students\` (\`id\`, \`student_id\`, \`name\`, \`email\`, \`password\`, \`department\`, \`year\`, \`community\`, \`skill_level\`, \`profile\`, \`interest\`, \`suggested_role\`, \`status\`, \`created_at\`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE \`name\` = VALUES(\`name\`), \`email\` = VALUES(\`email\`), \`password\` = VALUES(\`password\`), \`department\` = VALUES(\`department\`), \`year\` = VALUES(\`year\`), \`community\` = VALUES(\`community\`), \`status\` = VALUES(\`status\`);
+          `, [s.id, s.student_id, s.name, s.email, s.password, s.department || '', Number(s.year) || 1, s.community || '', s.skill_level || 'Beginner', s.profile || '', s.interest || '', s.suggested_role || '', s.status || 'ACTIVE', s.created_at ? new Date(s.created_at) : new Date()]);
+        }
+      }
+
+      // 4. Sync GD Sessions relational table
+      if (this.data.gd_sessions && this.data.gd_sessions.length > 0) {
+        for (const gd of this.data.gd_sessions) {
+          await this.mysqlPool.query(`
+            INSERT INTO \`gd_sessions\` (\`id\`, \`title\`, \`topic\`, \`description\`, \`pin\`, \`guidelines\`, \`target_community\`, \`department\`, \`date\`, \`start_time\`, \`duration_minutes\`, \`time_per_candidate_seconds\`, \`max_participants\`, \`min_evaluators_per_candidate\`, \`evaluation_criteria\`, \`speaker_duration_limit_seconds\`, \`status\`, \`created_by\`, \`created_at\`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE \`title\` = VALUES(\`title\`), \`topic\` = VALUES(\`topic\`), \`status\` = VALUES(\`status\`), \`speaker_duration_limit_seconds\` = VALUES(\`speaker_duration_limit_seconds\`);
+          `, [gd.id, gd.title, gd.topic, gd.description || null, gd.pin || null, gd.guidelines || null, gd.target_community || null, gd.department || null, gd.date || null, gd.start_time || null, Number(gd.duration_minutes) || 30, Number(gd.time_per_candidate_seconds) || 180, Number(gd.max_participants) || 10, Number(gd.min_evaluators_per_candidate) || 3, JSON.stringify(gd.evaluation_criteria || []), Number(gd.speaker_duration_limit_seconds) || 120, gd.status || 'UPCOMING', gd.created_by || null, gd.created_at ? new Date(gd.created_at) : new Date()]);
+        }
+      }
+
+      // 5. Sync GD Participants relational table
+      if (this.data.gd_participants && this.data.gd_participants.length > 0) {
+        for (const gp of this.data.gd_participants) {
+          await this.mysqlPool.query(`
+            INSERT INTO \`gd_participants\` (\`id\`, \`session_id\`, \`student_id\`, \`student_name\`, \`student_reg\`, \`student_department\`, \`student_community\`, \`speaking_order\`, \`speaking_status\`, \`speaking_time_seconds\`, \`rank\` , \`total_points\`, \`joined_at\`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE \`student_name\` = VALUES(\`student_name\`), \`speaking_status\` = VALUES(\`speaking_status\`), \`speaking_time_seconds\` = VALUES(\`speaking_time_seconds\`), \`rank\` = VALUES(\`rank\`), \`total_points\` = VALUES(\`total_points\`);
+          `, [gp.id, gp.session_id, gp.student_id, gp.student_name, gp.student_reg, gp.student_department || null, gp.student_community || null, Number(gp.speaking_order) || 1, gp.speaking_status || 'PENDING', Number(gp.speaking_time_seconds) || 0, Number(gp.rank) || 0, Number(gp.total_points) || 0, gp.joined_at ? new Date(gp.joined_at) : new Date()]);
+        }
+      }
+
+      // 6. Sync recent Audit Logs
+      if (this.data.audit_logs && this.data.audit_logs.length > 0) {
+        const recentLogs = this.data.audit_logs.slice(-30);
+        for (const log of recentLogs) {
+          await this.mysqlPool.query(`
+            INSERT IGNORE INTO \`audit_logs\` (\`id\`, \`actor_id\`, \`actor_role\`, \`action\`, \`entity_type\`, \`entity_id\`, \`metadata\`, \`timestamp\`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+          `, [log.id, log.actor_id, log.actor_role, log.action, log.entity_type, log.entity_id || null, log.metadata ? (typeof log.metadata === 'string' ? log.metadata : JSON.stringify(log.metadata)) : null, log.timestamp ? new Date(log.timestamp) : new Date()]);
+        }
+      }
+
+      console.log('🐬 Database changes successfully saved to MySQL.');
+    } catch (err: any) {
+      console.error('MySQL save failed:', err.message);
+    }
   }
 
   private triggerPostgresSync() {
@@ -512,4 +824,3 @@ export async function initDatabase(): Promise<void> {
   memoryDb.saveLocalCopies();
   console.log(`✅ Database initialized successfully. Mode: ${memoryDb.getStorageStatus().mode}, Path: ${dbPath}`);
 }
-

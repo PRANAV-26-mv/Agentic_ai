@@ -1,5 +1,120 @@
 [
   {
+    "id": "audit-1791830144214-382",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-12T18:35:44.214Z"
+  },
+  {
+    "id": "audit-1791830115373-164",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "CREATE_STUDENT",
+    "entity_type": "STUDENT",
+    "entity_id": "std-1791830115370-612",
+    "metadata": "{\"name\":\"pranav\"}",
+    "timestamp": "2026-10-12T18:35:15.373Z"
+  },
+  {
+    "id": "audit-1791830066694-540",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-12T18:34:26.694Z"
+  },
+  {
+    "id": "audit-1791829965949-802",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "RESTORE_DATABASE",
+    "entity_type": "SYSTEM",
+    "entity_id": "DATABASE",
+    "metadata": "{\"timestamp\":\"2026-10-12T18:32:45.949Z\"}",
+    "timestamp": "2026-10-12T18:32:45.949Z"
+  },
+  {
+    "id": "audit-1791829919382-225",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-12T18:31:59.382Z"
+  },
+  {
+    "id": "audit-1791829807587-735",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-12T18:30:07.587Z"
+  },
+  {
+    "id": "audit-1791829036356-626",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "CREATE_ADMIN",
+    "entity_type": "ADMIN_USER",
+    "entity_id": "adm-1791829036353",
+    "metadata": "{\"email\":\"pranavmv.it25@bitsathy.ac.in\",\"name\":\"PRANAV M V\"}",
+    "timestamp": "2026-10-12T18:17:16.356Z"
+  },
+  {
+    "id": "audit-1791829035997-267",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "CREATE_ADMIN",
+    "entity_type": "ADMIN_USER",
+    "entity_id": "adm-1791829035994",
+    "metadata": "{\"email\":\"sushanthip.it25@bitsathy.ac.in\",\"name\":\"Sushanthi P\"}",
+    "timestamp": "2026-10-12T18:17:15.997Z"
+  },
+  {
+    "id": "audit-1791829035646-808",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "CREATE_ADMIN",
+    "entity_type": "ADMIN_USER",
+    "entity_id": "adm-1791829035643",
+    "metadata": "{\"email\":\"ashmitam.it25@bitsathy.ac.in\",\"name\":\"Ashmita M\"}",
+    "timestamp": "2026-10-12T18:17:15.646Z"
+  },
+  {
+    "id": "audit-1791829035281-747",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "CREATE_ADMIN",
+    "entity_type": "ADMIN_USER",
+    "entity_id": "adm-1791829035278",
+    "metadata": "{\"email\":\"madhans.it25@bitsathy.ac.in\",\"name\":\"Madhan S\"}",
+    "timestamp": "2026-10-12T18:17:15.281Z"
+  },
+  {
+    "id": "audit-1791829034987-909",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "CREATE_ADMIN",
+    "entity_type": "ADMIN_USER",
+    "entity_id": "adm-1791829034985",
+    "metadata": "{\"email\":\"siddhikas.it25@bitsathy.ac.in\",\"name\":\"SIDDHIKA S\"}",
+    "timestamp": "2026-10-12T18:17:14.987Z"
+  },
+  {
+    "id": "audit-1791829026909-382",
+    "actor_id": "adm-002",
+    "actor_role": "ADMIN",
+    "action": "LOGIN",
+    "entity_type": "USER",
+    "entity_id": "adm-002",
+    "timestamp": "2026-10-12T18:17:06.909Z"
+  },
+  {
     "id": "audit-1791734196793-148",
     "actor_id": "adm-002",
     "actor_role": "ADMIN",

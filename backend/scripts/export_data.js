@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS students (
 if (data.students && data.students.length > 0) {
   for (const s of data.students) {
     sql += `INSERT INTO students (id, student_id, name, email, password, department, year, community, skill_level, profile, interest, suggested_role, status, created_at)\n` +
-      `VALUES (${escapeSql(s.id)}, ${escapeSql(s.student_id)}, ${escapeSql(s.name)}, ${escapeSql(s.email)}, ${escapeSql(s.password)}, ` +
+      `VALUES (${escapeSql(s.id)}, ${escapeSql(s.student_id)}, ${escapeSql(s.name)}, ${escapeSql(s.email)}, ${escapeSql(s.password || s.student_id || 'student123')}, ` +
       `${escapeSql(s.department)}, ${Number(s.year) || 1}, ${escapeSql(s.community)}, ${escapeSql(s.skill_level)}, ` +
       `${escapeSql(s.profile)}, ${escapeSql(s.interest)}, ${escapeSql(s.suggested_role)}, ${escapeSql(s.status || 'ACTIVE')}, ${escapeSql(s.created_at || new Date().toISOString())})\n` +
       `ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, email = EXCLUDED.email, password = EXCLUDED.password;\n`;
@@ -206,10 +206,15 @@ CREATE TABLE IF NOT EXISTS gd_participants (
 
 if (data.gd_participants && data.gd_participants.length > 0) {
   for (const gp of data.gd_participants) {
+    const sId = gp.session_id || gp.gd_session_id;
+    const sName = gp.student_name || gp.name || 'Student';
+    const sReg = gp.student_reg || gp.roll_number || 'N/A';
+    const sEmail = gp.email || `${sReg}@college.edu`;
+    const sDept = gp.student_department || gp.department || 'ALL';
     sql += `INSERT INTO gd_participants (id, gd_session_id, student_id, name, roll_number, email, department, speaking_order, speaking_status, total_speaking_duration_seconds, speaking_turns_count, joined_at)\n` +
-      `VALUES (${escapeSql(gp.id)}, ${escapeSql(gp.gd_session_id)}, ${escapeSql(gp.student_id)}, ${escapeSql(gp.name)}, ${escapeSql(gp.roll_number)}, ` +
-      `${escapeSql(gp.email)}, ${escapeSql(gp.department)}, ${Number(gp.speaking_order) || 1}, ${escapeSql(gp.speaking_status || 'PENDING')}, ` +
-      `${Number(gp.total_speaking_duration_seconds) || 0}, ${Number(gp.speaking_turns_count) || 0}, ${escapeSql(gp.joined_at || new Date().toISOString())})\n` +
+      `VALUES (${escapeSql(gp.id)}, ${escapeSql(sId)}, ${escapeSql(gp.student_id)}, ${escapeSql(sName)}, ${escapeSql(sReg)}, ` +
+      `${escapeSql(sEmail)}, ${escapeSql(sDept)}, ${Number(gp.speaking_order) || 1}, ${escapeSql(gp.speaking_status || 'PENDING')}, ` +
+      `${Number(gp.speaking_time_seconds || gp.total_speaking_duration_seconds) || 0}, ${Number(gp.speaking_turns_count) || 0}, ${escapeSql(gp.joined_at || new Date().toISOString())})\n` +
       `ON CONFLICT (id) DO NOTHING;\n`;
   }
 }

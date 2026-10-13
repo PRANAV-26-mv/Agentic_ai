@@ -1,0 +1,563 @@
+{
+    "type": "MySQLNotebook",
+    "version": "1.0",
+    "caption": "DB Notebook",
+    "content": "\\about\nSELECT * FROM `student_portal`.`admins`\nSELECT * FROM `student_portal`.`admins`\n",
+    "options": {
+        "tabSize": 4,
+        "insertSpaces": true,
+        "indentSize": 4,
+        "defaultEOL": "CRLF",
+        "trimAutoWhitespace": true
+    },
+    "viewState": {
+        "cursorState": [
+            {
+                "inSelectionMode": false,
+                "selectionStart": {
+                    "lineNumber": 4,
+                    "column": 1
+                },
+                "position": {
+                    "lineNumber": 4,
+                    "column": 1
+                }
+            }
+        ],
+        "viewState": {
+            "scrollLeft": 0,
+            "firstPosition": {
+                "lineNumber": 3,
+                "column": 1
+            },
+            "firstPositionDeltaTop": 274
+        },
+        "contributionsState": {
+            "editor.contrib.folding": {},
+            "editor.contrib.wordHighlighter": false
+        }
+    },
+    "contexts": [
+        {
+            "state": {
+                "start": 1,
+                "end": 1,
+                "language": "mysql",
+                "result": {
+                    "type": "text",
+                    "text": [
+                        {
+                            "type": 2,
+                            "content": "Welcome to the DB Notebook.\n\nUse DB Notebooks to explore MySQL data with executable SQL, JavaScript, and TypeScript code blocks.\n\n* Press Ctrl+Enter to execute or re-execute the selected code block.\n* Use Up and Down keys to move between code blocks.\n* Use Ctrl+Up and Ctrl+Down to navigate through the command history.\n\n* Execute \\sql to switch to SQL, \\js to JavaScript and \\ts to TypeScript mode.\n* Execute \\help or \\? for help;",
+                            "language": "ansi"
+                        }
+                    ]
+                },
+                "currentHeight": 207.1875,
+                "currentSet": 1,
+                "statements": [
+                    {
+                        "delimiter": ";",
+                        "span": {
+                            "start": 0,
+                            "length": 6
+                        },
+                        "contentStart": 0,
+                        "state": 0
+                    }
+                ]
+            },
+            "data": []
+        },
+        {
+            "state": {
+                "start": 2,
+                "end": 2,
+                "language": "mysql",
+                "result": {
+                    "type": "resultIds",
+                    "list": [
+                        "913819e7-a8dc-4bf7-f906-0fcb30fe3e27"
+                    ]
+                },
+                "currentHeight": 352,
+                "currentSet": 1,
+                "statements": [
+                    {
+                        "delimiter": ";",
+                        "span": {
+                            "start": 0,
+                            "length": 39
+                        },
+                        "contentStart": 0,
+                        "state": 3
+                    }
+                ]
+            },
+            "data": [
+                {
+                    "tabId": "c508f4f6-c271-48e0-d8a1-90bfd515544c",
+                    "resultId": "913819e7-a8dc-4bf7-f906-0fcb30fe3e27",
+                    "rows": [
+                        {
+                            "0": "adm-002",
+                            "1": "Pranav (Super Admin)",
+                            "2": "pranavannur9659@gmail.com",
+                            "3": "9488529035",
+                            "4": "ADMIN",
+                            "5": "Computer Science & Engineering",
+                            "6": 1,
+                            "7": "2026-09-05 14:20:00"
+                        },
+                        {
+                            "0": "adm-1788626901288",
+                            "1": "YAMUNA RANI R",
+                            "2": "yamunaranir.al25@bitsathy.ac.in",
+                            "3": "7376252AL245",
+                            "4": "ADMIN",
+                            "5": "Artificial Intelligence & Data Science",
+                            "6": 0,
+                            "7": "2026-09-05 16:48:21"
+                        }
+                    ],
+                    "columns": [
+                        {
+                            "title": "id",
+                            "field": "0",
+                            "dataType": {
+                                "type": 17,
+                                "characterMaximumLength": 65535,
+                                "flags": [
+                                    "BINARY",
+                                    "ASCII",
+                                    "UNICODE"
+                                ],
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": true,
+                            "nullable": false,
+                            "autoIncrement": false
+                        },
+                        {
+                            "title": "name",
+                            "field": "1",
+                            "dataType": {
+                                "type": 17,
+                                "characterMaximumLength": 65535,
+                                "flags": [
+                                    "BINARY",
+                                    "ASCII",
+                                    "UNICODE"
+                                ],
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": false,
+                            "nullable": false,
+                            "autoIncrement": false
+                        },
+                        {
+                            "title": "email",
+                            "field": "2",
+                            "dataType": {
+                                "type": 17,
+                                "characterMaximumLength": 65535,
+                                "flags": [
+                                    "BINARY",
+                                    "ASCII",
+                                    "UNICODE"
+                                ],
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": false,
+                            "nullable": false,
+                            "autoIncrement": false
+                        },
+                        {
+                            "title": "password",
+                            "field": "3",
+                            "dataType": {
+                                "type": 17,
+                                "characterMaximumLength": 65535,
+                                "flags": [
+                                    "BINARY",
+                                    "ASCII",
+                                    "UNICODE"
+                                ],
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": false,
+                            "nullable": false,
+                            "autoIncrement": false
+                        },
+                        {
+                            "title": "role",
+                            "field": "4",
+                            "dataType": {
+                                "type": 17,
+                                "characterMaximumLength": 65535,
+                                "flags": [
+                                    "BINARY",
+                                    "ASCII",
+                                    "UNICODE"
+                                ],
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": false,
+                            "nullable": false,
+                            "autoIncrement": false,
+                            "default": "ADMIN"
+                        },
+                        {
+                            "title": "department",
+                            "field": "5",
+                            "dataType": {
+                                "type": 17,
+                                "characterMaximumLength": 65535,
+                                "flags": [
+                                    "BINARY",
+                                    "ASCII",
+                                    "UNICODE"
+                                ],
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": false,
+                            "nullable": false,
+                            "autoIncrement": false
+                        },
+                        {
+                            "title": "is_super_admin",
+                            "field": "6",
+                            "dataType": {
+                                "type": 42,
+                                "flags": [
+                                    "SIGNED",
+                                    "ZEROFILL"
+                                ],
+                                "numericPrecision": 10,
+                                "parameterFormatType": "OneOrZero",
+                                "synonyms": [
+                                    "INTEGER",
+                                    "INT4"
+                                ]
+                            },
+                            "inPK": false,
+                            "nullable": true,
+                            "autoIncrement": false,
+                            "default": "0"
+                        },
+                        {
+                            "title": "created_at",
+                            "field": "7",
+                            "dataType": {
+                                "type": 26,
+                                "dateTimePrecision": 8,
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": false,
+                            "nullable": true,
+                            "autoIncrement": false,
+                            "default": "CURRENT_TIMESTAMP"
+                        }
+                    ],
+                    "executionInfo": {
+                        "text": "OK, 2 records retrieved in 1.059ms"
+                    },
+                    "totalRowCount": 2,
+                    "hasMoreRows": false,
+                    "currentPage": 0,
+                    "index": 0,
+                    "sql": "SELECT * FROM `student_portal`.`admins`",
+                    "updatable": true,
+                    "fullTableName": "`student_portal`.`admins`"
+                }
+            ]
+        },
+        {
+            "state": {
+                "start": 3,
+                "end": 3,
+                "language": "mysql",
+                "result": {
+                    "type": "resultIds",
+                    "list": [
+                        "73f66d25-4274-4977-d877-7e6bc630cb51"
+                    ]
+                },
+                "currentHeight": 352,
+                "currentSet": 1,
+                "statements": [
+                    {
+                        "delimiter": ";",
+                        "span": {
+                            "start": 0,
+                            "length": 39
+                        },
+                        "contentStart": 0,
+                        "state": 3
+                    }
+                ]
+            },
+            "data": [
+                {
+                    "tabId": "c508f4f6-c271-48e0-d8a1-90bfd515544c",
+                    "resultId": "73f66d25-4274-4977-d877-7e6bc630cb51",
+                    "rows": [
+                        {
+                            "0": "adm-002",
+                            "1": "Pranav (Super Admin)",
+                            "2": "pranavannur9659@gmail.com",
+                            "3": "9488529035",
+                            "4": "ADMIN",
+                            "5": "Computer Science & Engineering",
+                            "6": 1,
+                            "7": "2026-09-05 14:20:00"
+                        },
+                        {
+                            "0": "adm-1788626901288",
+                            "1": "YAMUNA RANI R",
+                            "2": "yamunaranir.al25@bitsathy.ac.in",
+                            "3": "7376252AL245",
+                            "4": "ADMIN",
+                            "5": "Artificial Intelligence & Data Science",
+                            "6": 0,
+                            "7": "2026-09-05 16:48:21"
+                        },
+                        {
+                            "0": "adm-1791829034985",
+                            "1": "SIDDHIKA S",
+                            "2": "siddhikas.it25@bitsathy.ac.in",
+                            "3": "7376252IT346",
+                            "4": "ADMIN",
+                            "5": "Information Technology",
+                            "6": 0,
+                            "7": "2026-10-12 23:47:15"
+                        },
+                        {
+                            "0": "adm-1791829035278",
+                            "1": "Madhan S",
+                            "2": "madhans.it25@bitsathy.ac.in",
+                            "3": "7376252IT233",
+                            "4": "ADMIN",
+                            "5": "Information Technology",
+                            "6": 0,
+                            "7": "2026-10-12 23:47:15"
+                        },
+                        {
+                            "0": "adm-1791829035643",
+                            "1": "Ashmita M",
+                            "2": "ashmitam.it25@bitsathy.ac.in",
+                            "3": "7376252IT117",
+                            "4": "ADMIN",
+                            "5": "Information Technology",
+                            "6": 0,
+                            "7": "2026-10-12 23:47:16"
+                        },
+                        {
+                            "0": "adm-1791829035994",
+                            "1": "Sushanthi P",
+                            "2": "sushanthip.it25@bitsathy.ac.in",
+                            "3": "7376252IT363",
+                            "4": "ADMIN",
+                            "5": "Information Technology",
+                            "6": 0,
+                            "7": "2026-10-12 23:47:16"
+                        },
+                        {
+                            "0": "adm-1791829036353",
+                            "1": "PRANAV M V",
+                            "2": "pranavmv.it25@bitsathy.ac.in",
+                            "3": "7376252IT280",
+                            "4": "ADMIN",
+                            "5": "Information Technology",
+                            "6": 0,
+                            "7": "2026-10-12 23:47:16"
+                        }
+                    ],
+                    "columns": [
+                        {
+                            "title": "id",
+                            "field": "0",
+                            "dataType": {
+                                "type": 17,
+                                "characterMaximumLength": 65535,
+                                "flags": [
+                                    "BINARY",
+                                    "ASCII",
+                                    "UNICODE"
+                                ],
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": true,
+                            "nullable": false,
+                            "autoIncrement": false
+                        },
+                        {
+                            "title": "name",
+                            "field": "1",
+                            "dataType": {
+                                "type": 17,
+                                "characterMaximumLength": 65535,
+                                "flags": [
+                                    "BINARY",
+                                    "ASCII",
+                                    "UNICODE"
+                                ],
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": false,
+                            "nullable": false,
+                            "autoIncrement": false
+                        },
+                        {
+                            "title": "email",
+                            "field": "2",
+                            "dataType": {
+                                "type": 17,
+                                "characterMaximumLength": 65535,
+                                "flags": [
+                                    "BINARY",
+                                    "ASCII",
+                                    "UNICODE"
+                                ],
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": false,
+                            "nullable": false,
+                            "autoIncrement": false
+                        },
+                        {
+                            "title": "password",
+                            "field": "3",
+                            "dataType": {
+                                "type": 17,
+                                "characterMaximumLength": 65535,
+                                "flags": [
+                                    "BINARY",
+                                    "ASCII",
+                                    "UNICODE"
+                                ],
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": false,
+                            "nullable": false,
+                            "autoIncrement": false
+                        },
+                        {
+                            "title": "role",
+                            "field": "4",
+                            "dataType": {
+                                "type": 17,
+                                "characterMaximumLength": 65535,
+                                "flags": [
+                                    "BINARY",
+                                    "ASCII",
+                                    "UNICODE"
+                                ],
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": false,
+                            "nullable": false,
+                            "autoIncrement": false,
+                            "default": "ADMIN"
+                        },
+                        {
+                            "title": "department",
+                            "field": "5",
+                            "dataType": {
+                                "type": 17,
+                                "characterMaximumLength": 65535,
+                                "flags": [
+                                    "BINARY",
+                                    "ASCII",
+                                    "UNICODE"
+                                ],
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": false,
+                            "nullable": false,
+                            "autoIncrement": false
+                        },
+                        {
+                            "title": "is_super_admin",
+                            "field": "6",
+                            "dataType": {
+                                "type": 42,
+                                "flags": [
+                                    "SIGNED",
+                                    "ZEROFILL"
+                                ],
+                                "numericPrecision": 10,
+                                "parameterFormatType": "OneOrZero",
+                                "synonyms": [
+                                    "INTEGER",
+                                    "INT4"
+                                ]
+                            },
+                            "inPK": false,
+                            "nullable": true,
+                            "autoIncrement": false,
+                            "default": "0"
+                        },
+                        {
+                            "title": "created_at",
+                            "field": "7",
+                            "dataType": {
+                                "type": 26,
+                                "dateTimePrecision": 8,
+                                "needsQuotes": true,
+                                "parameterFormatType": "OneOrZero"
+                            },
+                            "inPK": false,
+                            "nullable": true,
+                            "autoIncrement": false,
+                            "default": "CURRENT_TIMESTAMP"
+                        }
+                    ],
+                    "executionInfo": {
+                        "text": "OK, 7 records retrieved in 1.138ms"
+                    },
+                    "totalRowCount": 7,
+                    "hasMoreRows": false,
+                    "currentPage": 0,
+                    "index": 0,
+                    "sql": "SELECT * FROM `student_portal`.`admins`",
+                    "updatable": true,
+                    "fullTableName": "`student_portal`.`admins`"
+                }
+            ]
+        },
+        {
+            "state": {
+                "start": 4,
+                "end": 4,
+                "language": "mysql",
+                "currentSet": 1,
+                "statements": [
+                    {
+                        "delimiter": ";",
+                        "span": {
+                            "start": 0,
+                            "length": 0
+                        },
+                        "contentStart": 0,
+                        "state": 0
+                    }
+                ]
+            },
+            "data": []
+        }
+    ]
+}
