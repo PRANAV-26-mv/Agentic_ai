@@ -191,10 +191,41 @@ router.post('/evaluate', requireAuth, async (req: AuthRequest, res: Response) =>
       });
     }
 
+    const isResultsPublished = Boolean(session?.results_published);
+    const isStudent = req.user?.role === 'STUDENT';
+
+    // If student and results have not been officially launched by admin yet, mask score, grade, and numeric metrics
+    let finalEvaluation: any = { ...evaluation };
+    let finalSubmission: any = submission ? { ...submission } : null;
+
+    if (isStudent && !isResultsPublished) {
+      finalEvaluation = {
+        ...evaluation,
+        score: null,
+        grade: 'PENDING',
+        metrics: null,
+        isResultsPublished: false,
+        statusMessage: 'Prompt evaluated and registered! Your score and grade will be unlocked when the Super Admin launches the final results.'
+      };
+
+      if (finalSubmission) {
+        finalSubmission = {
+          ...finalSubmission,
+          score: null,
+          grade: 'PENDING',
+          metrics: null,
+          is_published: false
+        };
+      }
+    } else {
+      finalEvaluation.isResultsPublished = true;
+    }
+
     res.json({
-      evaluation,
-      submission,
-      session
+      evaluation: finalEvaluation,
+      submission: finalSubmission,
+      session,
+      isResultsPublished
     });
   } catch (err: any) {
     console.error('Prompt Evaluation error:', err);
@@ -215,10 +246,14 @@ router.get('/my-submissions', requireAuth, (req: AuthRequest, res: Response) => 
 
     const withSessionInfo = submissions.map(sub => {
       const session = sessions.find(s => s.id === sub.session_id);
+      const isPublished = Boolean(session?.results_published || sub.is_published);
       return {
         ...sub,
+        score: isPublished ? sub.score : null,
+        grade: isPublished ? sub.grade : 'PENDING',
+        metrics: isPublished ? sub.metrics : null,
         session_title: session?.title || 'Unknown Session',
-        session_published: session?.results_published ?? false
+        session_published: isPublished
       };
     });
 

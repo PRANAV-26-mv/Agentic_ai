@@ -17,7 +17,8 @@ import {
   Clock,
   ChevronRight,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Lock
 } from 'lucide-react';
 import { api } from '../services/api';
 import confetti from 'canvas-confetti';
@@ -33,21 +34,23 @@ interface PromptMistake {
 }
 
 interface EvaluationResult {
-  score: number;
-  grade: 'S' | 'A+' | 'A' | 'B' | 'C' | 'D';
-  metrics: {
+  score: number | null;
+  grade: 'S' | 'A+' | 'A' | 'B' | 'C' | 'D' | 'PENDING';
+  metrics?: {
     clarityAndSpecificity: number;
     personaAndRole: number;
     constraintsAndGuardrails: number;
     outputFormatting: number;
     securityAndRobustness: number;
-  };
+  } | null;
   mistakes: PromptMistake[];
   strengths: string[];
   suggestions: string[];
   improvedPrompt: string;
   summaryFeedback: string;
   engineUsed: 'GEMINI_AI' | 'HEURISTIC_RULE_ENGINE';
+  isResultsPublished?: boolean;
+  statusMessage?: string;
 }
 
 interface PromptSession {
@@ -67,7 +70,7 @@ interface PastSubmission {
   session_id: string;
   session_title?: string;
   session_published?: boolean;
-  score: number;
+  score: number | null;
   grade: string;
   submitted_prompt: string;
   mistakes: PromptMistake[];
@@ -362,83 +365,136 @@ export const StudentPromptEvaluator: React.FC = () => {
             {evaluation ? (
               <>
                 {/* Score & Engine Summary Card */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-4">
-                      {/* Big Score Ring */}
-                      <div className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border-2 border-indigo-200 dark:border-indigo-800 shadow-inner">
-                        <div className="text-center">
-                          <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 leading-none">
-                            {evaluation.score}
-                          </span>
-                          <span className="block text-[10px] font-bold text-slate-400">/ 100</span>
+                {((evaluation.isResultsPublished || currentSession?.results_published) && evaluation.score !== null) ? (
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-4">
+                        {/* Big Score Ring */}
+                        <div className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border-2 border-indigo-200 dark:border-indigo-800 shadow-inner">
+                          <div className="text-center">
+                            <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 leading-none">
+                              {evaluation.score}
+                            </span>
+                            <span className="block text-[10px] font-bold text-slate-400">/ 100</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2.5 py-0.5 rounded-lg text-xs font-black border uppercase tracking-wider ${getGradeBadge(evaluation.grade)}`}>
+                              Grade {evaluation.grade}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-400">
+                              {(evaluation.score ?? 0) >= 80 ? 'Exceptional Prompt' : (evaluation.score ?? 0) >= 60 ? 'Satisfactory Prompt' : 'Needs Optimization'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Evaluated via: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{evaluation.engineUsed === 'GEMINI_AI' ? 'Gemini AI Engine' : 'Heuristic Prompt Rule Engine'}</span>
+                          </p>
                         </div>
                       </div>
 
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2.5 py-0.5 rounded-lg text-xs font-black border uppercase tracking-wider ${getGradeBadge(evaluation.grade)}`}>
-                            Grade {evaluation.grade}
-                          </span>
-                          <span className="text-xs font-semibold text-slate-400">
-                            {evaluation.score >= 80 ? 'Exceptional Prompt' : evaluation.score >= 60 ? 'Satisfactory Prompt' : 'Needs Optimization'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Evaluated via: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{evaluation.engineUsed === 'GEMINI_AI' ? 'Gemini AI Engine' : 'Heuristic Prompt Rule Engine'}</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    {currentSession?.results_published && (
                       <div className="px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">
                         <Award className="w-4 h-4 text-emerald-500" />
                         <div>
                           <div>Super Admin Finalized</div>
-                          <div className="text-[10px] font-normal opacity-80">Score officially registered</div>
+                          <div className="text-[10px] font-normal opacity-80">Official Score & Grade Released</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Summary Feedback */}
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                      <span className="font-bold text-slate-900 dark:text-white mr-1">Feedback Summary:</span>
+                      {evaluation.summaryFeedback}
+                    </div>
+
+                    {/* 5-Dimensional Metrics Breakdown */}
+                    {evaluation.metrics && (
+                      <div className="space-y-3">
+                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                          Evaluation Dimension Breakdown (Out of 20 each)
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {[
+                            { label: 'Clarity & Specificity', val: evaluation.metrics.clarityAndSpecificity },
+                            { label: 'Persona & Role', val: evaluation.metrics.personaAndRole },
+                            { label: 'Constraints & Rules', val: evaluation.metrics.constraintsAndGuardrails },
+                            { label: 'Output Formatting', val: evaluation.metrics.outputFormatting },
+                            { label: 'Security & Injection Guard', val: evaluation.metrics.securityAndRobustness, fullSpan: true },
+                          ].map((m, idx) => (
+                            <div 
+                              key={idx} 
+                              className={`p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-1.5 ${m.fullSpan ? 'sm:col-span-2' : ''}`}
+                            >
+                              <div className="flex justify-between text-xs font-semibold">
+                                <span className="text-slate-700 dark:text-slate-300">{m.label}</span>
+                                <span className="font-mono text-slate-900 dark:text-white">{m.val}/20</span>
+                              </div>
+                              <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full transition-all duration-700 ${getMetricColor(m.val)}`}
+                                  style={{ width: `${(m.val / 20) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
                   </div>
-
-                  {/* Summary Feedback */}
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                    <span className="font-bold text-slate-900 dark:text-white mr-1">Feedback Summary:</span>
-                    {evaluation.summaryFeedback}
-                  </div>
-
-                  {/* 5-Dimensional Metrics Breakdown */}
-                  <div className="space-y-3">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Evaluation Dimension Breakdown (Out of 20 each)
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {[
-                        { label: 'Clarity & Specificity', val: evaluation.metrics.clarityAndSpecificity },
-                        { label: 'Persona & Role', val: evaluation.metrics.personaAndRole },
-                        { label: 'Constraints & Rules', val: evaluation.metrics.constraintsAndGuardrails },
-                        { label: 'Output Formatting', val: evaluation.metrics.outputFormatting },
-                        { label: 'Security & Injection Guard', val: evaluation.metrics.securityAndRobustness, fullSpan: true },
-                      ].map((m, idx) => (
-                        <div 
-                          key={idx} 
-                          className={`p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-1.5 ${m.fullSpan ? 'sm:col-span-2' : ''}`}
-                        >
-                          <div className="flex justify-between text-xs font-semibold">
-                            <span className="text-slate-700 dark:text-slate-300">{m.label}</span>
-                            <span className="font-mono text-slate-900 dark:text-white">{m.val}/20</span>
-                          </div>
-                          <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                            <div 
-                              className={`h-full rounded-full transition-all duration-700 ${getMetricColor(m.val)}`}
-                              style={{ width: `${(m.val / 20) * 100}%` }}
-                            />
-                          </div>
+                ) : (
+                  /* LOCKED STATE: When Super Admin has NOT launched final results yet */
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-4">
+                        {/* Big Locked Ring */}
+                        <div className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-800 text-amber-500 shadow-inner shrink-0">
+                          <Lock className="w-9 h-9 animate-pulse" />
                         </div>
-                      ))}
+
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2.5 py-0.5 rounded-lg text-xs font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                              Score & Grade Locked 🔒
+                            </span>
+                            <span className="text-xs font-semibold text-slate-400">
+                              Under Admin Review
+                            </span>
+                          </div>
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                            Prompt Successfully Evaluated & Recorded
+                          </h4>
+                          <p className="text-xs text-slate-500">
+                            Evaluated via: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{evaluation.engineUsed === 'GEMINI_AI' ? 'Gemini AI Engine' : 'Heuristic Rule Engine'}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="px-3.5 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center gap-2 self-start sm:self-auto">
+                        <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                        <div>
+                          <div>Awaiting Final Release</div>
+                          <div className="text-[10px] font-normal opacity-85">Score & Grade unlock when Super Admin presses Launch Final Result</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Summary Feedback */}
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                      <span className="font-bold text-slate-900 dark:text-white mr-1">Feedback Summary:</span>
+                      {evaluation.summaryFeedback}
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 text-xs text-indigo-900 dark:text-indigo-300 flex items-start gap-2.5">
+                      <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="font-bold">Next Steps: </strong>
+                        Review the detected mistakes, flaws, and AI-improved revision below to enhance your prompt. Once the Super Admin launches the official final results, your final numerical score and grade will unlock here and be dispatched to your email!
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Mistakes & Flaws Card (CRITICAL USER REQUIREMENT) */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
@@ -602,17 +658,29 @@ export const StudentPromptEvaluator: React.FC = () => {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-black border uppercase tracking-wider ${getGradeBadge(sub.grade)}`}>
-                        Grade {sub.grade}
-                      </span>
-                      <div className="text-right">
-                        <span className="text-lg font-black text-indigo-600 dark:text-indigo-400 font-mono">
-                          {sub.score}
+                    {sub.session_published && sub.score !== null ? (
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-black border uppercase tracking-wider ${getGradeBadge(sub.grade)}`}>
+                          Grade {sub.grade}
                         </span>
-                        <span className="text-xs text-slate-400 font-bold">/100</span>
+                        <div className="text-right">
+                          <span className="text-lg font-black text-indigo-600 dark:text-indigo-400 font-mono">
+                            {sub.score}
+                          </span>
+                          <span className="text-xs text-slate-400 font-bold">/100</span>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 flex items-center gap-1.5">
+                          <Lock className="w-3.5 h-3.5" />
+                          Grade Pending
+                        </span>
+                        <span className="text-xs font-mono font-bold text-slate-400">
+                          Score Locked
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Prompt Preview Snippet */}
