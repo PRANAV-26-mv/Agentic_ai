@@ -2752,5 +2752,248 @@ export const GdParticipantsModel = {
   }
 };
 
+export interface PromptSession {
+  id: string;
+  title: string;
+  description: string;
+  task_objective?: string;
+  target_community?: string;
+  target_department?: string;
+  target_year?: number;
+  status: 'DRAFT' | 'ACTIVE' | 'EVALUATED' | 'PUBLISHED' | 'ARCHIVED';
+  results_published: boolean;
+  published_at?: string;
+  created_by: string;
+  created_at: string;
+  updated_at?: string;
+  rubrics?: {
+    clarity_weight?: number;
+    persona_weight?: number;
+    constraints_weight?: number;
+    format_weight?: number;
+    security_weight?: number;
+  };
+}
+
+export interface PromptSubmissionMistake {
+  id: string;
+  category: 'CLARITY' | 'CONSTRAINTS' | 'PERSONA' | 'FORMAT' | 'SECURITY';
+  title: string;
+  description: string;
+  severity: 'CRITICAL' | 'WARNING' | 'SUGGESTION';
+  penaltyMarks: number;
+  howToFix: string;
+}
+
+export interface PromptSubmission {
+  id: string;
+  session_id: string;
+  student_id: string;
+  student_name: string;
+  student_email: string;
+  student_reg: string;
+  student_department?: string;
+  student_year?: number;
+  submitted_prompt: string;
+  score: number;
+  grade: 'S' | 'A+' | 'A' | 'B' | 'C' | 'D';
+  metrics: {
+    clarityAndSpecificity: number;
+    personaAndRole: number;
+    constraintsAndGuardrails: number;
+    outputFormatting: number;
+    securityAndRobustness: number;
+  };
+  mistakes: PromptSubmissionMistake[];
+  strengths: string[];
+  suggestions: string[];
+  improved_prompt: string;
+  summary_feedback: string;
+  engine_used: 'GEMINI_AI' | 'HEURISTIC_RULE_ENGINE';
+  is_published: boolean;
+  published_at?: string;
+  notification_sent?: boolean;
+  email_sent?: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export const PromptSessionsModel = {
+  getAll: (): PromptSession[] => {
+    return (db.getTable('prompt_sessions') || []) as PromptSession[];
+  },
+
+  getActive: (): PromptSession[] => {
+    const list = (db.getTable('prompt_sessions') || []) as PromptSession[];
+    return list.filter(s => s.status === 'ACTIVE' || s.status === 'PUBLISHED');
+  },
+
+  findById: (id: string): PromptSession | undefined => {
+    const list = (db.getTable('prompt_sessions') || []) as PromptSession[];
+    return list.find(s => s.id === id);
+  },
+
+  create: (data: Omit<PromptSession, 'id' | 'created_at' | 'results_published'> & Partial<PromptSession>): PromptSession => {
+    const list = (db.getTable('prompt_sessions') || []) as PromptSession[];
+    const now = new Date().toISOString();
+    const newSession: PromptSession = {
+      id: data.id || uuidv4(),
+      title: data.title,
+      description: data.description,
+      task_objective: data.task_objective || '',
+      target_community: data.target_community || '',
+      target_department: data.target_department || '',
+      target_year: data.target_year || 0,
+      status: data.status || 'ACTIVE',
+      results_published: false,
+      created_by: data.created_by || 'Admin',
+      created_at: now,
+      updated_at: now,
+      rubrics: data.rubrics || {}
+    };
+    list.push(newSession);
+    db.save();
+    return newSession;
+  },
+
+  update: (id: string, updates: Partial<PromptSession>): PromptSession | null => {
+    const list = (db.getTable('prompt_sessions') || []) as PromptSession[];
+    const idx = list.findIndex(s => s.id === id);
+    if (idx === -1) return null;
+    list[idx] = {
+      ...list[idx],
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+    db.save();
+    return list[idx];
+  },
+
+  delete: (id: string): boolean => {
+    const list = (db.getTable('prompt_sessions') || []) as PromptSession[];
+    const idx = list.findIndex(s => s.id === id);
+    if (idx === -1) return false;
+    list.splice(idx, 1);
+    db.save();
+    return true;
+  },
+
+  publishResults: (id: string): PromptSession | null => {
+    const list = (db.getTable('prompt_sessions') || []) as PromptSession[];
+    const idx = list.findIndex(s => s.id === id);
+    if (idx === -1) return null;
+    list[idx].results_published = true;
+    list[idx].status = 'PUBLISHED';
+    list[idx].published_at = new Date().toISOString();
+    list[idx].updated_at = new Date().toISOString();
+    db.save();
+    return list[idx];
+  }
+};
+
+export const PromptSubmissionsModel = {
+  getAll: (): PromptSubmission[] => {
+    return (db.getTable('prompt_submissions') || []) as PromptSubmission[];
+  },
+
+  findBySession: (sessionId: string): PromptSubmission[] => {
+    const list = (db.getTable('prompt_submissions') || []) as PromptSubmission[];
+    return list.filter(sub => sub.session_id === sessionId);
+  },
+
+  findByStudent: (studentId: string): PromptSubmission[] => {
+    const list = (db.getTable('prompt_submissions') || []) as PromptSubmission[];
+    return list.filter(sub => sub.student_id === studentId);
+  },
+
+  findBySessionAndStudent: (sessionId: string, studentId: string): PromptSubmission | undefined => {
+    const list = (db.getTable('prompt_submissions') || []) as PromptSubmission[];
+    return list.find(sub => sub.session_id === sessionId && sub.student_id === studentId);
+  },
+
+  findById: (id: string): PromptSubmission | undefined => {
+    const list = (db.getTable('prompt_submissions') || []) as PromptSubmission[];
+    return list.find(sub => sub.id === id);
+  },
+
+  createOrUpdate: (data: Omit<PromptSubmission, 'id' | 'created_at'> & Partial<PromptSubmission>): PromptSubmission => {
+    const list = (db.getTable('prompt_submissions') || []) as PromptSubmission[];
+    const now = new Date().toISOString();
+    const existingIdx = list.findIndex(s => s.session_id === data.session_id && s.student_id === data.student_id);
+
+    if (existingIdx !== -1) {
+      list[existingIdx] = {
+        ...list[existingIdx],
+        ...data,
+        updated_at: now
+      };
+      db.save();
+      return list[existingIdx];
+    } else {
+      const newSubmission: PromptSubmission = {
+        id: data.id || uuidv4(),
+        session_id: data.session_id,
+        student_id: data.student_id,
+        student_name: data.student_name,
+        student_email: data.student_email,
+        student_reg: data.student_reg,
+        student_department: data.student_department || '',
+        student_year: data.student_year || 0,
+        submitted_prompt: data.submitted_prompt,
+        score: data.score,
+        grade: data.grade,
+        metrics: data.metrics,
+        mistakes: data.mistakes || [],
+        strengths: data.strengths || [],
+        suggestions: data.suggestions || [],
+        improved_prompt: data.improved_prompt,
+        summary_feedback: data.summary_feedback,
+        engine_used: data.engine_used,
+        is_published: data.is_published ?? false,
+        published_at: data.published_at,
+        notification_sent: data.notification_sent ?? false,
+        email_sent: data.email_sent ?? false,
+        created_at: now,
+        updated_at: now
+      };
+      list.push(newSubmission);
+      db.save();
+      return newSubmission;
+    }
+  },
+
+  markPublishedForSession: (sessionId: string): PromptSubmission[] => {
+    const list = (db.getTable('prompt_submissions') || []) as PromptSubmission[];
+    const now = new Date().toISOString();
+    const updated: PromptSubmission[] = [];
+
+    list.forEach(sub => {
+      if (sub.session_id === sessionId) {
+        sub.is_published = true;
+        sub.published_at = now;
+        sub.updated_at = now;
+        updated.push(sub);
+      }
+    });
+
+    db.save();
+    return updated;
+  },
+
+  update: (id: string, updates: Partial<PromptSubmission>): PromptSubmission | null => {
+    const list = (db.getTable('prompt_submissions') || []) as PromptSubmission[];
+    const idx = list.findIndex(sub => sub.id === id);
+    if (idx === -1) return null;
+    list[idx] = {
+      ...list[idx],
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+    db.save();
+    return list[idx];
+  }
+};
+
+
 
 

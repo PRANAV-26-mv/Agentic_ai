@@ -90,6 +90,8 @@ export interface DbData {
   gd_participants: any[];
   gd_peer_evaluations: any[];
   gd_speaker_ratings?: any[];
+  prompt_sessions?: any[];
+  prompt_submissions?: any[];
 }
 
 const initialData: DbData = {
@@ -125,7 +127,9 @@ const initialData: DbData = {
   gd_sessions: [],
   gd_participants: [],
   gd_peer_evaluations: [],
-  gd_speaker_ratings: []
+  gd_speaker_ratings: [],
+  prompt_sessions: [],
+  prompt_submissions: []
 };
 
 export type StorageMode = 'mysql' | 'postgres' | 'cloud_sync' | 'persistent_disk' | 'ephemeral_local';
@@ -376,7 +380,7 @@ class MemoryDb {
             const arrayKeys: (keyof DbData)[] = [
               'admins', 'students', 'assessments', 'questions', 'study_materials',
               'attendance_sessions', 'quiz_sessions', 'meetings', 'meeting_settings',
-              'gd_sessions', 'gd_participants'
+              'gd_sessions', 'gd_participants', 'prompt_sessions', 'prompt_submissions'
             ];
 
             for (const k of arrayKeys) {
@@ -480,7 +484,7 @@ class MemoryDb {
             const arrayKeys: (keyof DbData)[] = [
               'admins', 'students', 'assessments', 'questions', 'study_materials',
               'attendance_sessions', 'quiz_sessions', 'meetings', 'meeting_settings',
-              'gd_sessions', 'gd_participants'
+              'gd_sessions', 'gd_participants', 'prompt_sessions', 'prompt_submissions'
             ];
 
             for (const k of arrayKeys) {

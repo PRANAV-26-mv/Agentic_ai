@@ -21,8 +21,10 @@ import { StudentQuizLobby } from './pages/StudentQuizLobby';
 import { StudentMeetings } from './pages/StudentMeetings';
 import { StudentGdSessions } from './pages/StudentGdSessions';
 import { StudentGdRoom } from './pages/StudentGdRoom';
+import { StudentPromptEvaluator } from './pages/StudentPromptEvaluator';
 
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AdminPromptEvaluator } from './pages/AdminPromptEvaluator';
 import { AdminQuizSessions } from './pages/AdminQuizSessions';
 import { AdminGdSessions } from './pages/AdminGdSessions';
 import { AdminMeetings } from './pages/AdminMeetings';
@@ -131,6 +133,7 @@ export function App() {
               <Route path="/quiz-sessions/:id" element={<StudentQuizLobby />} />
               <Route path="/gd-sessions" element={<StudentGdSessions />} />
               <Route path="/gd-sessions/:id" element={<StudentGdRoom />} />
+              <Route path="/prompt-evaluator" element={<StudentPromptEvaluator />} />
               <Route path="/results" element={<StudentResults />} />
               <Route path="/attendance" element={<StudentAttendance />} />
               <Route path="/notifications" element={<StudentNotifications />} />
@@ -149,6 +152,7 @@ export function App() {
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/send-emails" element={<EmailBroadcastPage />} />
               <Route path="/admin/students" element={<StudentManagement />} />
+              <Route path="/admin/prompt-evaluator" element={<AdminPromptEvaluator />} />
               <Route path="/admin/assessments" element={<AssessmentManagement />} />
               <Route path="/admin/meetings" element={<AdminMeetings />} />
               <Route path="/admin/quiz-sessions" element={<AdminQuizSessions />} />

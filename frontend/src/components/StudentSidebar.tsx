@@ -13,7 +13,8 @@ import {
   Video,
   LogOut,
   X,
-  Users
+  Users,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -40,6 +41,7 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({ mobileOpen, onCl
   ];
 
   const interactiveNav: NavItem[] = [
+    { to: '/prompt-evaluator', label: 'Prompt Evaluator', icon: Sparkles },
     { to: '/meetings', label: 'Live Meetings', icon: Video },
     { to: '/quiz-sessions', label: 'Live Quiz Sessions', icon: Zap, isLiveBadge: true },
     { to: '/gd-sessions', label: 'GD Sessions', icon: Users },

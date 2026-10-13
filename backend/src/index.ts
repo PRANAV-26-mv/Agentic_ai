@@ -28,6 +28,7 @@ import http from 'http';
 import certificateSettingsRouter from './routes/certificateSettings.js';
 import meetingsRouter from './routes/meetings.js';
 import gdSessionsRouter from './routes/gdSessions.js';
+import promptEvaluatorRouter from './routes/promptEvaluator.js';
 import { setupMeetingSocket } from './services/meetingSocketService.js';
 
 dotenv.config();
@@ -68,6 +69,7 @@ app.use('/api/quiz-sessions', quizSessionsRouter);
 app.use('/api/certificate-settings', certificateSettingsRouter);
 app.use('/api/meetings', meetingsRouter);
 app.use('/api/gd-sessions', gdSessionsRouter);
+app.use('/api/prompt-evaluator', promptEvaluatorRouter);
 
 // Healthcheck
 app.get('/api/health', (_req, res) => {

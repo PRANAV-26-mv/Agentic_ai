@@ -19,6 +19,7 @@ import {
   Award,
   Video,
   MessagesSquare,
+  Sparkles,
   LogOut,
   X 
 } from 'lucide-react';
@@ -43,6 +44,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ mobileOpen, onCloseM
   ];
 
   const sessionsNav = [
+    { to: '/admin/prompt-evaluator', label: 'Prompt Evaluator', icon: Sparkles },
     { to: '/admin/meetings', label: 'Live Meetings', icon: Video },
     { to: '/admin/quiz-sessions', label: 'Live Quiz Sessions', icon: Zap, isLiveBadge: true },
     { to: '/admin/gd-sessions', label: 'GD Sessions', icon: MessagesSquare },
