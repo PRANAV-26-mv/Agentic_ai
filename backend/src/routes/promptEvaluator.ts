@@ -195,7 +195,7 @@ router.post('/evaluate', requireAuth, async (req: AuthRequest, res: Response) =>
     const isResultsPublished = Boolean(session?.results_published);
     const isStudent = req.user?.role === 'STUDENT';
 
-    // If student and results have not been officially launched by admin yet, mask score, grade, and numeric metrics
+    // If student and results have not been officially launched by admin yet, lock ALL results (score, grade, mistakes, corrected prompt)
     let finalEvaluation: any = { ...evaluation };
     let finalSubmission: any = submission ? { ...submission } : null;
 
@@ -205,8 +205,13 @@ router.post('/evaluate', requireAuth, async (req: AuthRequest, res: Response) =>
         score: null,
         grade: 'PENDING',
         metrics: null,
+        mistakes: [],
+        strengths: [],
+        suggestions: [],
+        improvedPrompt: null,
+        summaryFeedback: 'Your prompt has been successfully analyzed and registered. All evaluation results, score, mistakes, and corrected prompt revision are locked until released by the Administrator.',
         isResultsPublished: false,
-        statusMessage: 'Prompt evaluated and registered! Your score and grade will be unlocked when the Super Admin launches the final results.'
+        statusMessage: 'Prompt evaluated and registered! All results will be unlocked when the Super Admin launches the final results.'
       };
 
       if (finalSubmission) {
@@ -215,6 +220,11 @@ router.post('/evaluate', requireAuth, async (req: AuthRequest, res: Response) =>
           score: null,
           grade: 'PENDING',
           metrics: null,
+          mistakes: [],
+          strengths: [],
+          suggestions: [],
+          improved_prompt: null,
+          summary_feedback: 'Your prompt has been successfully analyzed and registered. All evaluation results, score, mistakes, and corrected prompt revision are locked until released by the Administrator.',
           is_published: false
         };
       }
@@ -253,6 +263,11 @@ router.get('/my-submissions', requireAuth, (req: AuthRequest, res: Response) => 
         score: isPublished ? sub.score : null,
         grade: isPublished ? sub.grade : 'PENDING',
         metrics: isPublished ? sub.metrics : null,
+        mistakes: isPublished ? sub.mistakes : [],
+        strengths: isPublished ? sub.strengths : [],
+        suggestions: isPublished ? sub.suggestions : [],
+        improved_prompt: isPublished ? sub.improved_prompt : null,
+        summary_feedback: isPublished ? sub.summary_feedback : 'Locked pending release by Administrator.',
         session_title: session?.title || 'Unknown Session',
         session_published: isPublished
       };
