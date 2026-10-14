@@ -474,11 +474,19 @@ class MemoryDb {
           );
         `);
 
-        // Read stored state
+        // Read stored state from PostgreSQL
         const res = await this.pgPool.query(`SELECT data, updated_at FROM portal_storage WHERE key = 'portal_state' LIMIT 1;`);
         if (res.rows.length > 0 && res.rows[0].data) {
-          const pgData = res.rows[0].data;
-          if (Array.isArray(pgData.students) && pgData.students.length > 0) {
+          let pgData = res.rows[0].data;
+          if (typeof pgData === 'string') {
+            try {
+              pgData = JSON.parse(pgData);
+            } catch (parseErr: any) {
+              console.warn('Could not parse PostgreSQL portal_state JSON string:', parseErr.message);
+            }
+          }
+
+          if (pgData && typeof pgData === 'object' && ((Array.isArray(pgData.students) && pgData.students.length > 0) || (Array.isArray(pgData.admins) && pgData.admins.length > 0))) {
             const diskData = this.loadLocalFile();
             const mergedData: DbData = { ...initialData, ...diskData, ...pgData };
 
@@ -488,29 +496,37 @@ class MemoryDb {
               'gd_sessions', 'gd_participants', 'prompt_sessions', 'prompt_submissions'
             ];
 
+            // Retain PostgreSQL collections as primary source of truth without overwriting with disk code data
             for (const k of arrayKeys) {
               const diskArr = (diskData as any)[k];
               const pgArr = (pgData as any)[k];
-              if (Array.isArray(diskArr) && diskArr.length > 0 && (!Array.isArray(pgArr) || pgArr.length === 0)) {
+              if (Array.isArray(pgArr)) {
+                (mergedData as any)[k] = pgArr;
+              } else if (Array.isArray(diskArr)) {
                 (mergedData as any)[k] = diskArr;
               }
             }
 
-            if (diskData.admins && diskData.admins.length > 0) {
-              for (const admin of diskData.admins) {
-                if (!mergedData.admins.some((a: any) => a.email?.toLowerCase() === admin.email?.toLowerCase())) {
-                  mergedData.admins.unshift(admin);
-                }
-              }
+            // Always guarantee Super Admin pranavannur9659@gmail.com is present
+            if (!mergedData.admins.some((a: any) => a.email?.toLowerCase() === 'pranavannur9659@gmail.com')) {
+              mergedData.admins.unshift({
+                id: 'adm-002',
+                name: 'Pranav (Super Admin)',
+                email: 'pranavannur9659@gmail.com',
+                password: '9488529035',
+                role: 'ADMIN',
+                department: 'Computer Science & Engineering',
+                created_at: new Date().toISOString(),
+                is_super_admin: true
+              });
             }
 
             this.data = mergedData;
             this.storageMode = 'postgres';
             this.isHydrated = true;
             this.lastSavedAt = res.rows[0].updated_at || new Date().toISOString();
-            console.log(`✅ Database successfully hydrated & merged from PostgreSQL (${this.data.students.length} students, ${this.data.admins.length} admins)!`);
+            console.log(`✅ Database successfully loaded from PostgreSQL (${this.data.students?.length || 0} students, ${this.data.admins?.length || 0} admins, ${this.data.study_materials?.length || 0} materials)!`);
             this.saveLocalCopies();
-            await this.syncToPostgres();
             return;
           }
         }
@@ -760,24 +776,24 @@ class MemoryDb {
 
   private triggerPostgresSync() {
     if (!this.pgPool) return;
-
-    if (this.pgSyncTimer) clearTimeout(this.pgSyncTimer);
-
-    this.pgSyncTimer = setTimeout(async () => {
-      await this.syncToPostgres();
-    }, 250);
+    this.syncToPostgres().catch(err => {
+      console.error('PostgreSQL background sync error:', err.message);
+    });
   }
 
   private async syncToPostgres() {
     if (!this.pgPool) return;
     try {
+      const payload = typeof this.data === 'string' ? this.data : JSON.stringify(this.data);
       await this.pgPool.query(`
         INSERT INTO portal_storage (key, data, updated_at)
-        VALUES ('portal_state', $1, NOW())
+        VALUES ('portal_state', $1::jsonb, NOW())
         ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW();
-      `, [JSON.stringify(this.data)]);
+      `, [payload]);
+      this.postgresLastError = null;
       console.log('Database changes successfully saved to PostgreSQL.');
     } catch (err: any) {
+      this.postgresLastError = err.message;
       console.error('PostgreSQL save failed:', err.message);
     }
   }

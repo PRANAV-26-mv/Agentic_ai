@@ -2,9 +2,17 @@ import { memoryDb } from './config/database';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function seedData() {
+  const data = memoryDb.getData();
+  const status = memoryDb.getStorageStatus();
+
+  // If database is already hydrated from PostgreSQL, never re-seed or overwrite user portal changes
+  if (status.mode === 'postgres' && Array.isArray(data.admins) && data.admins.length > 0) {
+    console.log('✅ Portal database is active on PostgreSQL with verified collections. Skipping baseline seed.');
+    return;
+  }
+
   console.log('Verifying portal baseline collections...');
 
-  const data = memoryDb.getData();
   const now = new Date().toISOString();
   let seededAny = false;
 
