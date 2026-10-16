@@ -536,7 +536,7 @@ export const MeetingRoom: React.FC = () => {
             <div className="w-full h-full flex flex-col lg:flex-row gap-3">
               {/* Main Presentation Screen */}
               <div className="flex-1 h-full bg-black rounded-2xl overflow-hidden border border-purple-500/30 relative flex items-center justify-center">
-                <VideoPlayer stream={activeScreenShareStream} muted={false} />
+                <VideoPlayer stream={activeScreenShareStream} muted={isScreenSharing} />
                 <div className="absolute top-3 left-3 px-3 py-1 bg-purple-950/80 backdrop-blur-md rounded-full border border-purple-500/40 text-xs font-semibold text-purple-300 flex items-center space-x-1.5 shadow-lg">
                   <ScreenShare className="w-3.5 h-3.5" />
                   <span>{isScreenSharing ? 'You are presenting' : `${screenSharingPeer?.userName} is presenting`}</span>
@@ -1180,23 +1180,39 @@ const PeerVideoTile: React.FC<{
       if (audio.srcObject !== peer.stream) {
         audio.srcObject = peer.stream;
       }
+      audio.muted = !peer.audioEnabled;
+      audio.volume = 1.0;
+
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => {
           console.warn('Remote peer audio playback notice:', err);
+          // Unlock audio playback on first user gesture anywhere on page
+          const unlockAudio = () => {
+            audio.play().catch(() => {});
+            window.removeEventListener('click', unlockAudio);
+            window.removeEventListener('pointerdown', unlockAudio);
+            window.removeEventListener('keydown', unlockAudio);
+          };
+          window.addEventListener('click', unlockAudio);
+          window.addEventListener('pointerdown', unlockAudio);
+          window.addEventListener('keydown', unlockAudio);
         });
       }
     } else {
       audio.srcObject = null;
     }
-  }, [peer.stream]);
+  }, [peer.stream, peer.audioEnabled]);
 
-  const hasLivePeerVideo = peer.videoEnabled && peer.stream && peer.stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
+  const hasLivePeerVideo = peer.videoEnabled !== false && peer.stream && peer.stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
 
   return (
-    <div className={`relative w-full h-full min-h-[140px] aspect-video bg-[#1a1a20] rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800/80 shadow-lg flex items-center justify-center ${
-      isCompact ? 'min-h-0 aspect-video rounded-xl' : ''
-    }`}>
+    <div 
+      onClick={() => { audioRef.current?.play().catch(() => {}); }}
+      className={`relative w-full h-full min-h-[140px] aspect-video bg-[#1a1a20] rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800/80 shadow-lg flex items-center justify-center ${
+        isCompact ? 'min-h-0 aspect-video rounded-xl' : ''
+      }`}
+    >
       {/* Dedicated audio element ensuring remote peer voice is ALWAYS audible even if camera is off */}
       <audio ref={audioRef} autoPlay playsInline />
 
