@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { AttendanceModel, AuditLogsModel, StudentsModel } from '../models/dbModels.js';
+import { AttendanceModel, AuditLogsModel, StudentsModel, memoryDb, AttendanceRecord } from '../models/dbModels.js';
 import { requireAuth, requireAdmin, requireStudent, AuthRequest } from '../middleware/authMiddleware.js';
 
 const router = Router();
@@ -186,8 +186,54 @@ router.get('/export-all', requireAdmin, (req: AuthRequest, res: Response): void 
   }
 });
 
-// POST /api/attendance/mark (Student mark attendance via numeric OTP)
-router.post('/mark', requireStudent, (req: AuthRequest, res: Response) => {
+// GET /api/attendance/my-stats (Student attendance summary)
+router.get('/my-stats', requireStudent, (req: AuthRequest, res: Response): void => {
+  try {
+    const data = AttendanceModel.getStudentAttendance(req.user!.id);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Error fetching student attendance stats.' });
+  }
+});
+
+// GET /api/attendance/active-session (Check for live active session for quick access & alert)
+router.get('/active-session', requireAuth, (req: AuthRequest, res: Response): void => {
+  try {
+    const sessions = AttendanceModel.findAllSessions();
+    const now = new Date().getTime();
+    
+    // Filter active (unexpired) sessions
+    const activeSessions = sessions.filter(s => new Date(s.expires_at).getTime() > now);
+
+    if (activeSessions.length === 0) {
+      res.json({ hasActive: false, session: null, alreadyMarked: false });
+      return;
+    }
+
+    // Sort by latest created/started first
+    const latest = [...activeSessions].sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())[0];
+    
+    let alreadyMarked = false;
+    if (req.user?.role === 'STUDENT') {
+      const records = (memoryDb.table('attendance_records') as AttendanceRecord[]) || [];
+      alreadyMarked = records.some(r => r.session_id === latest.id && r.student_id === req.user!.id);
+    }
+
+    res.json({
+      hasActive: true,
+      session: {
+        ...latest,
+        attendee_count: AttendanceModel.getSessionAttendees(latest.id).length
+      },
+      alreadyMarked
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || 'Error checking active attendance session.' });
+  }
+});
+
+// POST /api/attendance/mark (Student mark attendance via numeric OTP or scanned QR code)
+router.post('/mark', requireStudent, (req: AuthRequest, res: Response): void => {
   try {
     const { code } = req.body;
     if (!code) {
@@ -195,9 +241,34 @@ router.post('/mark', requireStudent, (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const cleanCode = String(code).trim();
+    let rawStr = String(code).trim();
+
+    // Check if code is a deep link (e.g. /attendance?code=123456 or http://.../?code=123456)
+    if (rawStr.includes('code=')) {
+      try {
+        const urlObj = new URL(rawStr.startsWith('http') ? rawStr : `http://dummy.com${rawStr.startsWith('/') ? '' : '/'}${rawStr}`);
+        const extracted = urlObj.searchParams.get('code');
+        if (extracted) rawStr = extracted;
+      } catch {
+        const paramMatch = rawStr.match(/code=([0-9]{6})/i);
+        if (paramMatch) rawStr = paramMatch[1];
+      }
+    }
+
+    // Try parsing if JSON string e.g. {"code":"123456"}
+    if (rawStr.startsWith('{') && rawStr.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(rawStr);
+        if (parsed.code) rawStr = String(parsed.code);
+      } catch {}
+    }
+
+    // Extract any 6-digit sequence from the string
+    const match = rawStr.match(/\b\d{6}\b/);
+    const cleanCode = match ? match[0] : rawStr.replace(/\D/g, '');
+
     if (!/^\d{6}$/.test(cleanCode)) {
-      res.status(400).json({ message: 'Invalid OTP format. Please enter a valid 6-digit numeric OTP.' });
+      res.status(400).json({ message: 'Invalid OTP format. Please enter or scan a valid 6-digit numeric OTP.' });
       return;
     }
 

@@ -481,9 +481,129 @@
       "suggested_role": "AI Developer"
     }
   ],
-  "assessments": [],
+  "assessments": [
+    {
+      "id": "ass-001",
+      "title": "Agentic AI & Prompt Engineering Level 1",
+      "description": "First mandatory evaluation covering ReAct pattern, RAG basics, and CoT reasoning.",
+      "type": "HYBRID",
+      "question_selection_mode": "FIXED",
+      "target_type": "ALL",
+      "duration_minutes": 30,
+      "start_time": "2026-10-15T10:38:08.051Z",
+      "end_time": "2026-10-23T10:38:08.051Z",
+      "passing_percentage": 60,
+      "max_marks": 14,
+      "status": "PUBLISHED",
+      "created_by": "adm-002",
+      "created_at": "2026-10-16T10:38:08.051Z",
+      "question_ids": [
+        "q-001",
+        "q-002",
+        "q-003",
+        "q-004"
+      ]
+    },
+    {
+      "id": "ass-002",
+      "title": "Advanced LLM Architecture & Pool Test",
+      "description": "Randomized draw assessment from the Agentic AI Core pool.",
+      "type": "HYBRID",
+      "question_selection_mode": "RANDOMIZED_POOL",
+      "pool_id": "pool-001",
+      "draw_count": 3,
+      "target_type": "COMMUNITY",
+      "community": "Agentic AI & LLM Optimization",
+      "duration_minutes": 45,
+      "start_time": "2026-10-15T10:38:08.051Z",
+      "end_time": "2026-10-23T10:38:08.051Z",
+      "passing_percentage": 70,
+      "max_marks": 12,
+      "status": "PUBLISHED",
+      "created_by": "adm-002",
+      "created_at": "2026-10-16T10:38:08.051Z"
+    }
+  ],
   "assessment_assignments": [],
-  "questions": [],
+  "questions": [
+    {
+      "id": "q-001",
+      "source_pdf_id": "mat-001",
+      "question_type": "MCQ",
+      "question_text": "What is the core distinction of a ReAct (Reasoning + Acting) agent compared to a standard prompt pipeline?",
+      "option_a": "It executes code natively without external tools",
+      "option_b": "It interleaves reasoning step thoughts with tool execution observations in an iterative loop",
+      "option_c": "It pre-compiles all decision paths before execution",
+      "option_d": "It relies solely on zero-shot memory search",
+      "correct_answer": "B",
+      "explanation": "ReAct agents iteratively generate reasoning traces (Thought) and actions (Tool invocation), observing tool outputs before deciding the next step.",
+      "marks": 2,
+      "difficulty": "Medium",
+      "topic": "Agentic Workflows",
+      "status": "APPROVED",
+      "created_at": "2026-10-16T10:38:08.051Z"
+    },
+    {
+      "id": "q-002",
+      "source_pdf_id": "mat-001",
+      "question_type": "MCQ",
+      "question_text": "Which component in a RAG (Retrieval-Augmented Generation) system converts unstructured text into dense semantic vector representations?",
+      "option_a": "Tokenizer",
+      "option_b": "Embedding Model",
+      "option_c": "Cross-Encoder Reranker",
+      "option_d": "Decoder Head",
+      "correct_answer": "B",
+      "explanation": "Embedding models map text chunks into high-dimensional vector spaces where semantic similarity can be computed via cosine distance.",
+      "marks": 2,
+      "difficulty": "Easy",
+      "topic": "RAG Systems",
+      "status": "APPROVED",
+      "created_at": "2026-10-16T10:38:08.051Z"
+    },
+    {
+      "id": "q-003",
+      "source_pdf_id": "mat-002",
+      "question_type": "MCQ",
+      "question_text": "What is the primary advantage of FlashAttention over standard Multi-Head Attention in modern LLM architectures?",
+      "option_a": "It eliminates the need for Positional Embeddings",
+      "option_b": "It reduces memory IO complexity from quadratic O(N²) to linear by tiling GPU SRAM operations",
+      "option_c": "It converts self-attention into feed-forward layers",
+      "option_d": "It increases vocabulary size automatically",
+      "correct_answer": "B",
+      "explanation": "FlashAttention optimizes GPU memory bandwidth by executing attention matrix computation in SRAM tiles without writing full N x N matrices to HBM.",
+      "marks": 2,
+      "difficulty": "Hard",
+      "topic": "LLM Architectures",
+      "status": "APPROVED",
+      "created_at": "2026-10-16T10:38:08.051Z"
+    },
+    {
+      "id": "q-004",
+      "source_pdf_id": "mat-001",
+      "question_type": "WRITING",
+      "question_text": "Explain the trade-offs between a single centralized orchestrator agent vs. a decentralized multi-agent network for complex software tasks.",
+      "rubric": "Centralized: 2 marks for clear single-point control vs complexity. Decentralized: 2 marks for modularity & scalability vs communication overhead. Examples & Clarity: 1 mark.",
+      "expected_answer": "A centralized orchestrator maintains global state and plan clarity, but can become a bottleneck or failure point. Decentralized networks distribute specialized tasks to autonomous worker agents, improving modularity but requiring robust inter-agent protocols.",
+      "marks": 5,
+      "difficulty": "Medium",
+      "topic": "Multi-Agent Systems",
+      "status": "APPROVED",
+      "created_at": "2026-10-16T10:38:08.051Z"
+    },
+    {
+      "id": "q-005",
+      "source_pdf_id": "mat-003",
+      "question_type": "WRITING",
+      "question_text": "Describe how Chain-of-Thought (CoT) prompting alters model inference and why it improves performance on multi-step reasoning problems.",
+      "rubric": "Model compute allocation explanation: 2 marks. Multi-step decomposition: 2 marks. Practical example: 1 mark.",
+      "expected_answer": "Chain-of-Thought forces the model to generate intermediate reasoning tokens, effectively extending sequence-level compute budget before outputting the final answer.",
+      "marks": 5,
+      "difficulty": "Easy",
+      "topic": "Prompt Engineering",
+      "status": "APPROVED",
+      "created_at": "2026-10-16T10:38:08.051Z"
+    }
+  ],
   "question_options": [],
   "question_pools": [
     {
@@ -2569,8 +2689,200 @@
       ]
     }
   ],
-  "gd_sessions": [],
-  "gd_participants": [],
+  "gd_sessions": [
+    {
+      "id": "gd-demo-101",
+      "title": "Cohort Placement Mock GD - AI Ethics & Automation",
+      "topic": "Artificial Intelligence Ethics & Automation in 2026: Balancing Innovation with Human Welfare",
+      "description": "Sequential candidate turns with synchronized stopwatch, live audio visualization, and peer 10-point scoring.",
+      "pin": "789123",
+      "max_participants": 10,
+      "target_type": "ALL",
+      "duration_minutes": 20,
+      "speaker_duration_limit_seconds": 120,
+      "session_stage": "WAITING",
+      "status": "ACTIVE",
+      "current_speaker_index": 0,
+      "speaker_order": [
+        "std-001",
+        "std-002",
+        "std-003",
+        "std-004",
+        "std-005",
+        "std-006",
+        "std-007",
+        "std-008",
+        "std-009",
+        "std-010"
+      ],
+      "questions": [
+        {
+          "id": "gdq-1",
+          "question_text": "Opening & Problem Definition: Clarity in introducing the core issue",
+          "order": 1
+        },
+        {
+          "id": "gdq-2",
+          "question_text": "Subject Knowledge & Argumentation: Evidence-based persuasive points",
+          "order": 2
+        },
+        {
+          "id": "gdq-3",
+          "question_text": "Active Listening & Rebuttals: Courteous and logical counter-arguments",
+          "order": 3
+        },
+        {
+          "id": "gdq-4",
+          "question_text": "Team Collaboration & Synthesis: Concluding consensus and group leadership",
+          "order": 4
+        }
+      ],
+      "created_by": "adm-002",
+      "created_at": "2026-10-16T10:38:08.051Z"
+    }
+  ],
+  "gd_participants": [
+    {
+      "id": "gdp-1",
+      "session_id": "gd-demo-101",
+      "student_id": "std-001",
+      "student_name": "DEEPIKA J",
+      "student_reg": "7376242AD138",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-16T10:38:08.051Z",
+      "status": "JOINED",
+      "speaking_order": 1,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0
+    },
+    {
+      "id": "gdp-2",
+      "session_id": "gd-demo-101",
+      "student_id": "std-002",
+      "student_name": "DEEPIKA V",
+      "student_reg": "7376251CS145",
+      "student_department": "CS",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-16T10:38:08.051Z",
+      "status": "JOINED",
+      "speaking_order": 2,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0
+    },
+    {
+      "id": "gdp-3",
+      "session_id": "gd-demo-101",
+      "student_id": "std-003",
+      "student_name": "MOHAMED IRFAN R",
+      "student_reg": "7376252AD242",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-16T10:38:08.051Z",
+      "status": "JOINED",
+      "speaking_order": 3,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0
+    },
+    {
+      "id": "gdp-4",
+      "session_id": "gd-demo-101",
+      "student_id": "std-004",
+      "student_name": "SELVA RITHIKA S",
+      "student_reg": "7376252AD320",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-16T10:38:08.051Z",
+      "status": "JOINED",
+      "speaking_order": 4,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0
+    },
+    {
+      "id": "gdp-5",
+      "session_id": "gd-demo-101",
+      "student_id": "std-005",
+      "student_name": "MAHESAN A",
+      "student_reg": "7376252IT236",
+      "student_department": "IT",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-16T10:38:08.051Z",
+      "status": "JOINED",
+      "speaking_order": 5,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0
+    },
+    {
+      "id": "gdp-6",
+      "session_id": "gd-demo-101",
+      "student_id": "std-006",
+      "student_name": "JANANI SUBHA S",
+      "student_reg": "7376241CS214",
+      "student_department": "CS",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-16T10:38:08.051Z",
+      "status": "JOINED",
+      "speaking_order": 6,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0
+    },
+    {
+      "id": "gdp-7",
+      "session_id": "gd-demo-101",
+      "student_id": "std-007",
+      "student_name": "TANUSHREE P",
+      "student_reg": "7376241CS432",
+      "student_department": "CS",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-16T10:38:08.051Z",
+      "status": "JOINED",
+      "speaking_order": 7,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0
+    },
+    {
+      "id": "gdp-8",
+      "session_id": "gd-demo-101",
+      "student_id": "std-008",
+      "student_name": "DHARANISELVAM P",
+      "student_reg": "7376242AD143",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-16T10:38:08.051Z",
+      "status": "JOINED",
+      "speaking_order": 8,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0
+    },
+    {
+      "id": "gdp-9",
+      "session_id": "gd-demo-101",
+      "student_id": "std-009",
+      "student_name": "PRITHIVIKA R",
+      "student_reg": "7376242AD258",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-16T10:38:08.051Z",
+      "status": "JOINED",
+      "speaking_order": 9,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0
+    },
+    {
+      "id": "gdp-10",
+      "session_id": "gd-demo-101",
+      "student_id": "std-010",
+      "student_name": "SANJAI V S",
+      "student_reg": "7376242AD287",
+      "student_department": "AD",
+      "student_community": "AGENTIC AI & LLM OPTIMIZATION",
+      "joined_at": "2026-10-16T10:38:08.051Z",
+      "status": "JOINED",
+      "speaking_order": 10,
+      "speaking_status": "WAITING",
+      "speaking_time_seconds": 0
+    }
+  ],
   "gd_peer_evaluations": [],
   "gd_speaker_ratings": [],
   "prompt_sessions": [

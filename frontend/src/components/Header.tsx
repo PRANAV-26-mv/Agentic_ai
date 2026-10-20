@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
-import { Bell, LogOut, Shield, User as UserIcon, BookOpen, Crown, Menu, X, Sparkles } from 'lucide-react';
+import { Bell, LogOut, Shield, User as UserIcon, BookOpen, Crown, Menu, X, Sparkles, QrCode } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 
 interface HeaderProps {
@@ -65,6 +65,18 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
               {role === 'ADMIN' ? <Shield className="w-3 h-3 mr-1 text-indigo-600 shrink-0" /> : <UserIcon className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />}
               <span>{role}</span>
             </span>
+          )}
+
+          {/* Student Quick Attendance Pill for 1-click jump from anywhere */}
+          {role === 'STUDENT' && (
+            <Link
+              to="/attendance"
+              className="inline-flex items-center space-x-1.5 px-3 py-1 text-[11px] font-bold text-indigo-700 bg-indigo-50/90 hover:bg-indigo-100 border border-indigo-200/80 rounded-full transition-all duration-200 cursor-pointer shadow-xs backdrop-blur-sm"
+              title="Quick Attendance Scanner & OTP"
+            >
+              <QrCode className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="hidden sm:inline">Attendance QR</span>
+            </Link>
           )}
 
           {/* Desktop Notification Status / Quick Trigger */}

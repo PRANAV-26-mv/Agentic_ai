@@ -14,7 +14,8 @@ import {
   LogOut,
   X,
   Users,
-  Sparkles
+  Sparkles,
+  QrCode
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -41,6 +42,7 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({ mobileOpen, onCl
   ];
 
   const interactiveNav: NavItem[] = [
+    { to: '/attendance', label: 'Attendance & QR', icon: QrCode, isLiveBadge: true },
     { to: '/prompt-evaluator', label: 'Prompt Evaluator', icon: Sparkles },
     { to: '/meetings', label: 'Live Meetings', icon: Video },
     { to: '/quiz-sessions', label: 'Live Quiz Sessions', icon: Zap, isLiveBadge: true },
@@ -49,7 +51,6 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({ mobileOpen, onCl
 
   const profileNav: NavItem[] = [
     { to: '/results', label: 'My Results', icon: BarChart2 },
-    { to: '/attendance', label: 'Attendance', icon: Calendar },
     { to: '/notifications', label: 'Notifications', icon: Bell },
     { to: '/ask-doubt', label: 'Ask a Doubt', icon: MessageSquare },
     { to: '/profile', label: 'Profile Settings', icon: User },

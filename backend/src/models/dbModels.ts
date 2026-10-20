@@ -1150,7 +1150,7 @@ export const AttendanceModel = {
   findAllSessions(): AttendanceSession[] {
     return memoryDb.table('attendance_sessions');
   },
-  markAttendance(sessionId: string, studentId: string): { success: boolean; message: string; record?: AttendanceRecord } {
+  markAttendance(sessionId: string, studentId: string): { success: boolean; message: string; record?: AttendanceRecord; session?: AttendanceSession } {
     const session = memoryDb.table('attendance_sessions').find(s => s.id === sessionId || s.code === sessionId);
     if (!session) return { success: false, message: 'Invalid attendance code' };
 
@@ -1163,7 +1163,7 @@ export const AttendanceModel = {
       r => r.session_id === session.id && r.student_id === studentId
     );
     if (existing) {
-      return { success: false, message: 'You have already marked attendance for this session.' };
+      return { success: false, message: 'You have already marked attendance for this session.', session };
     }
 
     const record: AttendanceRecord = {
@@ -1176,7 +1176,7 @@ export const AttendanceModel = {
 
     memoryDb.table('attendance_records').push(record);
     db.save();
-    return { success: true, message: 'Attendance marked successfully', record };
+    return { success: true, message: 'Attendance marked successfully', record, session };
   },
   getStudentAttendance(studentId: string): { total: number; present: number; percentage: number; records: AttendanceRecord[] } {
     const records = memoryDb.table('attendance_records').filter(r => r.student_id === studentId);

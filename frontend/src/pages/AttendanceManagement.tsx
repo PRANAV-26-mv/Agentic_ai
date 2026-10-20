@@ -15,8 +15,13 @@ import {
   Check, 
   FileSpreadsheet, 
   Loader2,
-  AlertCircle
+  AlertCircle,
+  QrCode,
+  Maximize2,
+  Sparkles
 } from 'lucide-react';
+import { AttendanceQrModal } from '../components/AttendanceQrModal';
+import { generateAttendanceQr, downloadQrImage } from '../utils/qrUtils';
 
 export const AttendanceManagement: React.FC = () => {
   const [sessions, setSessions] = useState<AttendanceSession[]>([]);
@@ -24,6 +29,10 @@ export const AttendanceManagement: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // QR Code & Projector Modal State
+  const [qrModalSession, setQrModalSession] = useState<AttendanceSession | null>(null);
+  const [activeQrUrl, setActiveQrUrl] = useState<string>('');
 
   // Attendee Roster Modal State
   const [selectedSessionForRoster, setSelectedSessionForRoster] = useState<AttendanceSession | null>(null);
@@ -67,6 +76,15 @@ export const AttendanceManagement: React.FC = () => {
     fetchSessions();
   }, []);
 
+  // Generate QR preview whenever activeSession changes
+  useEffect(() => {
+    if (activeSession?.code) {
+      generateAttendanceQr(activeSession.code, 300).then(setActiveQrUrl);
+    } else {
+      setActiveQrUrl('');
+    }
+  }, [activeSession?.code]);
+
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
@@ -80,6 +98,8 @@ export const AttendanceManagement: React.FC = () => {
       const res = await api.post('/attendance/sessions', formData);
       setActiveSession(res.data);
       setShowCreateModal(false);
+      // Automatically show the generated OTP & QR code in the spotlight modal!
+      setQrModalSession(res.data);
       fetchSessions();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to generate attendance OTP.');
@@ -225,78 +245,138 @@ export const AttendanceManagement: React.FC = () => {
             className="flex-1 sm:flex-initial px-5 py-2.5 apple-btn-primary text-white font-bold text-xs rounded-full shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>New Numeric OTP</span>
+            <span>Generate OTP & QR Code</span>
           </button>
         </div>
       </div>
 
-      {/* Live Active Numeric OTP Hero Banner */}
+      {/* Live Active Numeric OTP & QR Code Hero Banner */}
       {activeSession && (
-        <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl text-center space-y-4">
-          <div className="flex items-center justify-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="text-xs font-black uppercase tracking-widest text-purple-300">
-              Live Active 6-Digit Numeric OTP
-            </span>
-          </div>
+        <div className="bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-white/10">
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+            
+            {/* Left: 6-Digit Numeric OTP & Details */}
+            <div className="space-y-4 text-center lg:text-left flex-1">
+              <div className="flex items-center justify-center lg:justify-start space-x-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+                <span className="text-xs font-black uppercase tracking-widest text-purple-300">
+                  Live Active Attendance Session
+                </span>
+              </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <div className="text-5xl sm:text-6xl font-extrabold font-mono tracking-widest text-amber-300 bg-white/10 px-8 py-3.5 rounded-2xl border border-white/20 select-all">
-              {activeSession.code}
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
+                <div className="text-5xl sm:text-6xl font-extrabold font-mono tracking-widest text-amber-300 bg-white/10 px-8 py-3.5 rounded-2xl border border-white/20 select-all shadow-inner">
+                  {activeSession.code}
+                </div>
+
+                <button
+                  onClick={() => handleCopyCode(activeSession.code)}
+                  className="p-3.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl border border-white/20 transition-all cursor-pointer flex items-center space-x-2"
+                  title="Copy OTP to clipboard"
+                >
+                  {copiedCode === activeSession.code ? (
+                    <>
+                      <Check className="w-5 h-5 text-emerald-400" />
+                      <span className="text-xs font-bold text-emerald-300">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-5 h-5 text-purple-200" />
+                      <span className="text-xs font-bold text-purple-200">Copy OTP</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="text-xs text-slate-300 flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-1">
+                <span>Target: <strong className="text-white">{activeSession.community}</strong> ({activeSession.department})</span>
+                <span>•</span>
+                <span>Expires: <strong className="text-white">{new Date(activeSession.expires_at).toLocaleTimeString()}</strong></span>
+                <span>•</span>
+                <span className="inline-flex items-center space-x-1 text-emerald-300 font-bold bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-400/30">
+                  <Users className="w-3.5 h-3.5" />
+                  <span>{activeSession.attendee_count || 0} Students Marked</span>
+                </span>
+              </div>
+
+              {/* Action buttons inside live active card */}
+              <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-2.5">
+                <button
+                  onClick={() => setQrModalSession(activeSession)}
+                  className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer shadow-md"
+                >
+                  <QrCode className="w-4 h-4 text-white" />
+                  <span>Enlarge QR & Projector</span>
+                </button>
+
+                <button
+                  onClick={() => handleOpenRoster(activeSession)}
+                  className="px-4 py-2 bg-white/15 hover:bg-white/25 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer border border-white/20"
+                >
+                  <Users className="w-4 h-4 text-purple-200" />
+                  <span>View Attendees ({activeSession.attendee_count || 0})</span>
+                </button>
+
+                <button
+                  onClick={() => handleDownloadSessionReport(activeSession.id, activeSession.code, activeSession.date)}
+                  disabled={exportingId === activeSession.id}
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer shadow-md disabled:opacity-50"
+                >
+                  {exportingId === activeSession.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  <span>Download Report (CSV)</span>
+                </button>
+              </div>
             </div>
 
-            <button
-              onClick={() => handleCopyCode(activeSession.code)}
-              className="p-3.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl border border-white/20 transition-all cursor-pointer flex items-center space-x-2"
-              title="Copy OTP to clipboard"
-            >
-              {copiedCode === activeSession.code ? (
-                <>
-                  <Check className="w-5 h-5 text-emerald-400" />
-                  <span className="text-xs font-bold text-emerald-300">Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-5 h-5 text-purple-200" />
-                  <span className="text-xs font-bold text-purple-200">Copy OTP</span>
-                </>
-              )}
-            </button>
-          </div>
+            {/* Right: Live Interactive QR Code Preview */}
+            <div className="shrink-0 flex flex-col items-center bg-white/10 p-4 rounded-3xl border border-white/20 backdrop-blur-md">
+              <div 
+                onClick={() => setQrModalSession(activeSession)}
+                className="bg-white p-2.5 rounded-2xl shadow-xl border border-white/30 cursor-pointer group relative overflow-hidden transition-transform duration-200 hover:scale-103"
+                title="Click to Enlarge or Launch Full Screen Projector Mode"
+              >
+                {activeQrUrl ? (
+                  <img 
+                    src={activeQrUrl} 
+                    alt="Active Attendance QR" 
+                    className="w-36 h-36 object-contain rounded-xl select-none"
+                  />
+                ) : (
+                  <div className="w-36 h-36 flex items-center justify-center text-xs text-slate-400">
+                    Generating QR...
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl">
+                  <span className="text-[11px] font-bold text-white flex items-center space-x-1 bg-white/20 px-2 py-1 rounded-lg backdrop-blur-xs">
+                    <Maximize2 className="w-3.5 h-3.5" />
+                    <span>Enlarge</span>
+                  </span>
+                </div>
+              </div>
 
-          <div className="text-xs text-slate-300 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-1">
-            <span>Target: <strong className="text-white">{activeSession.community}</strong> ({activeSession.department})</span>
-            <span>•</span>
-            <span>Expires: <strong className="text-white">{new Date(activeSession.expires_at).toLocaleTimeString()}</strong></span>
-            <span>•</span>
-            <span className="inline-flex items-center space-x-1 text-emerald-300 font-bold bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-400/30">
-              <Users className="w-3.5 h-3.5" />
-              <span>{activeSession.attendee_count || 0} Students Marked</span>
-            </span>
-          </div>
+              <div className="flex items-center space-x-2 mt-2.5 text-[11px] text-slate-300">
+                <button
+                  onClick={() => setQrModalSession(activeSession)}
+                  className="hover:text-white font-semibold flex items-center space-x-1 transition-colors cursor-pointer"
+                >
+                  <Maximize2 className="w-3 h-3 text-purple-300" />
+                  <span>Projector</span>
+                </button>
+                <span>•</span>
+                <button
+                  onClick={() => activeQrUrl && downloadQrImage(activeSession.code, activeQrUrl)}
+                  className="hover:text-white font-semibold flex items-center space-x-1 transition-colors cursor-pointer"
+                >
+                  <Download className="w-3 h-3 text-emerald-300" />
+                  <span>Download PNG</span>
+                </button>
+              </div>
+            </div>
 
-          {/* Action buttons inside live active card */}
-          <div className="pt-2 flex items-center justify-center gap-3">
-            <button
-              onClick={() => handleOpenRoster(activeSession)}
-              className="px-4 py-2 bg-white/15 hover:bg-white/25 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer border border-white/20"
-            >
-              <Users className="w-4 h-4 text-purple-200" />
-              <span>View Attendees ({activeSession.attendee_count || 0})</span>
-            </button>
-
-            <button
-              onClick={() => handleDownloadSessionReport(activeSession.id, activeSession.code, activeSession.date)}
-              disabled={exportingId === activeSession.id}
-              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer shadow-md disabled:opacity-50"
-            >
-              {exportingId === activeSession.id ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4" />
-              )}
-              <span>Download Report (CSV)</span>
-            </button>
           </div>
         </div>
       )}
@@ -307,10 +387,10 @@ export const AttendanceManagement: React.FC = () => {
           <div>
             <h3 className="font-bold text-slate-900 text-sm flex items-center space-x-2">
               <KeyRound className="w-4 h-4 text-purple-600" />
-              <span>Generated Attendance OTP Sessions ({sessions.length})</span>
+              <span>Generated Attendance OTP & QR Sessions ({sessions.length})</span>
             </h3>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              Each session allows students to mark attendance using its 6-digit numeric OTP.
+              Each session allows students to scan its QR code or enter its 6-digit numeric OTP.
             </p>
           </div>
         </div>
@@ -327,7 +407,7 @@ export const AttendanceManagement: React.FC = () => {
               onClick={() => setShowCreateModal(true)}
               className="px-4 py-2 bg-purple-50 text-purple-700 font-bold text-xs rounded-xl hover:bg-purple-100 transition-colors cursor-pointer"
             >
-              Generate First Numeric OTP
+              Generate First OTP & QR Code
             </button>
           </div>
         ) : (
@@ -392,10 +472,19 @@ export const AttendanceManagement: React.FC = () => {
                         </button>
                       </td>
                       <td className="p-4 text-right">
-                        <div className="flex items-center justify-end space-x-2">
+                        <div className="flex items-center justify-end space-x-1.5">
+                          <button
+                            onClick={() => setQrModalSession(sess)}
+                            className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl border border-indigo-200 flex items-center space-x-1 transition-colors cursor-pointer"
+                            title="View QR Code and Numeric OTP for this session"
+                          >
+                            <QrCode className="w-3.5 h-3.5" />
+                            <span>QR & OTP</span>
+                          </button>
+
                           <button
                             onClick={() => handleOpenRoster(sess)}
-                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-1 transition-colors cursor-pointer"
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center space-x-1 transition-colors cursor-pointer"
                             title="View roster of who put the OTP"
                           >
                             <Users className="w-3.5 h-3.5" />
@@ -405,7 +494,7 @@ export const AttendanceManagement: React.FC = () => {
                           <button
                             onClick={() => handleDownloadSessionReport(sess.id, sess.code, sess.date)}
                             disabled={exportingId === sess.id}
-                            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-200 flex items-center space-x-1 transition-colors cursor-pointer disabled:opacity-50"
+                            className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-200 flex items-center space-x-1 transition-colors cursor-pointer disabled:opacity-50"
                             title="Download CSV report of attendees"
                           >
                             {exportingId === sess.id ? (
@@ -580,8 +669,8 @@ export const AttendanceManagement: React.FC = () => {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <h3 className="font-bold text-slate-900 text-base flex items-center space-x-2">
-                <KeyRound className="w-5 h-5 text-purple-600" />
-                <span>Generate Numeric Attendance OTP</span>
+                <QrCode className="w-5 h-5 text-indigo-600" />
+                <span>Generate Attendance OTP & QR Code</span>
               </h3>
               <button
                 onClick={() => setShowCreateModal(false)}
@@ -592,7 +681,7 @@ export const AttendanceManagement: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-500">
-              Generates a strictly 6-digit numeric OTP (e.g. 748291). Students must enter this number to mark themselves present.
+              Generates a strictly 6-digit numeric OTP and a scannable QR Code. When generated, both will be immediately presented for classroom projection or student camera scanning.
             </p>
 
             <form onSubmit={handleCreateSession} className="space-y-3.5 text-xs">
@@ -652,17 +741,17 @@ export const AttendanceManagement: React.FC = () => {
                 <button 
                   type="submit" 
                   disabled={creating}
-                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition-colors cursor-pointer flex items-center space-x-1.5 disabled:opacity-50"
+                  className="px-5 py-2 apple-btn-primary text-white font-bold rounded-xl shadow-md transition-colors cursor-pointer flex items-center space-x-1.5 disabled:opacity-50"
                 >
                   {creating ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Generating OTP...</span>
+                      <span>Generating OTP & QR...</span>
                     </>
                   ) : (
                     <>
-                      <KeyRound className="w-4 h-4" />
-                      <span>Generate 6-Digit OTP</span>
+                      <QrCode className="w-4 h-4" />
+                      <span>Generate OTP & QR Code</span>
                     </>
                   )}
                 </button>
@@ -671,6 +760,13 @@ export const AttendanceManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* QR CODE & OTP SPOTLIGHT / PROJECTOR MODAL */}
+      <AttendanceQrModal
+        session={qrModalSession}
+        onClose={() => setQrModalSession(null)}
+        onOpenRoster={handleOpenRoster}
+      />
 
     </div>
   );
