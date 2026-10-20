@@ -39,7 +39,38 @@ const ICE_SERVERS: RTCConfiguration = {
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun3.l.google.com:19302' },
     { urls: 'stun:stun4.l.google.com:19302' },
-  ]
+    { urls: 'stun:global.stun.twilio.com:3478' },
+    { urls: 'stun:stun.relay.metered.ca:80' },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
+  ],
+  iceCandidatePoolSize: 10
+};
+
+const findTransceiver = (pc: RTCPeerConnection, kind: 'audio' | 'video'): RTCRtpTransceiver | undefined => {
+  return pc.getTransceivers().find(t => 
+    t.receiver?.track?.kind === kind || 
+    t.sender?.track?.kind === kind
+  );
+};
+
+const findSender = (pc: RTCPeerConnection, kind: 'audio' | 'video'): RTCRtpSender | undefined => {
+  const transceiver = findTransceiver(pc, kind);
+  if (transceiver) return transceiver.sender;
+  return pc.getSenders().find(s => s.track?.kind === kind);
 };
 
 export function useWebRTCMeeting(
@@ -284,18 +315,33 @@ export function useWebRTCMeeting(
 
         // Update senders on any active peer connections
         peerConnectionsRef.current.forEach(pc => {
-          const senders = pc.getSenders();
           const vTrack = stream.getVideoTracks()[0] || null;
           const aTrack = stream.getAudioTracks()[0] || null;
 
-          const vSender = senders.find(s => s.track?.kind === 'video' || (s as any).kind === 'video');
-          if (vSender && vTrack) {
-            vSender.replaceTrack(vTrack).catch(e => console.warn('Video sender replace error:', e));
+          if (vTrack) {
+            const vSender = findSender(pc, 'video');
+            if (vSender) {
+              vSender.replaceTrack(vTrack).catch(e => console.warn('Video sender replace error:', e));
+            } else {
+              try {
+                pc.addTrack(vTrack, stream);
+              } catch (e) {
+                console.warn('Video track add error:', e);
+              }
+            }
           }
 
-          const aSender = senders.find(s => s.track?.kind === 'audio' || (s as any).kind === 'audio');
-          if (aSender && aTrack) {
-            aSender.replaceTrack(aTrack).catch(e => console.warn('Audio sender replace error:', e));
+          if (aTrack) {
+            const aSender = findSender(pc, 'audio');
+            if (aSender) {
+              aSender.replaceTrack(aTrack).catch(e => console.warn('Audio sender replace error:', e));
+            } else {
+              try {
+                pc.addTrack(aTrack, stream);
+              } catch (e) {
+                console.warn('Audio track add error:', e);
+              }
+            }
           }
         });
 
@@ -340,48 +386,49 @@ export function useWebRTCMeeting(
     const pc = new RTCPeerConnection(ICE_SERVERS);
     peerConnectionsRef.current.set(remoteSocketId, pc);
 
-    // 1. Add current active local tracks
     const activeVideoTrack = isScreenSharingRef.current && screenStreamRef.current
       ? screenStreamRef.current.getVideoTracks()[0]
       : (localStreamRef.current?.getVideoTracks()[0] || null);
 
     const activeAudioTrack = localStreamRef.current?.getAudioTracks()[0] || null;
 
-    if (activeAudioTrack && localStreamRef.current) {
-      try {
-        pc.addTrack(activeAudioTrack, localStreamRef.current);
-      } catch (e) {
-        console.warn('[WebRTC] Audio track add notice:', e);
+    // 1. Setup Audio Transceiver & Track
+    let audioTransceiver = pc.getTransceivers().find(t => t.receiver?.track?.kind === 'audio' || t.sender?.track?.kind === 'audio');
+    if (!audioTransceiver) {
+      if (activeAudioTrack && localStreamRef.current) {
+        try {
+          audioTransceiver = pc.addTransceiver(activeAudioTrack, {
+            direction: 'sendrecv',
+            streams: [localStreamRef.current]
+          });
+        } catch (e) {
+          audioTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' });
+        }
+      } else {
+        audioTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' });
       }
+    } else if (activeAudioTrack && audioTransceiver.sender) {
+      audioTransceiver.sender.replaceTrack(activeAudioTrack).catch(() => {});
     }
 
-    if (activeVideoTrack) {
-      try {
-        pc.addTrack(activeVideoTrack, isScreenSharingRef.current ? screenStreamRef.current! : localStreamRef.current!);
-      } catch (e) {
-        console.warn('[WebRTC] Video track add notice:', e);
+    // 2. Setup Video Transceiver & Track
+    let videoTransceiver = pc.getTransceivers().find(t => t.receiver?.track?.kind === 'video' || t.sender?.track?.kind === 'video');
+    const targetVideoStream = isScreenSharingRef.current ? screenStreamRef.current : localStreamRef.current;
+    if (!videoTransceiver) {
+      if (activeVideoTrack && targetVideoStream) {
+        try {
+          videoTransceiver = pc.addTransceiver(activeVideoTrack, {
+            direction: 'sendrecv',
+            streams: [targetVideoStream]
+          });
+        } catch (e) {
+          videoTransceiver = pc.addTransceiver('video', { direction: 'sendrecv' });
+        }
+      } else {
+        videoTransceiver = pc.addTransceiver('video', { direction: 'sendrecv' });
       }
-    }
-
-    // 2. Guarantee transceivers exist so SDP offers & answers always negotiate BOTH audio and video
-    const senders = pc.getSenders();
-    const hasAudioSender = senders.some(s => s.track?.kind === 'audio' || (s as any).kind === 'audio');
-    const hasVideoSender = senders.some(s => s.track?.kind === 'video' || (s as any).kind === 'video');
-
-    if (!hasAudioSender) {
-      try {
-        pc.addTransceiver('audio', { direction: 'sendrecv' });
-      } catch (e) {
-        console.warn('Audio transceiver notice:', e);
-      }
-    }
-
-    if (!hasVideoSender) {
-      try {
-        pc.addTransceiver('video', { direction: 'sendrecv' });
-      } catch (e) {
-        console.warn('Video transceiver notice:', e);
-      }
+    } else if (activeVideoTrack && videoTransceiver.sender) {
+      videoTransceiver.sender.replaceTrack(activeVideoTrack).catch(() => {});
     }
 
     pc.onicecandidate = (event) => {
@@ -410,24 +457,31 @@ export function useWebRTCMeeting(
             remoteStream!.addTrack(track);
           }
         });
-      } else if (event.track) {
+      }
+      if (event.track) {
         if (!remoteStream.getTracks().some(t => t.id === event.track.id)) {
           remoteStream.addTrack(event.track);
         }
       }
 
-      // Always create a new MediaStream wrapper so React components re-render and re-evaluate track counts
-      const freshStream = new MediaStream(remoteStream.getTracks());
-
-      setPeers(prev => {
-        const next = new Map(prev);
-        const existing = next.get(remoteSocketId) || remoteUser;
-        next.set(remoteSocketId, {
-          ...existing,
-          stream: freshStream
+      const syncRemoteStreamState = () => {
+        const freshStream = new MediaStream(remoteStream!.getTracks());
+        setPeers(prev => {
+          const next = new Map(prev);
+          const existing = next.get(remoteSocketId) || remoteUser;
+          next.set(remoteSocketId, {
+            ...existing,
+            stream: freshStream
+          });
+          return next;
         });
-        return next;
-      });
+      };
+
+      event.track.onunmute = syncRemoteStreamState;
+      event.track.onmute = syncRemoteStreamState;
+      event.track.onended = syncRemoteStreamState;
+
+      syncRemoteStreamState();
     };
 
     pc.onconnectionstatechange = () => {
@@ -481,11 +535,18 @@ export function useWebRTCMeeting(
       const newPeersMap = new Map<string, RemotePeer>();
 
       for (const peer of data.existingPeers) {
-        newPeersMap.set(peer.socketId, peer);
+        const existingStream = remoteStreamsRef.current.get(peer.socketId);
+        newPeersMap.set(peer.socketId, {
+          ...peer,
+          stream: existingStream || peer.stream
+        });
         const pc = createPeerConnection(peer.socketId, peer);
 
         try {
-          const offer = await pc.createOffer();
+          const offer = await pc.createOffer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: true
+          });
           await pc.setLocalDescription(offer);
           socket.emit('signal-send', {
             toSocketId: peer.socketId,
@@ -504,7 +565,12 @@ export function useWebRTCMeeting(
       console.log('[Socket] user-joined received:', newPeer.userName, newPeer.socketId);
       setPeers(prev => {
         const next = new Map(prev);
-        next.set(newPeer.socketId, newPeer);
+        const existing = next.get(newPeer.socketId);
+        const stream = existing?.stream || remoteStreamsRef.current.get(newPeer.socketId);
+        next.set(newPeer.socketId, {
+          ...newPeer,
+          stream
+        });
         return next;
       });
       createPeerConnection(newPeer.socketId, newPeer);
@@ -730,11 +796,15 @@ export function useWebRTCMeeting(
 
         // Update senders on all active peer connections
         peerConnectionsRef.current.forEach(pc => {
-          const aSender = pc.getSenders().find(s => s.track?.kind === 'audio' || (s as any).kind === 'audio');
+          const aSender = findSender(pc, 'audio');
           if (aSender) {
             aSender.replaceTrack(newTrack).catch(err => console.warn('Audio sender replace error:', err));
           } else {
-            pc.addTrack(newTrack, localStreamRef.current!);
+            try {
+              pc.addTrack(newTrack, localStreamRef.current!);
+            } catch (err) {
+              console.warn('Audio addTrack error:', err);
+            }
           }
         });
 
@@ -751,6 +821,13 @@ export function useWebRTCMeeting(
 
     audioTracks.forEach(track => {
       track.enabled = nextState;
+    });
+
+    peerConnectionsRef.current.forEach(pc => {
+      const aSender = findSender(pc, 'audio');
+      if (aSender) {
+        aSender.replaceTrack(nextState ? (audioTracks[0] || null) : null).catch(() => {});
+      }
     });
 
     setLocalAudioEnabled(nextState);
@@ -784,11 +861,15 @@ export function useWebRTCMeeting(
 
         // Update video senders on all active peer connections instantaneously via replaceTrack
         peerConnectionsRef.current.forEach(pc => {
-          const vSender = pc.getSenders().find(s => s.track?.kind === 'video' || (s as any).kind === 'video');
+          const vSender = findSender(pc, 'video');
           if (vSender) {
             vSender.replaceTrack(newTrack).catch(err => console.warn('Video sender replace error:', err));
           } else {
-            pc.addTrack(newTrack, localStreamRef.current!);
+            try {
+              pc.addTrack(newTrack, localStreamRef.current!);
+            } catch (err) {
+              console.warn('Video addTrack error:', err);
+            }
           }
         });
 
@@ -808,7 +889,7 @@ export function useWebRTCMeeting(
 
     // Update senders on peer connections
     peerConnectionsRef.current.forEach(pc => {
-      const vSender = pc.getSenders().find(s => s.track?.kind === 'video' || (s as any).kind === 'video');
+      const vSender = findSender(pc, 'video');
       if (vSender) {
         vSender.replaceTrack(nextState ? (videoTracks[0] || null) : null).catch(() => {});
       }
@@ -832,7 +913,7 @@ export function useWebRTCMeeting(
       // Revert video sender to local camera track
       const camTrack = localVideoEnabledRef.current ? localStreamRef.current?.getVideoTracks()[0] || null : null;
       peerConnectionsRef.current.forEach(pc => {
-        const vSender = pc.getSenders().find(s => s.track?.kind === 'video' || (s as any).kind === 'video');
+        const vSender = findSender(pc, 'video');
         if (vSender) {
           vSender.replaceTrack(camTrack).catch(err => console.warn('Revert cam track error:', err));
         }
@@ -849,11 +930,15 @@ export function useWebRTCMeeting(
 
         // Replace video sender on all active peer connections with screen share track
         peerConnectionsRef.current.forEach(pc => {
-          const vSender = pc.getSenders().find(s => s.track?.kind === 'video' || (s as any).kind === 'video');
+          const vSender = findSender(pc, 'video');
           if (vSender) {
             vSender.replaceTrack(screenTrack).catch(err => console.warn('Screen track replace error:', err));
           } else {
-            pc.addTrack(screenTrack, stream);
+            try {
+              pc.addTrack(screenTrack, stream);
+            } catch (err) {
+              console.warn('Screen addTrack error:', err);
+            }
           }
         });
 
@@ -864,7 +949,7 @@ export function useWebRTCMeeting(
 
           const camTrack = localVideoEnabledRef.current ? localStreamRef.current?.getVideoTracks()[0] || null : null;
           peerConnectionsRef.current.forEach(pc => {
-            const vSender = pc.getSenders().find(s => s.track?.kind === 'video' || (s as any).kind === 'video');
+            const vSender = findSender(pc, 'video');
             if (vSender) {
               vSender.replaceTrack(camTrack).catch(err => console.warn('Revert cam track onended error:', err));
             }

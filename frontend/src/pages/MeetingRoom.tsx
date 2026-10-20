@@ -175,6 +175,26 @@ export const MeetingRoom: React.FC = () => {
     }
   }, [chatMessages, activeDrawer]);
 
+  // Global media playback unlock on first user gesture
+  useEffect(() => {
+    const unlockAllMedia = () => {
+      document.querySelectorAll('audio, video').forEach(el => {
+        const media = el as HTMLMediaElement;
+        if (media.paused && media.srcObject) {
+          media.play().catch(() => {});
+        }
+      });
+    };
+    window.addEventListener('click', unlockAllMedia);
+    window.addEventListener('touchstart', unlockAllMedia);
+    window.addEventListener('keydown', unlockAllMedia);
+    return () => {
+      window.removeEventListener('click', unlockAllMedia);
+      window.removeEventListener('touchstart', unlockAllMedia);
+      window.removeEventListener('keydown', unlockAllMedia);
+    };
+  }, []);
+
   // Load directory members for instant invite
   const handleOpenInviteModal = async () => {
     setShowInviteModal(true);
@@ -572,7 +592,7 @@ export const MeetingRoom: React.FC = () => {
             }`}>
               {/* Local Participant Tile */}
               <div className="relative w-full h-full min-h-[160px] aspect-video bg-[#1a1a20] rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800/80 shadow-lg group flex items-center justify-center">
-                {localVideoEnabled && localStream && localStream.getVideoTracks().some(t => t.enabled && t.readyState === 'live') ? (
+                {localVideoEnabled && localStream && localStream.getVideoTracks().length > 0 && localStream.getVideoTracks().some(t => t.readyState !== 'ended') ? (
                   <VideoPlayer
                     stream={localStream}
                     muted={true}
@@ -1204,7 +1224,8 @@ const PeerVideoTile: React.FC<{
     }
   }, [peer.stream, peer.audioEnabled]);
 
-  const hasLivePeerVideo = peer.videoEnabled !== false && peer.stream && peer.stream.getVideoTracks().some(t => t.enabled && t.readyState === 'live');
+  const videoTracks = peer.stream ? peer.stream.getVideoTracks() : [];
+  const hasLivePeerVideo = peer.videoEnabled !== false && videoTracks.length > 0 && videoTracks.some(t => t.readyState !== 'ended');
 
   return (
     <div 

@@ -142,8 +142,8 @@ export function setupMeetingSocket(httpServer: HttpServer): SocketIOServer {
           userName: user.name,
           userEmail: user.email,
           userRole: user.role,
-          audioEnabled,
-          videoEnabled,
+          audioEnabled: audioEnabled !== false,
+          videoEnabled: videoEnabled !== false,
           isScreenSharing: false,
           isHost
         } as MeetingSocketData;
@@ -171,8 +171,8 @@ export function setupMeetingSocket(httpServer: HttpServer): SocketIOServer {
             userName: s.data.userName,
             userEmail: s.data.userEmail,
             userRole: s.data.userRole,
-            audioEnabled: Boolean(s.data.audioEnabled),
-            videoEnabled: Boolean(s.data.videoEnabled),
+            audioEnabled: s.data.audioEnabled !== false,
+            videoEnabled: s.data.videoEnabled !== false,
             isScreenSharing: Boolean(s.data.isScreenSharing),
             isHost: Boolean(s.data.isHost)
           }));
@@ -203,8 +203,8 @@ export function setupMeetingSocket(httpServer: HttpServer): SocketIOServer {
           userName: user.name,
           userEmail: user.email,
           userRole: user.role,
-          audioEnabled,
-          videoEnabled,
+          audioEnabled: socket.data.audioEnabled !== false,
+          videoEnabled: socket.data.videoEnabled !== false,
           isScreenSharing: false,
           isHost
         });
