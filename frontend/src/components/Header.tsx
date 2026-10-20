@@ -19,14 +19,14 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
 
   return (
     <header className="sticky top-2 sm:top-3 z-40 mx-2 sm:mx-4 lg:mx-8 apple-glass-nav rounded-2xl sm:rounded-full transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
         
         {/* Brand Title & Mobile Menu Toggle */}
-        <div className="flex items-center space-x-2.5 sm:space-x-3.5 shrink-0">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
           {onToggleMobileMenu && (
             <button
               onClick={onToggleMobileMenu}
-              className="md:hidden p-2 rounded-xl text-slate-700 hover:bg-white/60 border border-white/80 shadow-xs focus:outline-hidden transition-colors cursor-pointer"
+              className="md:hidden p-2 rounded-xl text-slate-700 hover:bg-white/60 border border-white/80 shadow-xs focus:outline-hidden transition-colors cursor-pointer shrink-0"
               title="Toggle Mobile Menu"
             >
               {mobileMenuOpen ? <X className="w-4 h-4 text-slate-900" /> : <Menu className="w-4 h-4 text-slate-900" />}
@@ -34,16 +34,16 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
           )}
 
           {/* Apple Liquid Glass Brand Icon & Title */}
-          <Link to="/" className="flex items-center space-x-2.5 group cursor-pointer">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-[0_4px_16px_rgba(99,102,241,0.35)] transition-all duration-300 group-hover:scale-105 border border-white/40 shrink-0">
+          <Link to="/" className="flex items-center space-x-2 sm:space-x-2.5 group cursor-pointer min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-[0_4px_16px_rgba(99,102,241,0.35)] transition-all duration-300 group-hover:scale-105 border border-white/40 shrink-0">
               <BookOpen className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <h1 className="font-bold text-slate-900 text-xs sm:text-sm tracking-tight leading-snug">
+            <div className="min-w-0">
+              <h1 className="font-bold text-slate-900 text-xs sm:text-sm tracking-tight leading-snug truncate">
                 <span className="hidden sm:inline">Student Assessment & Learning</span>
                 <span className="inline sm:hidden font-bold">CampusPortal</span>
               </h1>
-              <p className="text-[10px] text-slate-500 font-medium tracking-normal hidden sm:block">
+              <p className="text-[10px] text-slate-500 font-medium tracking-normal hidden md:block truncate">
                 Precision Learning • Cohort Analytics • Group Discussion
               </p>
             </div>
@@ -51,17 +51,16 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
         </div>
 
         {/* User Actions & Layered Floating Elements */}
-        <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+        <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
           
-          {/* Role / Super Admin Badge */}
+          {/* Role / Super Admin Badge (Hidden on small mobile to avoid header overflow) */}
           {isSuperAdmin ? (
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-900 border border-amber-500/30 shadow-xs backdrop-blur-md">
-              <Crown className="w-3 h-3 mr-1 text-amber-600 shrink-0 animate-bounce" />
+            <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-900 border border-amber-500/30 shadow-xs backdrop-blur-md">
+              <Crown className="w-3 h-3 sm:mr-1 text-amber-600 shrink-0 animate-bounce" />
               <span className="hidden sm:inline">SUPER ADMIN</span>
-              <span className="inline sm:hidden">SUPER</span>
             </span>
           ) : (
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold apple-glass-pill text-slate-800">
+            <span className="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold apple-glass-pill text-slate-800">
               {role === 'ADMIN' ? <Shield className="w-3 h-3 mr-1 text-indigo-600 shrink-0" /> : <UserIcon className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />}
               <span>{role}</span>
             </span>
@@ -71,11 +70,11 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
           {role === 'STUDENT' && (
             <Link
               to="/attendance"
-              className="inline-flex items-center space-x-1.5 px-3 py-1 text-[11px] font-bold text-indigo-700 bg-indigo-50/90 hover:bg-indigo-100 border border-indigo-200/80 rounded-full transition-all duration-200 cursor-pointer shadow-xs backdrop-blur-sm"
+              className="inline-flex items-center space-x-1 p-2 sm:px-3 sm:py-1 text-[11px] font-bold text-indigo-700 bg-indigo-50/90 hover:bg-indigo-100 border border-indigo-200/80 rounded-full transition-all duration-200 cursor-pointer shadow-xs backdrop-blur-sm"
               title="Quick Attendance Scanner & OTP"
             >
-              <QrCode className="w-3.5 h-3.5 text-indigo-600" />
-              <span className="hidden sm:inline">Attendance QR</span>
+              <QrCode className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <span className="hidden sm:inline">Attendance</span>
             </Link>
           )}
 
@@ -91,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
           ) : (
             <button
               onClick={() => requestPermission()}
-              className="hidden sm:inline-flex items-center space-x-1 px-3 py-1 text-[10px] font-semibold text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100/90 border border-indigo-200/80 rounded-full transition-all duration-200 cursor-pointer shadow-xs backdrop-blur-sm"
+              className="hidden md:inline-flex items-center space-x-1 px-3 py-1 text-[10px] font-semibold text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100/90 border border-indigo-200/80 rounded-full transition-all duration-200 cursor-pointer shadow-xs backdrop-blur-sm"
               title="Click to enable native pop-ups"
             >
               <Sparkles className="w-3 h-3 text-indigo-500" />
@@ -102,7 +101,7 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
           {/* Notifications Bell */}
           <Link 
             to={notifTargetRoute} 
-            className="relative p-2 text-slate-700 hover:text-slate-900 apple-glass-pill hover:bg-white/90 rounded-full transition-all duration-200 cursor-pointer"
+            className="relative p-2 text-slate-700 hover:text-slate-900 apple-glass-pill hover:bg-white/90 rounded-full transition-all duration-200 cursor-pointer shrink-0"
             title={role === 'ADMIN' ? 'Admin Notifications' : 'Student Notifications'}
           >
             <Bell className={`w-4 h-4 ${unreadCount > 0 ? 'animate-bell-ring text-indigo-600' : ''}`} />
@@ -129,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({ mobileMenuOpen, onToggleMobileMe
           {/* Logout Button */}
           <button
             onClick={() => { logout(); navigate('/login'); }}
-            className="apple-btn-glass inline-flex items-center space-x-1 px-3.5 py-1 text-xs font-medium text-slate-700 hover:text-rose-600 rounded-full transition-all duration-200 cursor-pointer"
+            className="apple-btn-glass inline-flex items-center space-x-1 p-2 sm:px-3 sm:py-1 text-xs font-medium text-slate-700 hover:text-rose-600 rounded-full transition-all duration-200 cursor-pointer shrink-0"
             title="Log out of session"
           >
             <LogOut className="w-3.5 h-3.5 shrink-0" />

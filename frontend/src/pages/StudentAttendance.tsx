@@ -254,31 +254,31 @@ export const StudentAttendance: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-12">
+    <div className="space-y-4 sm:space-y-6 max-w-4xl mx-auto pb-12">
       
       {/* Top Header Card */}
-      <div className="apple-glass-card p-6 sm:p-7 rounded-[26px] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="apple-glass-card p-4 sm:p-7 rounded-2xl sm:rounded-[26px] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
           <div className="inline-flex items-center space-x-1.5 text-[11px] font-extrabold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200 mb-1">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+            <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
             <span>Smart Attendance Hub</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2">
-            <Calendar className="w-6 h-6 text-indigo-600" />
+          <h2 className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2">
+            <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 shrink-0" />
             <span>Mark Attendance</span>
           </h2>
-          <p className="text-slate-500 text-xs mt-1">
+          <p className="text-slate-500 text-xs mt-1 leading-relaxed">
             Scan the attendance QR code displayed by your faculty with your camera or enter the 6-digit numeric OTP.
           </p>
         </div>
 
         {/* Live Active Session Indicator Badge */}
         {activeSession && (
-          <div className="bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-2xl flex items-center space-x-2.5">
+          <div className="bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-2xl flex items-center space-x-2.5 w-full sm:w-auto shrink-0">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
-            <div className="text-left text-xs">
-              <span className="font-extrabold text-emerald-800 block">Faculty Session Active</span>
-              <span className="text-[10px] text-emerald-600 font-medium">Expires: {new Date(activeSession.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            <div className="text-left text-xs min-w-0">
+              <span className="font-extrabold text-emerald-800 block truncate">Faculty Session Active</span>
+              <span className="text-[10px] text-emerald-600 font-medium truncate">Expires: {new Date(activeSession.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           </div>
         )}
@@ -286,16 +286,16 @@ export const StudentAttendance: React.FC = () => {
 
       {/* Already Marked Alert */}
       {alreadyMarked && (
-        <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-emerald-400/30">
-          <div className="flex items-center space-x-3 text-center sm:text-left">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0">
+        <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-emerald-400/30">
+          <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-3 sm:space-x-3">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-6 h-6 text-emerald-300" />
             </div>
             <div>
               <span className="text-[10px] uppercase font-black tracking-widest text-emerald-300 block">
                 Status: PRESENT
               </span>
-              <h3 className="text-base sm:text-lg font-bold text-white">
+              <h3 className="text-sm sm:text-lg font-bold text-white">
                 You're all set! Attendance marked for this session.
               </h3>
               <p className="text-xs text-slate-300">
@@ -304,13 +304,13 @@ export const StudentAttendance: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 shrink-0">
+          <div className="flex items-center space-x-2 shrink-0 w-full sm:w-auto">
             <button
               onClick={() => {
                 setAlreadyMarked(false);
                 setMessage(null);
               }}
-              className="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-xl border border-white/20 transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-xl border border-white/20 transition-colors cursor-pointer text-center"
             >
               Scan Another Session
             </button>
@@ -320,24 +320,25 @@ export const StudentAttendance: React.FC = () => {
 
       {/* Main Dual Attendance Card */}
       {!alreadyMarked && (
-        <div className="apple-glass-card rounded-[28px] p-6 sm:p-8 space-y-6">
+        <div className="apple-glass-card rounded-2xl sm:rounded-[28px] p-4 sm:p-8 space-y-5 sm:space-y-6">
           
           {/* Mode Switcher Tabs (Segmented Control) */}
-          <div className="flex items-center justify-center p-1 bg-slate-100/80 rounded-2xl max-w-sm mx-auto border border-slate-200">
+          <div className="flex items-center justify-center p-1 bg-slate-100/80 rounded-2xl max-w-sm mx-auto border border-slate-200 w-full">
             <button
               type="button"
               onClick={() => {
                 setMode('camera');
                 setMessage(null);
               }}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+              className={`flex-1 py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 sm:space-x-2 cursor-pointer ${
                 mode === 'camera'
                   ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/60'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Camera className="w-4 h-4" />
-              <span>Camera QR Scanner</span>
+              <Camera className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Camera QR Scanner</span>
+              <span className="sm:hidden text-[11px]">QR Scanner</span>
             </button>
 
             <button
@@ -346,14 +347,15 @@ export const StudentAttendance: React.FC = () => {
                 setMode('otp');
                 setMessage(null);
               }}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+              className={`flex-1 py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 sm:space-x-2 cursor-pointer ${
                 mode === 'otp'
                   ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/60'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <KeyRound className="w-4 h-4" />
-              <span>Enter 6-Digit OTP</span>
+              <KeyRound className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Enter 6-Digit OTP</span>
+              <span className="sm:hidden text-[11px]">Enter OTP</span>
             </button>
           </div>
 
@@ -419,15 +421,15 @@ export const StudentAttendance: React.FC = () => {
               </div>
 
               {/* Camera Scanner Controls */}
-              <div className="flex flex-wrap items-center justify-center gap-3">
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={handleFlipCamera}
                   disabled={!cameraActive}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-50 text-xs font-bold rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer"
+                  className="px-3 sm:px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-50 text-xs font-bold rounded-xl flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
                   title="Switch between front and back camera"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
+                  <RotateCcw className="w-3.5 h-3.5 shrink-0" />
                   <span>Flip Camera</span>
                 </button>
 
@@ -435,7 +437,7 @@ export const StudentAttendance: React.FC = () => {
                   <button
                     type="button"
                     onClick={stopScanner}
-                    className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 flex items-center space-x-1.5 transition-colors cursor-pointer"
+                    className="px-3 sm:px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
                   >
                     <span>Pause Camera</span>
                   </button>
@@ -443,9 +445,9 @@ export const StudentAttendance: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => startScanner(cameraFacing)}
-                    className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl border border-indigo-200 flex items-center space-x-1.5 transition-colors cursor-pointer"
+                    className="px-3 sm:px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl border border-indigo-200 flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
                   >
-                    <Camera className="w-3.5 h-3.5" />
+                    <Camera className="w-3.5 h-3.5 shrink-0" />
                     <span>Start Camera</span>
                   </button>
                 )}
@@ -462,19 +464,19 @@ export const StudentAttendance: React.FC = () => {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={fileScanning}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer"
+                  className="col-span-2 sm:col-span-1 px-3 sm:px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
                   title="Upload a photo or screenshot of the QR code"
                 >
                   {fileScanning ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
                   ) : (
-                    <Upload className="w-3.5 h-3.5" />
+                    <Upload className="w-3.5 h-3.5 shrink-0" />
                   )}
                   <span>Upload QR Photo</span>
                 </button>
               </div>
 
-              <p className="text-center text-xs text-slate-400">
+              <p className="text-center text-xs text-slate-400 px-2 leading-relaxed">
                 Point your device camera at the attendance QR code displayed on the screen. It will scan and mark automatically.
               </p>
 
@@ -559,10 +561,10 @@ export const StudentAttendance: React.FC = () => {
       )}
 
       {/* Attendance Stats & History Log */}
-      <div className="liquid-glass-card rounded-[26px] p-6 space-y-4">
+      <div className="liquid-glass-card rounded-2xl sm:rounded-[26px] p-4 sm:p-6 space-y-4">
         <div className="flex items-center justify-between border-b border-white/80 pb-3">
           <h3 className="font-extrabold text-slate-900 text-sm flex items-center space-x-2">
-            <Sparkles className="w-4 h-4 text-indigo-600" />
+            <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
             <span>My Attendance Summary</span>
           </h3>
           <span className="text-xs font-bold text-slate-500">
@@ -570,18 +572,27 @@ export const StudentAttendance: React.FC = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 sm:gap-4">
-          <div className="liquid-glass-card-hover p-4 rounded-2xl text-center bg-white/60">
-            <div className="text-2xl sm:text-3xl font-black text-slate-900">{stats.total || 0}</div>
-            <div className="text-[11px] text-slate-500 font-semibold mt-0.5">Total Sessions</div>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="liquid-glass-card-hover p-2.5 sm:p-4 rounded-xl sm:rounded-2xl text-center bg-white/60">
+            <div className="text-xl sm:text-3xl font-black text-slate-900">{stats.total || 0}</div>
+            <div className="text-[10px] sm:text-[11px] text-slate-500 font-semibold mt-0.5 truncate">
+              <span className="hidden sm:inline">Total Sessions</span>
+              <span className="sm:hidden">Total</span>
+            </div>
           </div>
-          <div className="liquid-glass-card-hover p-4 rounded-2xl text-center bg-emerald-50/50">
-            <div className="text-2xl sm:text-3xl font-black text-emerald-700">{stats.present || 0}</div>
-            <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">Attended</div>
+          <div className="liquid-glass-card-hover p-2.5 sm:p-4 rounded-xl sm:rounded-2xl text-center bg-emerald-50/50">
+            <div className="text-xl sm:text-3xl font-black text-emerald-700">{stats.present || 0}</div>
+            <div className="text-[10px] sm:text-[11px] text-emerald-600 font-semibold mt-0.5 truncate">
+              <span className="hidden sm:inline">Attended Sessions</span>
+              <span className="sm:hidden">Attended</span>
+            </div>
           </div>
-          <div className="liquid-glass-card-hover p-4 rounded-2xl text-center bg-purple-50/50">
-            <div className="text-2xl sm:text-3xl font-black text-purple-700">{stats.percentage || 100}%</div>
-            <div className="text-[11px] text-purple-600 font-semibold mt-0.5">Attendance Rate</div>
+          <div className="liquid-glass-card-hover p-2.5 sm:p-4 rounded-xl sm:rounded-2xl text-center bg-purple-50/50">
+            <div className="text-xl sm:text-3xl font-black text-purple-700">{stats.percentage || 100}%</div>
+            <div className="text-[10px] sm:text-[11px] text-purple-600 font-semibold mt-0.5 truncate">
+              <span className="hidden sm:inline">Attendance Rate</span>
+              <span className="sm:hidden">Rate</span>
+            </div>
           </div>
         </div>
 
@@ -591,17 +602,17 @@ export const StudentAttendance: React.FC = () => {
             <h4 className="text-xs font-bold text-slate-700">Verified Attendance Records</h4>
             <div className="divide-y divide-slate-100 text-xs">
               {stats.records.map((r: any) => (
-                <div key={r.id} className="py-2.5 flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
+                <div key={r.id} className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
+                  <div className="flex items-center space-x-2 min-w-0">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div>
-                      <span className="font-bold text-slate-800">Session Attendance Verified</span>
-                      <span className="ml-2 font-mono text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">{r.session_id}</span>
+                    <div className="flex items-center space-x-1.5 flex-wrap min-w-0">
+                      <span className="font-bold text-slate-800 text-xs">Verified</span>
+                      <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md truncate max-w-[150px] sm:max-w-none">{r.session_id}</span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 text-slate-500 font-mono text-[11px]">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{new Date(r.marked_at).toLocaleString()}</span>
+                  <div className="flex items-center space-x-1.5 text-slate-500 font-mono text-[11px] pl-6 sm:pl-0">
+                    <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>{new Date(r.marked_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                   </div>
                 </div>
               ))}

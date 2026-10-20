@@ -134,19 +134,19 @@ export const StudentDashboard: React.FC = () => {
       
       {/* Apple Product Storytelling Hero Card */}
       {/* Liquid Glass Hero Banner */}
-      <div className="liquid-glass-dark rounded-[28px] p-7 sm:p-9 shadow-[0_24px_60px_rgba(15,23,42,0.35)] relative overflow-hidden border border-white/20">
+      <div className="liquid-glass-dark rounded-2xl sm:rounded-[28px] p-5 sm:p-9 shadow-[0_24px_60px_rgba(15,23,42,0.35)] relative overflow-hidden border border-white/20">
         {/* Soft blue and violet ambient lighting sheen */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/25 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-violet-500/25 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 sm:gap-6">
           <div className="space-y-2 max-w-xl">
             <div className="inline-flex items-center space-x-2 bg-white/10 text-white/95 text-xs font-semibold px-3.5 py-1 rounded-full border border-white/25 backdrop-blur-md">
               <Sparkles className="w-3.5 h-3.5 text-violet-300" />
               <span>{user?.community || 'Agentic AI Community'}</span>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            <h2 className="text-xl sm:text-3xl font-extrabold tracking-tight text-white">
               Welcome back, {user?.name}.
             </h2>
 
@@ -155,10 +155,10 @@ export const StudentDashboard: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto shrink-0">
             <Link
               to="/attendance"
-              className="inline-flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-lg transition-all cursor-pointer transform hover:scale-102 active:scale-98 border border-white/30"
+              className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-lg transition-all cursor-pointer transform hover:scale-102 active:scale-98 border border-white/30"
               title="Quick scan QR code or enter attendance OTP"
             >
               <QrCode className="w-3.5 h-3.5 text-white" />
@@ -168,7 +168,7 @@ export const StudentDashboard: React.FC = () => {
             <button
               onClick={handleDownloadReportCard}
               disabled={downloadingReport}
-              className="inline-flex items-center space-x-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs px-4 py-2.5 rounded-full border border-white/25 shadow-xs backdrop-blur-md transition-all cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center justify-center space-x-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs px-4 py-2.5 rounded-full border border-white/25 shadow-xs backdrop-blur-md transition-all cursor-pointer disabled:opacity-50"
               title="Download official report card PDF"
             >
               {downloadingReport ? (
@@ -186,7 +186,7 @@ export const StudentDashboard: React.FC = () => {
 
             <Link
               to="/ask-doubt"
-              className="inline-flex items-center space-x-2 bg-white hover:bg-slate-100 text-[#1d1d1f] font-bold text-xs px-5 py-2.5 rounded-full shadow-lg transition-all cursor-pointer transform hover:scale-102 active:scale-98 border border-white"
+              className="inline-flex items-center justify-center space-x-2 bg-white hover:bg-slate-100 text-[#1d1d1f] font-bold text-xs px-5 py-2.5 rounded-full shadow-lg transition-all cursor-pointer transform hover:scale-102 active:scale-98 border border-white"
             >
               <MessageSquare className="w-3.5 h-3.5 text-indigo-600" />
               <span>Ask AI Assistant</span>
@@ -197,8 +197,8 @@ export const StudentDashboard: React.FC = () => {
 
       {/* Live Active Attendance Session Announcement Banner */}
       {liveAttendanceSession && !alreadyMarkedSession && (
-        <div className="bg-gradient-to-r from-indigo-950 via-purple-950 to-slate-900 rounded-3xl p-5 sm:p-6 text-white shadow-xl border border-indigo-400/40 relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in">
-          <div className="flex items-center space-x-3.5 text-center sm:text-left">
+        <div className="bg-gradient-to-r from-indigo-950 via-purple-950 to-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white shadow-xl border border-indigo-400/40 relative overflow-hidden flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 animate-in fade-in">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center shrink-0 shadow-md">
               <QrCode className="w-6 h-6 text-indigo-300 animate-pulse" />
             </div>
@@ -209,29 +209,29 @@ export const StudentDashboard: React.FC = () => {
                   Live Attendance Active
                 </span>
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+              <h3 className="text-base sm:text-lg font-bold text-white tracking-tight mt-0.5">
                 Faculty Attendance is Open: {liveAttendanceSession.community}
               </h3>
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
                 Scan the projected QR code with your camera or enter the 6-digit OTP code before it expires.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2.5 shrink-0 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 shrink-0 w-full sm:w-auto">
             <Link
               to="/attendance?mode=camera"
-              className="flex-1 sm:flex-initial px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center space-x-1.5 transition-all cursor-pointer transform hover:scale-102"
+              className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center space-x-1.5 transition-all cursor-pointer transform hover:scale-102"
             >
-              <Camera className="w-4 h-4" />
+              <Camera className="w-4 h-4 shrink-0" />
               <span>Scan QR Code</span>
             </Link>
 
             <Link
               to="/attendance?mode=otp"
-              className="flex-1 sm:flex-initial px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
             >
-              <KeyRound className="w-4 h-4 text-purple-200" />
+              <KeyRound className="w-4 h-4 text-purple-200 shrink-0" />
               <span>Enter OTP</span>
             </Link>
           </div>
