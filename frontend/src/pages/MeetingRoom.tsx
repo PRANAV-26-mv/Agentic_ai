@@ -1203,22 +1203,38 @@ const PeerVideoTile: React.FC<{
       audio.muted = !peer.audioEnabled;
       audio.volume = 1.0;
 
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          console.warn('Remote peer audio playback notice:', err);
-          // Unlock audio playback on first user gesture anywhere on page
-          const unlockAudio = () => {
-            audio.play().catch(() => {});
-            window.removeEventListener('click', unlockAudio);
-            window.removeEventListener('pointerdown', unlockAudio);
-            window.removeEventListener('keydown', unlockAudio);
-          };
-          window.addEventListener('click', unlockAudio);
-          window.addEventListener('pointerdown', unlockAudio);
-          window.addEventListener('keydown', unlockAudio);
-        });
-      }
+      const attemptPlay = () => {
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            console.warn('Remote peer audio playback notice:', err);
+            const unlockAudio = () => {
+              audio.play().catch(() => {});
+              window.removeEventListener('click', unlockAudio);
+              window.removeEventListener('pointerdown', unlockAudio);
+              window.removeEventListener('keydown', unlockAudio);
+            };
+            window.addEventListener('click', unlockAudio);
+            window.addEventListener('pointerdown', unlockAudio);
+            window.addEventListener('keydown', unlockAudio);
+          });
+        }
+      };
+
+      attemptPlay();
+
+      const onAddTrack = () => {
+        if (audio.srcObject !== peer.stream) {
+          audio.srcObject = peer.stream || null;
+        }
+        attemptPlay();
+      };
+
+      peer.stream.addEventListener('addtrack', onAddTrack);
+
+      return () => {
+        peer.stream?.removeEventListener('addtrack', onAddTrack);
+      };
     } else {
       audio.srcObject = null;
     }
